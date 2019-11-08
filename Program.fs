@@ -2,21 +2,25 @@
 
 open System
 open Giraffe
-
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Cors.Infrastructure
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Logging
 open Microsoft.AspNetCore.Authentication.JwtBearer
-
 open Microsoft.AspNetCore.Hosting
 open System.IO
 open Microsoft.IdentityModel.Tokens
-open kaSkjerSvc.Database
+open kaSkjerSvc.Handlers
 
 let webApp = choose[
     GET >=> choose[
-        route "/" >=> text "yoo"
+        route "/" >=> text "Ka skjer?"
+        route "/events" >=> EventHandlers.getEvents
+        routef "/events/id=%i" EventHandlers.getEvent
+        routef "/events/employeeId=%i" EventHandlers.getEventsForEmployee
+    ]
+    DELETE >=> choose[
+        routef "/events/id=%i" EventHandlers.deleteEvent
     ]
 ]
 
@@ -61,16 +65,4 @@ let main argv =
         .ConfigureServices(configureServices)
         .Build()
         .Run()
-    
-    
-    (*let events = dbContext.Dbo.Events
-    printfn "%A" (Seq.head events).Title
-    
-    let row = events.``Create(FromDate, Location, ResponsibleEmployee, Title, ToDate)``(DateTimeOffset.Now, "Månen", 1437, "Test2", DateTimeOffset.Now)
-    dbContext.SubmitUpdates()
-    
-    (events
-    |> Seq.rev
-    |> Seq.head).Title
-    |> printfn "%A"*)
     0

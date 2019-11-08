@@ -15,7 +15,12 @@
  </PropertyGroup>
   <ItemGroup>
     <Compile Include="Database\DbContext.fs" />
+    <Compile Include="Events\EventModels.fs" />
+    <Compile Include="Events\EventRepository.fs" />
+    <Compile Include="Events\EventService.fs" />
+    <Compile Include="Events\EventHandlers.fs" />
     <Compile Include="Program.fs" />
+   
   </ItemGroup>
   <Import Project=".paket\Paket.Restore.targets" />
 </Project>
