@@ -26,7 +26,22 @@ module EventRepository =
             e.Delete()
             dbContext.SubmitUpdates()) 
      
-                        
+    let updateEvent (event : EventDomainModel) =
+        let foundEventMaybe = query {
+                for e in dbContext.Dbo.Events do
+                where (e.Id = event.Id)
+                select (Some e)
+                exactlyOneOrDefault }
+        match foundEventMaybe with
+        | Some foundEvent ->
+            foundEvent.Title <- event.Title
+            foundEvent.Description <- event.Description
+            foundEvent.Location <- event.Location
+            foundEvent.FromDate <- event.FromDate
+            foundEvent.ToDate <- event.ToDate
+            foundEvent.ResponsibleEmployee <- event.ResponsibleEmployee
+            dbContext.SubmitUpdates()
+        | None -> ()
                          
     
     
