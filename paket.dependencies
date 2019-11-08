@@ -1,3 +1,5 @@
 source https://api.nuget.org/v3/index.json
 nuget SQLProvider 
 nuget System.Data.SqlClient
+nuget Giraffe
+nuget Microsoft.AspNetCore.Authentication.JwtBearer

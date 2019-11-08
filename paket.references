@@ -1,2 +1,4 @@
 SQLProvider 
 System.Data.SqlClient
+Giraffe
+Microsoft.AspNetCore.Authentication.JwtBearer
