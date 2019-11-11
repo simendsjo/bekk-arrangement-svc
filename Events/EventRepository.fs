@@ -5,28 +5,28 @@ open kaSkjerSvc.Models
 open kaSkjerSvc.Models.EventModels
 
 module EventRepository =
-    let getEvents () =
+    let getEvents (dbContext : ArrangementDbContext) =
        dbContext.Dbo.Events
        |> Seq.map EventModels.mapDbEventToDomain 
     
-    let getEventsForEmployee employeeId =
-      getEvents ()
+    let getEventsForEmployee employeeId (dbContext : ArrangementDbContext) =
+      getEvents dbContext
       |> Seq.filter (fun event ->
           event.ResponsibleEmployee = employeeId)
       
-    let getEvent id = getEvents () |> Seq.tryFind (fun event -> event.Id = id)
+    let getEvent id (dbContext : ArrangementDbContext) =
+        getEvents dbContext |> Seq.tryFind (fun event -> event.Id = id)
     
-    let deleteEvent id =
+    let deleteEvent id (dbContext : ArrangementDbContext) =
         query { for e in dbContext.Dbo.Events do
                 where (e.Id = id)
                 select (Some e)
                 exactlyOneOrDefault }
         |> Option.map (fun e ->
-            printfn "%A" e.Id
             e.Delete()
             dbContext.SubmitUpdates()) 
      
-    let updateEvent (event : EventDomainModel) =
+    let updateEvent (event : EventDomainModel) (dbContext : ArrangementDbContext) =
         let foundEventMaybe = query {
                 for e in dbContext.Dbo.Events do
                 where (e.Id = event.Id)
@@ -45,7 +45,7 @@ module EventRepository =
         | None -> None
                          
     
-    let createEvent (event : EventWriteModel) =
+    let createEvent (event : EventWriteModel) (dbContext : ArrangementDbContext) =
         let newEvent = dbContext.Dbo.Events.``Create(FromDate, Location, ResponsibleEmployee, Title, ToDate)``
                            (event.FromDate,
                            event.Location,
@@ -55,7 +55,3 @@ module EventRepository =
         newEvent.Description <- event.Description
         dbContext.SubmitUpdates()
         newEvent |> EventModels.mapDbEventToDomain
-    
-    
-
-

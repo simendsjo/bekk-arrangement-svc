@@ -5,43 +5,49 @@ open Microsoft.AspNetCore.Http
 
 open kaSkjerSvc.Models.EventModels
 open kaSkjerSvc.Services
+open kaSkjerSvc.Database
 
 module EventHandlers =    
     let getEvents (next : HttpFunc) (ctx : HttpContext) =
-        json (EventService.getEvents ()) next ctx
+        let dbContext = ctx.GetService<ArrangementDbContext>()
+        json (EventService.getEvents dbContext) next ctx
         
     let getEventsForEmployee employeeId : HttpHandler =
         fun (next : HttpFunc) (ctx : HttpContext) ->
-            json (EventService.getEventsForEmployee employeeId) next ctx
+            let dbContext = ctx.GetService<ArrangementDbContext>()
+            json (EventService.getEventsForEmployee employeeId dbContext) next ctx
 
     let getEvent id : HttpHandler =
         fun (next : HttpFunc) (ctx : HttpContext) ->
-            EventService.getEvent id
+            let dbContext = ctx.GetService<ArrangementDbContext>()
+            EventService.getEvent id dbContext
             |> function
                 | Some event -> json event next ctx
                 | None -> RequestErrors.NOT_FOUND "Event not found" next ctx
     
     let deleteEvent id : HttpHandler =
         fun (next : HttpFunc) (ctx : HttpContext) ->
-            EventService.deleteEvent id
+            let dbContext = ctx.GetService<ArrangementDbContext>()
+            EventService.deleteEvent id dbContext
             |> function
                 | Some _ -> Successful.OK "Event deleted ok" next ctx
                 | None -> RequestErrors.NOT_FOUND "Event not found" next ctx
                 
-                
     let updateEvent id : HttpHandler =
             fun (next : HttpFunc) (ctx : HttpContext) ->
+                let dbContext = ctx.GetService<ArrangementDbContext>()
                 let event = ctx.BindJsonAsync<EventWriteModel>().Result
-                EventService.updateEvent (event |> mapWriteEventToDomain id)
+                EventService.updateEvent (event |> mapWriteEventToDomain id) dbContext
                 |> function
                     | Some event -> json event next ctx
                     | None -> RequestErrors.NOT_FOUND "Event not found" next ctx
                 
     let createEvent (next : HttpFunc) (ctx : HttpContext) =
+        let dbContext = ctx.GetService<ArrangementDbContext>()
         let event = ctx.BindJsonAsync<EventWriteModel>().Result
-        let newEvent = EventService.createEvent event
-        json newEvent next ctx
-        
+        let newEvent = EventService.createEvent event dbContext
+        json newEvent next ctx    
+    
     let EventRoutes : HttpHandler =
         choose [
             GET >=> choose[

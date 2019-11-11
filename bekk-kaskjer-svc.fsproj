@@ -20,11 +20,10 @@
     <Compile Include="Events\EventService.fs" />
     <Compile Include="Events\EventHandlers.fs" />
     <Compile Include="Program.fs" />
-    <Content Include="appsettings.json" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="appsettings.json">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
   <Import Project=".paket\Paket.Restore.targets" />

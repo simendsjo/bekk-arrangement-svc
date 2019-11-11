@@ -2,22 +2,23 @@ namespace kaSkjerSvc.Services
 
 open kaSkjerSvc.Models
 open kaSkjerSvc.Repositories
+open kaSkjerSvc.Database
 
 module EventService =
-    let getEvents () = EventRepository.getEvents ()
-                       |> Seq.map EventModels.mapDomainEventToView
+    let getEvents (context : ArrangementDbContext) =
+        EventRepository.getEvents context |> Seq.map EventModels.mapDomainEventToView
 
-    let getEventsForEmployee employeeId =
-      EventRepository.getEventsForEmployee employeeId
+    let getEventsForEmployee employeeId (dbContext : ArrangementDbContext) =
+      EventRepository.getEventsForEmployee employeeId dbContext
       |> Seq.map EventModels.mapDomainEventToView
                                           
-    let getEvent id = EventRepository.getEvent id
-                      |> Option.map EventModels.mapDomainEventToView
+    let getEvent id (dbContext : ArrangementDbContext) =
+        EventRepository.getEvent id dbContext |> Option.map EventModels.mapDomainEventToView
                       
-    let deleteEvent id = EventRepository.deleteEvent id
+    let deleteEvent id (dbContext : ArrangementDbContext) = EventRepository.deleteEvent id dbContext
     
-    let updateEvent event = EventRepository.updateEvent event
-                            |> Option.map EventModels.mapDomainEventToView
+    let updateEvent event (dbContext : ArrangementDbContext) =
+        EventRepository.updateEvent event dbContext |> Option.map EventModels.mapDomainEventToView
     
-    let createEvent event = EventRepository.createEvent event
-                           |> EventModels.mapDomainEventToView
+    let createEvent event (dbContext : ArrangementDbContext) =
+        EventRepository.createEvent event dbContext |> EventModels.mapDomainEventToView

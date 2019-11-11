@@ -11,11 +11,19 @@ open Microsoft.AspNetCore.Hosting
 open System.IO
 open Microsoft.IdentityModel.Tokens
 
+open Microsoft.Extensions.Configuration
 open kaSkjerSvc.Handlers
+open kaSkjerSvc.Database
 
 let webApp = choose[
     EventHandlers.EventRoutes
 ]
+
+let private configuration =
+    let builder = ConfigurationBuilder()
+    builder.AddJsonFile("appsettings.json") |> ignore
+    builder.AddEnvironmentVariables() |> ignore
+    builder.Build()
 
 let errorHandler (ex: Exception) (logger: ILogger) =
     logger.LogError(ex, "An unhandled exception has occurred while executing the request.")
@@ -26,27 +34,28 @@ let configureCors (builder: CorsPolicyBuilder) =
     
 let configureApp (app: IApplicationBuilder) =
     (app.UseGiraffeErrorHandler errorHandler)
-        .UseAuthentication()        
+        .UseAuthentication()
         .UseCors(configureCors)
         .UseGiraffe(webApp)
     
 let configureServices (services: IServiceCollection) =
     services.AddCors() |> ignore
-    services.AddGiraffe() |> ignore
+    services.AddGiraffe() |> ignore    
+    services.AddSingleton<ArrangementDbContext>(createDbContext configuration.["ConnectionStrings:EventDb"]) |> ignore
     services
         .AddAuthentication(fun options ->
             options.DefaultAuthenticateScheme <- JwtBearerDefaults.AuthenticationScheme
             options.DefaultChallengeScheme <- JwtBearerDefaults.AuthenticationScheme)
         .AddJwtBearer(fun options ->
-            let audiences = ["QHQy75S7tmnhDdBGYSnszzlhMPul0fAE"; "https://api.dev.bekk.no"]
-            options.Authority <- "https://bekk-dev.eu.auth0.com"
+            let audiences = [configuration.["Auth0:Audience"]; configuration.["Auth0:Scheduled_Tasks_Audience"]]
+            options.Authority <- sprintf "https://%s" configuration.["Auth0:Issuer_Domain"]
             options.TokenValidationParameters <- TokenValidationParameters(
                 ValidateIssuer = false,
                 ValidAudiences = audiences))
         |> ignore
 
 [<EntryPoint>]
-let main argv =
+let main _ =
     let contentRoot = Directory.GetCurrentDirectory()
     let webRoot = Path.Combine(contentRoot, "WebRoot")
     WebHostBuilder()
