@@ -41,19 +41,21 @@ module EventRepository =
             foundEvent.ToDate <- event.ToDate
             foundEvent.ResponsibleEmployee <- event.ResponsibleEmployee
             dbContext.SubmitUpdates()
-        | None -> ()
+            foundEvent |> EventModels.mapDbEventToDomain |> Some
+        | None -> None
                          
     
+    let createEvent (event : EventWriteModel) =
+        let newEvent = dbContext.Dbo.Events.``Create(FromDate, Location, ResponsibleEmployee, Title, ToDate)``
+                           (event.FromDate,
+                           event.Location,
+                           event.ResponsibleEmployee,
+                           event.Title,
+                           event.ToDate)
+        newEvent.Description <- event.Description
+        dbContext.SubmitUpdates()
+        newEvent |> EventModels.mapDbEventToDomain
     
     
-    
-    (*printfn "%A" (Seq.head events).Title
-    
-    let row = events.``Create(FromDate, Location, ResponsibleEmployee, Title, ToDate)``(DateTimeOffset.Now, "Månen", 1437, "Test2", DateTimeOffset.Now)
-    dbContext.SubmitUpdates()
-    
-    (events
-    |> Seq.rev
-    |> Seq.head).Title
-    |> printfn "%A"*)
+
 

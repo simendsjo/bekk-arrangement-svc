@@ -10,18 +10,11 @@ open Microsoft.AspNetCore.Authentication.JwtBearer
 open Microsoft.AspNetCore.Hosting
 open System.IO
 open Microsoft.IdentityModel.Tokens
+
 open kaSkjerSvc.Handlers
 
 let webApp = choose[
-    GET >=> choose[
-        route "/" >=> text "Ka skjer?"
-        route "/events" >=> EventHandlers.getEvents
-        routef "/events/id=%i" EventHandlers.getEvent
-        routef "/events/employeeId=%i" EventHandlers.getEventsForEmployee
-    ]
-    DELETE >=> choose[
-        routef "/events/id=%i" EventHandlers.deleteEvent
-    ]
+    EventHandlers.EventRoutes
 ]
 
 let errorHandler (ex: Exception) (logger: ILogger) =

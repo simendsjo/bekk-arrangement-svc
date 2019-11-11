@@ -15,4 +15,9 @@ module EventService =
                       |> Option.map EventModels.mapDomainEventToView
                       
     let deleteEvent id = EventRepository.deleteEvent id
-                          
+    
+    let updateEvent event = EventRepository.updateEvent event
+                            |> Option.map EventModels.mapDomainEventToView
+    
+    let createEvent event = EventRepository.createEvent event
+                           |> EventModels.mapDomainEventToView

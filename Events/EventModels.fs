@@ -1,5 +1,6 @@
 namespace kaSkjerSvc.Models
 open System
+
 open kaSkjerSvc.Database
 
 module EventModels =
@@ -14,7 +15,16 @@ module EventModels =
     }
     
     type EventViewModel = {
-        Id: int
+        Id : int
+        Title : string
+        Description : string
+        Location : string
+        FromDate : DateTimeOffset
+        ToDate : DateTimeOffset
+        ResponsibleEmployee : int
+    }
+    
+    type EventWriteModel = {
         Title : string
         Description : string
         Location : string
@@ -25,7 +35,7 @@ module EventModels =
     
     // Utils
     
-    let mapDbEventToDomain (dbRecord : KaSkjerSql.dataContext.``dbo.EventsEntity``) : EventDomainModel =
+    let mapDbEventToDomain (dbRecord : ArrangementSql.dataContext.``dbo.EventsEntity``) : EventDomainModel =
         {
             Id = dbRecord.Id
             Title = dbRecord.Title
@@ -45,5 +55,16 @@ module EventModels =
             FromDate = domainModel.FromDate
             ToDate = domainModel.ToDate
             ResponsibleEmployee = domainModel.ResponsibleEmployee
+        }
+        
+    let mapWriteEventToDomain id (writeModel : EventWriteModel) : EventDomainModel =
+        {
+            Id = id
+            Title = writeModel.Title
+            Description = writeModel.Description
+            Location = writeModel.Location
+            FromDate = writeModel.FromDate
+            ToDate = writeModel.ToDate
+            ResponsibleEmployee = writeModel.ResponsibleEmployee
         }
 
