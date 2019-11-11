@@ -1,11 +1,11 @@
-namespace kaSkjerSvc.Handlers
+namespace arrangementSvc.Handlers
 
 open Giraffe
 open Microsoft.AspNetCore.Http
 
-open kaSkjerSvc.Models.EventModels
-open kaSkjerSvc.Services
-open kaSkjerSvc.Database
+open arrangementSvc.Models.EventModels
+open arrangementSvc.Services
+open arrangementSvc.Database
 
 module EventHandlers =    
     let getEvents (next : HttpFunc) (ctx : HttpContext) =

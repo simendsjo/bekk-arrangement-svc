@@ -1,4 +1,4 @@
-﻿module kaSkjerSvc.App
+﻿module arrangementSvc.App
 
 open System
 open Giraffe
@@ -10,10 +10,10 @@ open Microsoft.AspNetCore.Authentication.JwtBearer
 open Microsoft.AspNetCore.Hosting
 open System.IO
 open Microsoft.IdentityModel.Tokens
-
 open Microsoft.Extensions.Configuration
-open kaSkjerSvc.Handlers
-open kaSkjerSvc.Database
+
+open arrangementSvc.Handlers
+open arrangementSvc.Database
 
 let webApp = choose[
     EventHandlers.EventRoutes

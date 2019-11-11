@@ -1,4 +1,4 @@
-namespace kaSkjerSvc
+namespace arrangementSvc
 
 open FSharp.Data.Sql
 open Microsoft.Extensions.DependencyInjection

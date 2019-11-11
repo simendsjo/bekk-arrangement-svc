@@ -1,7 +1,8 @@
-namespace kaSkjerSvc.Models
+namespace arrangementSvc.Models
+
 open System
 
-open kaSkjerSvc.Database
+open arrangementSvc.Database
 
 module EventModels =
     type EventDomainModel = {

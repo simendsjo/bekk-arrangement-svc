@@ -1,8 +1,8 @@
-namespace kaSkjerSvc.Repositories
+namespace arrangementSvc.Repositories
 
-open kaSkjerSvc.Database
-open kaSkjerSvc.Models
-open kaSkjerSvc.Models.EventModels
+open arrangementSvc.Database
+open arrangementSvc.Models
+open arrangementSvc.Models.EventModels
 
 module EventRepository =
     let getEvents (dbContext : ArrangementDbContext) =
