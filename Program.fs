@@ -67,4 +67,7 @@ let main _ =
         .ConfigureServices(configureServices)
         .Build()
         .Run()
+        
+    let foo = createDbContext ConnectionString
+    foo.SaveContextSchema() |> ignore
     0

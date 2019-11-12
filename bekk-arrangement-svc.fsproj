@@ -5,14 +5,22 @@
     <TargetFramework>netcoreapp3.0</TargetFramework>
     <RootNamespace>bekk_arrangement_svc</RootNamespace>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(MSBuildRuntimeType)' == 'Core'">
+    <IsOSX Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX)))' == 'true'">true</IsOSX>
+    <IsLinux Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' == 'true'">true</IsLinux>
+  </PropertyGroup>  
   <PropertyGroup>
    <DisableAutoSetFscCompilerPath>true</DisableAutoSetFscCompilerPath>
    <DotnetFscCompilerPath></DotnetFscCompilerPath>
  </PropertyGroup>
- <PropertyGroup>
+ <PropertyGroup Condition="'$(IsOSX)' == 'true'">
    <FscToolPath>/Library/Frameworks/Mono.framework/Versions/Current/Commands</FscToolPath>
    <FscToolExe>fsharpc</FscToolExe>
  </PropertyGroup>
+ <PropertyGroup Condition="'$(IsLinux)' == 'true'">
+    <FscToolPath>/usr/bin</FscToolPath>
+    <FscToolExe>fsharpc</FscToolExe>
+  </PropertyGroup>
   <ItemGroup>
     <Compile Include="Database\DbContext.fs" />
     <Compile Include="Events\EventModels.fs" />
@@ -25,7 +33,6 @@
     <Content Include="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Dockerfile" />
   </ItemGroup>
   <Import Project=".paket\Paket.Restore.targets" />
 </Project>
