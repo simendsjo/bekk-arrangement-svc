@@ -24,7 +24,8 @@ RUN mono .paket/paket.exe restore --verbose
 #  && apt-get install -y dotnet-sdk-3.0 
 
 COPY . ./
-RUN dotnet publish -c Release -o out ./bekk-arrangement-svc.fsproj
+RUN dotnet restore
+RUN dotnet publish --no-restore -c Release -o out ./bekk-arrangement-svc.fsproj
 
 CMD dotnet out/bekk-arrangement-svc.dll
 
