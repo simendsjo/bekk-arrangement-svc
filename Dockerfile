@@ -1,6 +1,8 @@
 FROM fsharp:10.6.0-netcore AS build-env
 WORKDIR /app
 
+COPY . ./
+
 COPY .paket/ .paket/
 COPY paket.lock ./
 COPY paket.dependencies ./
@@ -11,7 +13,6 @@ RUN mono .paket/paket.exe install
 RUN mono .paket/paket.exe restore
 
 COPY . ./
-#RUN msbuild
 RUN dotnet publish -c Release -o out ./bekk-arrangement-svc.fsproj
 CMD dotnet out/bekk-arrangement-svc.dll
 

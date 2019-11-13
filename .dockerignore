@@ -10,3 +10,6 @@ docker-compose.*.yml
 **/obj
 bin/
 obj/
+out/
+./paket/paket.exe
+./paket/paket
