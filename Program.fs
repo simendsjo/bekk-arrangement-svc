@@ -34,7 +34,7 @@ let configureCors (builder: CorsPolicyBuilder) =
 let configureApp (app: IApplicationBuilder) =
     app.Use(fun context next -> 
         context.Request.Path <- context.Request.Path.Value.Replace(configuration.["VIRTUAL_PATH"], "")  |> PathString
-        next.Invoke()) |> ignore     
+        next.Invoke()) |> ignore
     (app.UseGiraffeErrorHandler errorHandler)
         .UseAuthentication()
         .UseCors(configureCors)
@@ -43,7 +43,6 @@ let configureApp (app: IApplicationBuilder) =
 let configureServices (services: IServiceCollection) =
     services.AddCors() |> ignore
     services.AddGiraffe() |> ignore
-    printfn "%A" configuration.["ConnectionStrings:EventDb"]
     services.AddSingleton<ArrangementDbContext>(createDbContext configuration.["ConnectionStrings:EventDb"]) |> ignore
     services.AddAuthentication(fun options ->
             options.DefaultAuthenticateScheme <- JwtBearerDefaults.AuthenticationScheme
@@ -61,10 +60,19 @@ let configureServices (services: IServiceCollection) =
 let main _ =
     let contentRoot = Directory.GetCurrentDirectory()
     let webRoot = Path.Combine(contentRoot, "WebRoot")
-    WebHostBuilder().UseKestrel().UseContentRoot(contentRoot).UseIISIntegration().UseWebRoot(webRoot)
-        .Configure(Action<IApplicationBuilder> configureApp).ConfigureServices(configureServices).Build().Run()
+    WebHostBuilder()
+        .UseKestrel()
+        .UseContentRoot(contentRoot)
+        .UseIISIntegration()
+        .UseWebRoot(webRoot)
+        .UseUrls(sprintf "http://localhost:%s" configuration.["PORT"])
+        .Configure(Action<IApplicationBuilder> configureApp)
+        .ConfigureServices(configureServices)
+        .Build()
+        .Run()
 
     // TODO: FIX
     let foo = createDbContext ConnectionString
     foo.SaveContextSchema() |> ignore
     0
+    
