@@ -26,11 +26,11 @@ RUN apt-get update \
 COPY . ./
 RUN dotnet publish -c Release -o out ./bekk-arrangement-svc.fsproj
 
-ENV ConnectionStrings__EventDb=Server=rds-dev.bekk.local;User=event-svc;Password=9U6&i5xvvBkG%Bs*S&eT;Database=event-svc
 CMD dotnet out/bekk-arrangement-svc.dll
 
-#FROM microsoft/dotnet:3.0-aspnetcore-runtime
+#FROM mcr.microsoft.com/dotnet/core/runtime:3.0-buster-slim
 #WORKDIR /app
 #COPY --from=build-env /app/out .
-
+#COPY --from=build-env /app/hahaha.sh .
 #CMD dotnet bekk-arrangement-svc.dll
+#CMD ./hahaha.sh
