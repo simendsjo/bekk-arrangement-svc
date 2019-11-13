@@ -1,19 +1,21 @@
 FROM fsharp:10.6.0-netcore AS build-env
 WORKDIR /app
 
-COPY .paket/ .paket/
-COPY paket.lock ./
-COPY paket.dependencies ./
-COPY paket.references ./
+#COPY .paket/ .paket/
+#COPY paket.lock ./
+#COPY paket.dependencies ./
+#COPY paket.references ./
 
-RUN mono .paket/paket.bootstrapper.exe
-RUN mono .paket/paket.exe install
-RUN mono .paket/paket.exe restore
+#RUN mono .paket/paket.bootstrapper.exe
+#RUN mono .paket/paket.exe install
+#RUN mono .paket/paket.exe restore
 
-COPY . ./
-RUN bash -c "dotnet restore | echo feil"
-RUN dotnet publish --no-restore  -c Release -o out ./bekk-arrangement-svc.fsproj
-CMD dotnet out/bekk-arrangement-svc.dll
+RUN bash -c "uname -m"
+#COPY . ./
+#CMD ./hahaha.sh
+#RUN bash -c "dotnet restore | echo feil"
+#RUN dotnet publish --no-restore  -c Release -o out ./bekk-arrangement-svc.fsproj
+#CMD dotnet out/bekk-arrangement-svc.dll
 
 #FROM mcr.microsoft.com/dotnet/core/runtime:3.0-buster-slim
 #WORKDIR /app
