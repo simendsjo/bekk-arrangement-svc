@@ -26,8 +26,7 @@ RUN apt-get update \
 COPY . ./
 RUN dotnet publish -c Release -o out ./bekk-arrangement-svc.fsproj
 
-#CMD ./hahaha.sh
-ENV "hei": "Data Source=rds-dev.bekk.local;Database=event-svc;User ID=event-svc;Password=9U6&i5xvvBkG%Bs*S&eT"
+ENV ConnectionStrings__EventDb=Server=rds-dev.bekk.local;User=event-svc;Password=9U6&i5xvvBkG%Bs*S&eT;Database=event-svc
 CMD dotnet out/bekk-arrangement-svc.dll
 
 #FROM microsoft/dotnet:3.0-aspnetcore-runtime

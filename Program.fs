@@ -36,8 +36,8 @@ let configureApp (app: IApplicationBuilder) =
 let configureServices (services: IServiceCollection) =
     services.AddCors() |> ignore
     services.AddGiraffe() |> ignore
-    printfn "\n\nLLOOOOK AT MEEEEEEEEEEEEE: %A\n\n" configuration.["hei"]
-    services.AddSingleton<ArrangementDbContext>(createDbContext configuration.["hei"]) |> ignore
+    printfn "%A" configuration.["ConnectionStrings:EventDb"]
+    services.AddSingleton<ArrangementDbContext>(createDbContext configuration.["ConnectionStrings:EventDb"]) |> ignore
     services.AddAuthentication(fun options ->
             options.DefaultAuthenticateScheme <- JwtBearerDefaults.AuthenticationScheme
             options.DefaultChallengeScheme <- JwtBearerDefaults.AuthenticationScheme)
@@ -57,6 +57,7 @@ let main _ =
     WebHostBuilder().UseKestrel().UseContentRoot(contentRoot).UseIISIntegration().UseWebRoot(webRoot)
         .Configure(Action<IApplicationBuilder> configureApp).ConfigureServices(configureServices).Build().Run()
 
+    // TODO: FIX
     let foo = createDbContext ConnectionString
     foo.SaveContextSchema() |> ignore
     0
