@@ -32,13 +32,13 @@ let configureCors (builder: CorsPolicyBuilder) =
     builder.WithOrigins("http://localhost:8080").AllowAnyMethod().AllowAnyHeader() |> ignore
 
 let configureApp (app: IApplicationBuilder) =
+    app.Use(fun context next -> 
+        context.Request.Path <- context.Request.Path.Value.Replace(configuration.["VIRTUAL_PATH"], "")  |> PathString
+        next.Invoke()) |> ignore     
     (app.UseGiraffeErrorHandler errorHandler)
         .UseAuthentication()
         .UseCors(configureCors)
         .UseGiraffe(webApp)
-    app.Use(fun context next -> 
-        context.Request.Path <- context.Request.Path.Value.Replace(configuration.["VIRTUAL_PATH"], "")  |> PathString
-        next.Invoke())            
 
 let configureServices (services: IServiceCollection) =
     services.AddCors() |> ignore
