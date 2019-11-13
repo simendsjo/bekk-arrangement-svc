@@ -2,13 +2,13 @@ version: 2
 jobs:
   build_and_deploy:
     environment:
-      APP_NAME: cabin-svc
+      APP_NAME: arrangement-svc
       APP_VERSION_NUM: 2.0.0
       ECR_ENDPOINT: 882089634282.dkr.ecr.eu-central-1.amazonaws.com
       AWS_DEFAULT_REGION: eu-central-1
     working_directory: /app
     docker:
-      - image: docker:17.05.0-ce-git
+      - image: docker:19.03.4-git
     steps:
       - checkout
       - setup_remote_docker
