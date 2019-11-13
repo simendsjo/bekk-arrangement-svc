@@ -11,9 +11,8 @@ RUN mono .paket/paket.exe install
 RUN mono .paket/paket.exe restore
 
 COPY . ./
-RUN dotnet tool install -g paket
-RUN export PATH="$PATH:/root/.dotnet/tools"
-RUN dotnet publish -c Release -o out ./bekk-arrangement-svc.fsproj
+RUN bash -c "dotnet restore | echo feil"
+# RUN dotnet publish -c Release -o out ./bekk-arrangement-svc.fsproj
 CMD dotnet out/bekk-arrangement-svc.dll
 
 #FROM mcr.microsoft.com/dotnet/core/runtime:3.0-buster-slim
