@@ -12,7 +12,7 @@ RUN mono .paket/paket.exe restore
 
 COPY . ./
 RUN bash -c "dotnet restore | echo feil"
-RUN dotnet --no-restore publish -c Release -o out ./bekk-arrangement-svc.fsproj
+RUN dotnet publish --no-restore  -c Release -o out ./bekk-arrangement-svc.fsproj
 CMD dotnet out/bekk-arrangement-svc.dll
 
 #FROM mcr.microsoft.com/dotnet/core/runtime:3.0-buster-slim
