@@ -11,6 +11,7 @@ open Microsoft.AspNetCore.Hosting
 open System.IO
 open Microsoft.IdentityModel.Tokens
 open Microsoft.Extensions.Configuration
+open Microsoft.AspNetCore.Http
 
 open arrangementSvc.Handlers
 open arrangementSvc.Database
@@ -31,7 +32,13 @@ let configureCors (builder: CorsPolicyBuilder) =
     builder.WithOrigins("http://localhost:8080").AllowAnyMethod().AllowAnyHeader() |> ignore
 
 let configureApp (app: IApplicationBuilder) =
-    (app.UseGiraffeErrorHandler errorHandler).UseAuthentication().UseCors(configureCors).UseGiraffe(webApp)
+    (app.UseGiraffeErrorHandler errorHandler)
+        .UseAuthentication()
+        .UseCors(configureCors)
+        .UseGiraffe(webApp)
+    app.Use(fun context next -> 
+        context.Request.Path <- context.Request.Path.Value.Replace(configuration.["VIRTUAL_PATH"], "")  |> PathString
+        next.Invoke())            
 
 let configureServices (services: IServiceCollection) =
     services.AddCors() |> ignore
