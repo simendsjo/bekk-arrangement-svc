@@ -27,6 +27,7 @@
     <Compile Include="Events\EventRepository.fs" />
     <Compile Include="Events\EventService.fs" />
     <Compile Include="Events\EventHandlers.fs" />
+    <Compile Include="Health\Health.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
   <ItemGroup>

@@ -15,7 +15,7 @@ open Microsoft.Extensions.Configuration
 open arrangementSvc.Handlers
 open arrangementSvc.Database
 
-let webApp = choose [ EventHandlers.EventRoutes ]
+let webApp = choose [ EventHandlers.EventRoutes; Health.healthCheck ]
 
 let private configuration =
     let builder = ConfigurationBuilder()
