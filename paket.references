@@ -1,6 +1,0 @@
-SQLProvider 
-System.Data.SqlClient
-Giraffe
-Microsoft.AspNetCore.Authentication.JwtBearer
-Microsoft.Extensions.Configuration.Json 
-Microsoft.AspNetCore.App=2.1.13
