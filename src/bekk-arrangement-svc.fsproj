@@ -1,9 +1,11 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.0</TargetFramework>
-    <RootNamespace>bekk_arrangement_svc</RootNamespace>
+    <DebugType>portable</DebugType>
+    <AssemblyName>arrangementSvc</AssemblyName>
+    <OutputType>Exe</OutputType>
+    <EnableDefaultContentItems>false</EnableDefaultContentItems>
   </PropertyGroup>
   <PropertyGroup Condition="'$(MSBuildRuntimeType)' == 'Core'">
     <IsOSX Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX)))' == 'true'">true</IsOSX>
@@ -35,5 +37,5 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
-  <Import Project=".paket\Paket.Restore.targets" />
+  <Import Project="..\.paket\Paket.Restore.targets" />
 </Project>

@@ -36,7 +36,7 @@ module EventModels =
     
     // Utils
     
-    let mapDbEventToDomain (dbRecord : ArrangementSql.dataContext.``dbo.EventsEntity``) : EventDomainModel =
+    let mapDbEventToDomain (dbRecord : ArrangementDbContext.``dbo.EventsEntity``) : EventDomainModel =
         {
             Id = dbRecord.Id
             Title = dbRecord.Title
@@ -58,7 +58,7 @@ module EventModels =
             ResponsibleEmployee = domainModel.ResponsibleEmployee
         }
         
-    let mapWriteEventToDomain id (writeModel : EventWriteModel) : EventDomainModel =
+    let mapWriteEventToDomain (id : int) (writeModel : EventWriteModel) : EventDomainModel =
         {
             Id = id
             Title = writeModel.Title

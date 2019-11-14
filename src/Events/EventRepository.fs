@@ -5,7 +5,7 @@ open arrangementSvc.Models
 open arrangementSvc.Models.EventModels
 
 module EventRepository =
-    let getEvents (dbContext : ArrangementDbContext) =
+    let getEvents (dbContext : ArrangementDbContext) =    
        dbContext.Dbo.Events
        |> Seq.map EventModels.mapDbEventToDomain 
     
@@ -27,13 +27,12 @@ module EventRepository =
             dbContext.SubmitUpdates()) 
      
     let updateEvent (event : EventDomainModel) (dbContext : ArrangementDbContext) =
-        let foundEventMaybe = query {
+        query {
                 for e in dbContext.Dbo.Events do
                 where (e.Id = event.Id)
                 select (Some e)
                 exactlyOneOrDefault }
-        match foundEventMaybe with
-        | Some foundEvent ->
+        |> Option.map (fun foundEvent ->
             foundEvent.Title <- event.Title
             foundEvent.Description <- event.Description
             foundEvent.Location <- event.Location
@@ -41,10 +40,8 @@ module EventRepository =
             foundEvent.ToDate <- event.ToDate
             foundEvent.ResponsibleEmployee <- event.ResponsibleEmployee
             dbContext.SubmitUpdates()
-            foundEvent |> EventModels.mapDbEventToDomain |> Some
-        | None -> None
-                         
-    
+            foundEvent |> EventModels.mapDbEventToDomain)
+  
     let createEvent (event : EventWriteModel) (dbContext : ArrangementDbContext) =
         let newEvent = dbContext.Dbo.Events.``Create(FromDate, Location, ResponsibleEmployee, Title, ToDate)``
                            (event.FromDate,

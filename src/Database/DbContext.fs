@@ -16,6 +16,6 @@ module Database =
 
     type ArrangementDbContext = ArrangementSql.dataContext
 
-    let createDbContext (connectionString: string): ArrangementSql.dataContext =
+    let createDbContext (connectionString: string): ArrangementDbContext =
         ArrangementSql.GetDataContext(connectionString)
 ;

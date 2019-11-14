@@ -48,7 +48,7 @@ module EventHandlers =
         let newEvent = EventService.createEvent event dbContext
         json newEvent next ctx
 
-    let EventRoutes: HttpHandler =
+    let EventRoutes : HttpHandler =
         choose
             [ GET >=> choose
                           [ route "/events" >=> getEvents
