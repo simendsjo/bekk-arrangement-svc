@@ -1,57 +1,51 @@
 namespace arrangementSvc.Repositories
 
+open Giraffe
+open Microsoft.AspNetCore.Http
+
 open arrangementSvc.Database
 open arrangementSvc.Models
 open arrangementSvc.Models.EventModels
 
 module EventRepository =
-    let getEvents (dbContext : ArrangementDbContext) =
-       dbContext.Dbo.Events
-       |> Seq.map EventModels.mapDbEventToDomain 
-    
-    let getEventsForEmployee employeeId (dbContext : ArrangementDbContext) =
-      getEvents dbContext
-      |> Seq.filter (fun event ->
-          event.ResponsibleEmployee = employeeId)
-      
-    let getEvent id (dbContext : ArrangementDbContext) =
-        getEvents dbContext |> Seq.tryFind (fun event -> event.Id = id)
-    
-    let deleteEvent id (dbContext : ArrangementDbContext) =
-        query { for e in dbContext.Dbo.Events do
+    let events (ctx: HttpContext) = ctx.GetService<ArrangementDbContext>().Dbo.Events
+    let save (ctx: HttpContext) = ctx.GetService<ArrangementDbContext>().SubmitUpdates()
+
+    let eventQuery id ctx =
+        query {
+            for e in events ctx do
                 where (e.Id = id)
                 select (Some e)
-                exactlyOneOrDefault }
+                exactlyOneOrDefault
+        }
+
+    let getEvents: HttpContext -> EventDomainModel seq = events >> Seq.map EventModels.mapDbEventToDomain
+
+    let deleteEvent id ctx =
+        eventQuery id ctx
         |> Option.map (fun e ->
             e.Delete()
-            dbContext.SubmitUpdates()) 
-     
-    let updateEvent (event : EventDomainModel) (dbContext : ArrangementDbContext) =
-        let foundEventMaybe = query {
-                for e in dbContext.Dbo.Events do
-                where (e.Id = event.Id)
-                select (Some e)
-                exactlyOneOrDefault }
-        match foundEventMaybe with
-        | Some foundEvent ->
+            save ctx)
+
+    let updateEvent (event: EventDomainModel) ctx =
+        eventQuery event.Id ctx
+        |> Option.map (fun foundEvent ->
             foundEvent.Title <- event.Title
             foundEvent.Description <- event.Description
             foundEvent.Location <- event.Location
             foundEvent.FromDate <- event.FromDate
             foundEvent.ToDate <- event.ToDate
             foundEvent.ResponsibleEmployee <- event.ResponsibleEmployee
-            dbContext.SubmitUpdates()
-            foundEvent |> EventModels.mapDbEventToDomain |> Some
-        | None -> None
-                         
-    
-    let createEvent (event : EventWriteModel) (dbContext : ArrangementDbContext) =
-        let newEvent = dbContext.Dbo.Events.``Create(FromDate, Location, ResponsibleEmployee, Title, ToDate)``
-                           (event.FromDate,
-                           event.Location,
-                           event.ResponsibleEmployee,
-                           event.Title,
-                           event.ToDate)
+            save ctx
+            foundEvent)
+        |> Option.map EventModels.mapDbEventToDomain
+
+
+    let createEvent (event: EventWriteModel) (ctx: HttpContext) =
+        let newEvent =
+            (events ctx)
+                .``Create(FromDate, Location, ResponsibleEmployee, Title, ToDate)``
+                (event.FromDate, event.Location, event.ResponsibleEmployee, event.Title, event.ToDate)
         newEvent.Description <- event.Description
-        dbContext.SubmitUpdates()
+        save ctx
         newEvent |> EventModels.mapDbEventToDomain
