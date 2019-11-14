@@ -1,5 +1,0 @@
-SQLProvider 
-System.Data.SqlClient
-Giraffe
-Microsoft.AspNetCore.Authentication.JwtBearer
-Microsoft.Extensions.Configuration.Json 
