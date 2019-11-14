@@ -1,4 +1,4 @@
-namespace arrangementSvc
+namespace ArrangementService
 
 open FSharp.Data.Sql
 

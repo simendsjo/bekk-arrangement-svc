@@ -1,13 +1,10 @@
-namespace arrangementSvc.Repositories
+namespace ArrangementService.Events
 
 open Giraffe
 open Microsoft.AspNetCore.Http
+open ArrangementService.Database
 
-open arrangementSvc.Database
-open arrangementSvc.Models
-open arrangementSvc.Models.EventModels
-
-module EventRepository =
+module Repo =
     let events (ctx: HttpContext) = ctx.GetService<ArrangementDbContext>().Dbo.Events
     let save (ctx: HttpContext) = ctx.GetService<ArrangementDbContext>().SubmitUpdates()
 
@@ -19,7 +16,7 @@ module EventRepository =
                 exactlyOneOrDefault
         }
 
-    let getEvents: HttpContext -> EventDomainModel seq = events >> Seq.map EventModels.mapDbEventToDomain
+    let getEvents: HttpContext -> Models.EventDomainModel seq = events >> Seq.map Models.mapDbEventToDomain
 
     let deleteEvent id ctx =
         eventQuery id ctx
@@ -27,7 +24,7 @@ module EventRepository =
             e.Delete()
             save ctx)
 
-    let updateEvent (event: EventDomainModel) ctx =
+    let updateEvent (event: Models.EventDomainModel) ctx =
         eventQuery event.Id ctx
         |> Option.map (fun foundEvent ->
             foundEvent.Title <- event.Title
@@ -38,14 +35,14 @@ module EventRepository =
             foundEvent.ResponsibleEmployee <- event.ResponsibleEmployee
             save ctx
             foundEvent)
-        |> Option.map EventModels.mapDbEventToDomain
+        |> Option.map Models.mapDbEventToDomain
 
 
-    let createEvent (event: EventWriteModel) (ctx: HttpContext) =
+    let createEvent (event: Models.EventWriteModel) (ctx: HttpContext) =
         let newEvent =
             (events ctx)
                 .``Create(FromDate, Location, ResponsibleEmployee, Title, ToDate)``
                 (event.FromDate, event.Location, event.ResponsibleEmployee, event.Title, event.ToDate)
         newEvent.Description <- event.Description
         save ctx
-        newEvent |> EventModels.mapDbEventToDomain
+        newEvent |> Models.mapDbEventToDomain

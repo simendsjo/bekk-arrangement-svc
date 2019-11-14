@@ -1,58 +1,42 @@
-namespace arrangementSvc.Handlers
+namespace ArrangementService.Events
 
 open Giraffe
-open Microsoft.AspNetCore.Http
-
-open arrangementSvc.Models.EventModels
-open arrangementSvc.Services
-open arrangementSvc.Models
+open ArrangementService.Handler
 
 module EventHandlers =
-    // Bind for reader monaden?
-    let (>->) f g x = g (f x) x
-
-    let handle f (next: HttpFunc) (ctx: HttpContext) = json (f ctx) next ctx
-
-    let handleWithError errorMessage f (next: HttpFunc) (ctx: HttpContext) =
-        f ctx
-        |> function
-        | Some result -> json result next ctx
-        | None -> errorMessage next ctx
-
-    let getBody<'WriteModel> (ctx: HttpContext) = ctx.BindJsonAsync<'WriteModel>().Result
 
     let eventNotFound id = sprintf "Kan ikke finne event %d" id |> RequestErrors.NOT_FOUND
 
     let getEvents =
-        EventService.getEvents
-        >> Seq.map EventModels.mapDomainEventToView
+        Service.getEvents
+        >> Seq.map Models.domainToView
         |> handle
 
     let getEventsForEmployee employeeId =
-        EventService.getEventsForEmployee employeeId
-        >> Seq.map EventModels.mapDomainEventToView
+        Service.getEventsForEmployee employeeId
+        >> Seq.map Models.domainToView
         |> handle
 
     let getEvent id =
-        EventService.getEvent id
-        >> Option.map EventModels.mapDomainEventToView
+        Service.getEvent id
+        >> Option.map Models.domainToView
         |> handleWithError (eventNotFound id)
 
     let deleteEvent id =
-        EventService.deleteEvent id
+        Service.deleteEvent id
         >> Option.map (fun _ -> Successful.OK "Eventet blei sletta!")
         |> handleWithError (eventNotFound id)
 
     let updateEvent id =
-        getBody<EventWriteModel>
-        >> mapWriteEventToDomain id
-        >-> EventService.updateEvent
-        >> Option.map mapDomainEventToView
+        getBody<Models.EventWriteModel>
+        >> Models.writeToDomain id
+        >-> Service.updateEvent
+        >> Option.map Models.domainToView
         |> handleWithError (eventNotFound id)
 
     let createEvent =
-        getBody<EventWriteModel> >-> EventService.createEvent
-        >> EventModels.mapDomainEventToView
+        getBody<Models.EventWriteModel> >-> Service.createEvent
+        >> Models.domainToView
         |> handle
 
     let EventRoutes: HttpHandler =

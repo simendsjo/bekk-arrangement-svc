@@ -1,4 +1,4 @@
-﻿module arrangementSvc.App
+﻿module ArragementService.App
 
 open System
 open Giraffe
@@ -13,10 +13,11 @@ open Microsoft.IdentityModel.Tokens
 open Microsoft.Extensions.Configuration
 open Microsoft.AspNetCore.Http
 
-open arrangementSvc.Handlers
-open arrangementSvc.Database
+open ArrangementService.Database
+open ArrangementService.Health
+open ArrangementService.Events
 
-let webApp = choose [ EventHandlers.EventRoutes; Health.healthCheck ]
+let webApp = choose [ EventHandlers.EventRoutes; healthCheck ]
 
 let private configuration =
     let builder = ConfigurationBuilder()
@@ -32,13 +33,11 @@ let configureCors (builder: CorsPolicyBuilder) =
     builder.WithOrigins("http://localhost:8080").AllowAnyMethod().AllowAnyHeader() |> ignore
 
 let configureApp (app: IApplicationBuilder) =
-    app.Use(fun context next -> 
-        context.Request.Path <- context.Request.Path.Value.Replace(configuration.["VIRTUAL_PATH"], "")  |> PathString
-        next.Invoke()) |> ignore
-    (app.UseGiraffeErrorHandler errorHandler)
-        .UseAuthentication()
-        .UseCors(configureCors)
-        .UseGiraffe(webApp)
+    app.Use(fun context next ->
+        context.Request.Path <- context.Request.Path.Value.Replace(configuration.["VIRTUAL_PATH"], "") |> PathString
+        next.Invoke())
+    |> ignore
+    (app.UseGiraffeErrorHandler errorHandler).UseAuthentication().UseCors(configureCors).UseGiraffe(webApp)
 
 let configureServices (services: IServiceCollection) =
     services.AddCors() |> ignore
@@ -60,19 +59,12 @@ let configureServices (services: IServiceCollection) =
 let main _ =
     let contentRoot = Directory.GetCurrentDirectory()
     let webRoot = Path.Combine(contentRoot, "WebRoot")
-    WebHostBuilder()
-        .UseKestrel()
-        .UseContentRoot(contentRoot)
-        .UseIISIntegration()
-        .UseWebRoot(webRoot)
+    WebHostBuilder().UseKestrel().UseContentRoot(contentRoot).UseIISIntegration().UseWebRoot(webRoot)
         //.UseUrls(sprintf "http://0.0.0.0:%s/" configuration.["PORT"])
-        .Configure(Action<IApplicationBuilder> configureApp)
-        .ConfigureServices(configureServices)
-        .Build()
-        .Run()
+        .Configure(Action<IApplicationBuilder> configureApp).ConfigureServices(configureServices).Build().Run()
 
     // TODO: FIX
     let foo = createDbContext ConnectionString
     foo.SaveContextSchema() |> ignore
     0
-    
+ 
