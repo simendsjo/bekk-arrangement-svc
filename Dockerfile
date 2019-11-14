@@ -14,7 +14,7 @@ RUN mono .paket/paket.exe restore
 
 COPY . ./
 RUN dotnet publish -c Release -o out ./bekk-arrangement-svc.fsproj
-ENV PORT=80
+ENV ASPNETCORE_URLS="http://0.0.0.0:80"
 CMD dotnet out/bekk-arrangement-svc.dll
 
 #FROM mcr.microsoft.com/dotnet/core/runtime:3.0-buster-slim
