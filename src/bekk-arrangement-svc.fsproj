@@ -1,28 +1,37 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.0</TargetFramework>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
     <DebugType>portable</DebugType>
     <AssemblyName>arrangementSvc</AssemblyName>
     <OutputType>Exe</OutputType>
     <EnableDefaultContentItems>false</EnableDefaultContentItems>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(MSBuildRuntimeType)' == 'Core'">
+
+    <PropertyGroup>
     <IsOSX Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX)))' == 'true'">true</IsOSX>
     <IsLinux Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' == 'true'">true</IsLinux>
-  </PropertyGroup>  
-  <PropertyGroup>
-   <DisableAutoSetFscCompilerPath>true</DisableAutoSetFscCompilerPath>
-   <DotnetFscCompilerPath></DotnetFscCompilerPath>
- </PropertyGroup>
- <PropertyGroup Condition="'$(IsOSX)' == 'true'">
-   <FscToolPath>/Library/Frameworks/Mono.framework/Versions/Current/Commands</FscToolPath>
-   <FscToolExe>fsharpc</FscToolExe>
- </PropertyGroup>
- <PropertyGroup Condition="'$(IsLinux)' == 'true'">
+  </PropertyGroup>
+
+   <PropertyGroup Condition="'$(IsLinux)' == 'true' AND Exists('/usr/bin/fsharpc')">
     <FscToolPath>/usr/bin</FscToolPath>
     <FscToolExe>fsharpc</FscToolExe>
   </PropertyGroup>
+
+    <ItemGroup><!-- Mono fix -->
+    <Reference Condition="'$(IsWindows)' != 'true'" Include="FSharp.Data.SqlProvider">
+      <HintPath>../../packages/SQLProvider/lib/net451/FSharp.Data.SqlProvider.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.App" Version="2.1.*" />
+    <PackageReference Include="SQLProvider" Version="1.1.74" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.7.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.1.*" />
+    <PackageReference Include="Giraffe" Version="3.4.*" />
+  </ItemGroup>
+
   <ItemGroup>
     <Compile Include="Database\DbContext.fs" />
     <Compile Include="Events\EventModels.fs" />
@@ -37,5 +46,4 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
-  <Import Project="..\.paket\Paket.Restore.targets" />
 </Project>

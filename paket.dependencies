@@ -4,3 +4,4 @@ nuget System.Data.SqlClient
 nuget Giraffe
 nuget Microsoft.AspNetCore.Authentication.JwtBearer
 nuget Microsoft.Extensions.Configuration.Json
+nuget Microsoft.AspNetCore.App
