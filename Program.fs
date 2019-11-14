@@ -65,7 +65,7 @@ let main _ =
         .UseContentRoot(contentRoot)
         .UseIISIntegration()
         .UseWebRoot(webRoot)
-        .UseUrls(sprintf "http://0.0.0.0:%s" configuration.["PORT"])
+        .UseUrls(sprintf "http://*:%s" configuration.["PORT"])
         .Configure(Action<IApplicationBuilder> configureApp)
         .ConfigureServices(configureServices)
         .Build()
