@@ -1,11 +1,10 @@
-FROM fsharp:10.2.1-netcore AS build-env
+FROM fsharp:10.6.0-netcore AS build-env
 WORKDIR /app
 
 COPY src/ .
-RUN dotnet publish -c Release -o out
+RUN dotnet publish -c Release -o out        
 
-FROM microsoft/dotnet:2.1-aspnetcore-runtime
-
+FROM microsoft/dotnet:3.0-aspnetcore-runtime
 COPY --from=build-env /app/out .
 
 ENV VIRTUAL_PATH="/arrangment-svc"
