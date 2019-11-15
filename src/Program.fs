@@ -2,31 +2,35 @@
 
 open System
 open Giraffe
-open Microsoft.AspNetCore.Builder
-open Microsoft.AspNetCore.Cors.Infrastructure
-open Microsoft.Extensions.DependencyInjection
-open Microsoft.Extensions.Logging
+open Microsoft.AspNetCore.Cors.Infrastructure 
 open Microsoft.AspNetCore.Authentication.JwtBearer
+open Microsoft.AspNetCore.Builder
+open Microsoft.AspNetCore.Http
+open Microsoft.Extensions.Configuration
+open Microsoft.Extensions.DependencyInjection
 open Microsoft.AspNetCore.Hosting
 open System.IO
 open Microsoft.IdentityModel.Tokens
-open Microsoft.Extensions.Configuration
-open Microsoft.AspNetCore.Http
+open Serilog
+open Giraffe.SerilogExtensions
 
 open arrangementSvc.Handlers
 open arrangementSvc.Database
 
 let webApp = choose [ EventHandlers.EventRoutes; Health.healthCheck ]
+let webAppWithLogging = SerilogAdapter.Enable(webApp)
+
+Log.Logger <- 
+  LoggerConfiguration()
+    .Destructure.FSharpTypes()
+    .WriteTo.Console()
+    .CreateLogger()
 
 let private configuration =
     let builder = ConfigurationBuilder()
     builder.AddJsonFile("appsettings.json") |> ignore
     builder.AddEnvironmentVariables() |> ignore
     builder.Build()
-
-let errorHandler (ex: Exception) (logger: ILogger) =
-    logger.LogError(ex, "An unhandled exception has occurred while executing the request.")
-    clearResponse >=> setStatusCode 500 >=> text ex.Message
 
 let configureCors (builder: CorsPolicyBuilder) =
     builder.AllowAnyMethod().AllowAnyHeader() |> ignore
@@ -35,10 +39,9 @@ let configureApp (app: IApplicationBuilder) =
     app.Use(fun context next -> 
         context.Request.Path <- context.Request.Path.Value.Replace(configuration.["VIRTUAL_PATH"], "")  |> PathString
         next.Invoke()) |> ignore
-    (app.UseGiraffeErrorHandler errorHandler)
-        .UseAuthentication()
-        .UseCors(configureCors)
-        .UseGiraffe(webApp)
+    app.UseAuthentication()
+       .UseCors(configureCors)
+       .UseGiraffe(webAppWithLogging)
 
 let configureServices (services: IServiceCollection) =
     services.AddCors() |> ignore
@@ -65,7 +68,6 @@ let main _ =
         .UseContentRoot(contentRoot)
         .UseIISIntegration()
         .UseWebRoot(webRoot)
-        //.UseUrls(sprintf "http://0.0.0.0:%s/" configuration.["PORT"])
         .Configure(Action<IApplicationBuilder> configureApp)
         .ConfigureServices(configureServices)
         .Build()
