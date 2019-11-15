@@ -44,8 +44,8 @@ module EventHandlers =
         choose
             [ GET >=> choose
                           [ route "/events" >=> getEvents
-                            routef "/events/id=%i" getEvent
-                            routef "/events/employeeId=%i" getEventsForEmployee ]
-              DELETE >=> choose [ routef "/events/id=%i" deleteEvent ]
-              PUT >=> choose [ routef "/events/id=%i" updateEvent ]
+                            routef "/events/%i" getEvent
+                            routef "/events/employee/%i" getEventsForEmployee ]
+              DELETE >=> choose [ routef "/events/%i" deleteEvent ]
+              PUT >=> choose [ routef "/events/%i" updateEvent ]
               POST >=> choose [ route "/events" >=> createEvent ] ]
