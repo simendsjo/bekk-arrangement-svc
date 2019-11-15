@@ -6,7 +6,6 @@ open ArrangementService.Database
 
 module Repo =
     let events (ctx: HttpContext) = ctx.GetService<ArrangementDbContext>().Dbo.Events
-    let save (ctx: HttpContext) = ctx.GetService<ArrangementDbContext>().SubmitUpdates()
 
     let eventQuery id ctx =
         query {
@@ -18,11 +17,7 @@ module Repo =
 
     let getEvents: HttpContext -> Models.EventDomainModel seq = events >> Seq.map Models.mapDbEventToDomain
 
-    let deleteEvent id ctx =
-        eventQuery id ctx
-        |> Option.map (fun e ->
-            e.Delete()
-            save ctx)
+    let deleteEvent id ctx = eventQuery id ctx |> Option.map (fun e -> e.Delete())
 
     let updateEvent (event: Models.EventDomainModel) ctx =
         eventQuery event.Id ctx
@@ -33,7 +28,6 @@ module Repo =
             foundEvent.FromDate <- event.FromDate
             foundEvent.ToDate <- event.ToDate
             foundEvent.ResponsibleEmployee <- event.ResponsibleEmployee
-            save ctx
             foundEvent)
         |> Option.map Models.mapDbEventToDomain
 
@@ -44,5 +38,4 @@ module Repo =
                 .``Create(FromDate, Location, ResponsibleEmployee, Title, ToDate)``
                 (event.FromDate, event.Location, event.ResponsibleEmployee, event.Title, event.ToDate)
         newEvent.Description <- event.Description
-        save ctx
         newEvent |> Models.mapDbEventToDomain

@@ -22,8 +22,9 @@
     <FscToolExe>fsharpc</FscToolExe>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Utils\Handler.fs" />
     <Compile Include="Database\DbContext.fs" />
+    <Compile Include="Utils\Operators.fs" />
+    <Compile Include="Utils\Handler.fs" />
     <Compile Include="Events\EventModels.fs" />
     <Compile Include="Events\EventRepository.fs" />
     <Compile Include="Events\EventService.fs" />

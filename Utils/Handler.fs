@@ -2,16 +2,29 @@ namespace ArrangementService
 
 open Giraffe
 open Microsoft.AspNetCore.Http
+open ArrangementService.Database
 
 module Handler =
-    let (>->) f g x = g (f x) x
 
-    let handle f (next: HttpFunc) (ctx: HttpContext) = json (f ctx) next ctx
+    type HttpErr = HttpFunc -> HttpContext -> HttpFuncResult
 
-    let handleWithError errorMessage f (next: HttpFunc) (ctx: HttpContext) =
-        f ctx
-        |> function
-        | Some result -> json result next ctx
-        | None -> errorMessage next ctx
+    type Handler<'t> = HttpContext -> Result<'t, HttpErr>
 
-    let getBody<'WriteModel> (ctx: HttpContext) = ctx.BindJsonAsync<'WriteModel>().Result
+    let handle (f: Handler<'t>) (next: HttpFunc) (ctx: HttpContext) =
+        match f ctx with
+        | Ok result -> json result next ctx
+        | Error errorMessage -> errorMessage next ctx
+
+    let getBody<'WriteModel> (ctx: HttpContext) =
+        try
+            Ok(ctx.BindJsonAsync<'WriteModel>().Result)
+        with ex ->
+            "Feilformatert writemodel"
+            |> RequestErrors.BAD_REQUEST
+            |> Error
+
+    let save (ctx: HttpContext) = ctx.GetService<ArrangementDbContext>().SubmitUpdates()
+
+    let commitTransaction x ctx =
+        save ctx
+        Ok x
