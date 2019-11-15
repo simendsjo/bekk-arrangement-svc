@@ -26,15 +26,15 @@ module EventHandlers =
         |> handle
 
     let updateEvent id =
-        getBody<Models.EventWriteModel>
+        getBody<Models.WriteModel>
         >> Result.map (Models.writeToDomain id)
-        >>= Service.updateEvent
+        >>= Service.updateEvent id
         >>= commitTransaction
         >> Result.map Models.domainToView
         |> handle
 
     let createEvent =
-        getBody<Models.EventWriteModel>
+        getBody<Models.WriteModel>
         >>= resultOk Service.createEvent
         >>= commitTransaction
         >> Result.map Models.domainToView

@@ -4,7 +4,7 @@ open System
 open ArrangementService.Database
 
 module Models =
-    type EventDomainModel =
+    type DomainModel =
         { Id: int
           Title: string
           Description: string
@@ -13,7 +13,7 @@ module Models =
           ToDate: DateTimeOffset
           ResponsibleEmployee: int }
 
-    type EventViewModel =
+    type ViewModel =
         { Id: int
           Title: string
           Description: string
@@ -22,7 +22,7 @@ module Models =
           ToDate: DateTimeOffset
           ResponsibleEmployee: int }
 
-    type EventWriteModel =
+    type WriteModel =
         { Title: string
           Description: string
           Location: string
@@ -30,9 +30,13 @@ module Models =
           ToDate: DateTimeOffset
           ResponsibleEmployee: int }
 
-    // Utils
+    type TableModel = ArrangementDbContext.dboSchema.``dbo.Events``
 
-    let mapDbEventToDomain (dbRecord: ArrangementSql.dataContext.``dbo.EventsEntity``): EventDomainModel =
+    type DbModel = ArrangementDbContext.``dbo.EventsEntity``
+
+    let key (record: DbModel) = record.Id
+
+    let dbToDomain (dbRecord: DbModel): DomainModel =
         { Id = dbRecord.Id
           Title = dbRecord.Title
           Description = dbRecord.Description
@@ -41,7 +45,16 @@ module Models =
           ToDate = dbRecord.ToDate
           ResponsibleEmployee = dbRecord.ResponsibleEmployee }
 
-    let domainToView (domainModel: EventDomainModel): EventViewModel =
+    let updateDbWithDomain (db: DbModel) (event: DomainModel): DbModel =
+        db.Title <- event.Title
+        db.Description <- event.Description
+        db.Location <- event.Location
+        db.FromDate <- event.FromDate
+        db.ToDate <- event.ToDate
+        db.ResponsibleEmployee <- event.ResponsibleEmployee
+        db
+
+    let domainToView (domainModel: DomainModel): ViewModel =
         { Id = domainModel.Id
           Title = domainModel.Title
           Description = domainModel.Description
@@ -50,7 +63,7 @@ module Models =
           ToDate = domainModel.ToDate
           ResponsibleEmployee = domainModel.ResponsibleEmployee }
 
-    let writeToDomain id (writeModel: EventWriteModel): EventDomainModel =
+    let writeToDomain id (writeModel: WriteModel): DomainModel =
         { Id = id
           Title = writeModel.Title
           Description = writeModel.Description
