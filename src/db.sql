@@ -1,4 +1,9 @@
-CREATE DATABASE [kaskjer-db];
+USE [master]
+
+DROP DATABASE [arrangement-db]
+CREATE DATABASE [arrangement-db];
+
+USE [arrangement-db]
 
 CREATE TABLE [Events](
     Id INT PRIMARY KEY IDENTITY(1,1) NOT NULL,

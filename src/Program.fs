@@ -2,29 +2,21 @@
 
 open System
 open Giraffe
-open Microsoft.AspNetCore.Cors.Infrastructure 
-open Microsoft.AspNetCore.Authentication.JwtBearer
-open Microsoft.AspNetCore.Builder
-open Microsoft.AspNetCore.Http
-open Microsoft.Extensions.Configuration
-open Microsoft.Extensions.DependencyInjection
-open Microsoft.AspNetCore.Hosting
 open System.IO
+open Microsoft.AspNetCore.Http
+open Microsoft.AspNetCore.Hosting
+open Microsoft.AspNetCore.Builder
 open Microsoft.IdentityModel.Tokens
-open Serilog
-open Giraffe.SerilogExtensions
+open Microsoft.Extensions.Configuration
+open Microsoft.AspNetCore.Cors.Infrastructure 
+open Microsoft.Extensions.DependencyInjection
+open Microsoft.AspNetCore.Authentication.JwtBearer
 
 open arrangementSvc.Handlers
 open arrangementSvc.Database
+open arrangementSvc.Logging
 
 let webApp = choose [ EventHandlers.EventRoutes; Health.healthCheck ]
-let webAppWithLogging = SerilogAdapter.Enable(webApp)
-
-Log.Logger <- 
-  LoggerConfiguration()
-    .Destructure.FSharpTypes()
-    .WriteTo.Console()
-    .CreateLogger()
 
 let private configuration =
     let builder = ConfigurationBuilder()
@@ -41,7 +33,7 @@ let configureApp (app: IApplicationBuilder) =
         next.Invoke()) |> ignore
     app.UseAuthentication()
        .UseCors(configureCors)
-       .UseGiraffe(webAppWithLogging)
+       .UseGiraffe(createLoggingApp webApp config)
 
 let configureServices (services: IServiceCollection) =
     services.AddCors() |> ignore
@@ -77,4 +69,3 @@ let main _ =
     let foo = createDbContext ConnectionString
     foo.SaveContextSchema() |> ignore
     0
-    
