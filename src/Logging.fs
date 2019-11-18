@@ -9,6 +9,23 @@ open Serilog.Formatting.Compact
 open Microsoft.Extensions.Logging
 
 module Logging =
+    type ExceptionType = {
+        LogEventId : string
+        LogLevel : LogLevel
+        ExceptionType : Type
+        ExceptionMessage : string
+        Name : string
+        UserId : string
+        UserMessage : string
+        RequestUrl : string
+        RequestMethod : string
+        RequestConsumerName : string
+        RequestTraceId : string
+        StackTrace : string
+        StatusCode : int
+        InnerException : exn 
+    }
+
     let getEmployeeName (ctx : HttpContext) = 
         let nameClaim = ctx.User.FindFirst "name"
         match nameClaim with
@@ -27,7 +44,7 @@ module Logging =
 
     let createExceptionMessage (ex : Exception) (ctx : HttpContext) =
         let logEventId = Guid.NewGuid().ToString().Split(Convert.ToChar("-")).[0]
-        {|
+        {
             LogEventId = logEventId
             LogLevel = LogLevel.Error
             ExceptionType = ex.GetType()
@@ -42,7 +59,7 @@ module Logging =
             StackTrace = ex.StackTrace
             StatusCode = StatusCodes.Status500InternalServerError
             InnerException = ex.InnerException
-        |}
+        }
 
     let errorHandler (ex : Exception) : HttpHandler =
         fun (next : HttpFunc) (ctx : HttpContext) ->

@@ -5,8 +5,6 @@ COPY src/ .
 RUN dotnet publish -c Release -o out
 
 FROM microsoft/dotnet:2.2-aspnetcore-runtime
-
-FROM microsoft/dotnet:3.0-aspnetcore-runtime
 COPY --from=build-env /app/out .
 
 ENV VIRTUAL_PATH="/arrangment-svc"
