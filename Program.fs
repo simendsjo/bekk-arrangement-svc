@@ -15,9 +15,9 @@ open Microsoft.AspNetCore.Http
 
 open ArrangementService.Database
 open ArrangementService.Health
-open ArrangementService.Events
+open ArrangementService
 
-let webApp = choose [ EventHandlers.EventRoutes; healthCheck ]
+let webApp = choose [ Events.Handlers.routes; healthCheck ]
 
 let private configuration =
     let builder = ConfigurationBuilder()

@@ -36,7 +36,7 @@ module Handlers =
         >>= commitTransaction
         >> Result.map models.domainToView
 
-    let EventRoutes: HttpHandler =
+    let routes: HttpHandler =
         choose
             [ GET >=> choose
                           [ route "/events" >=> handle getEvents
