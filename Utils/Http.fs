@@ -4,7 +4,7 @@ open Giraffe
 open Microsoft.AspNetCore.Http
 open ArrangementService.Database
 
-module Handler =
+module Http =
 
     type HttpErr = HttpFunc -> HttpContext -> HttpFuncResult
 

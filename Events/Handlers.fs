@@ -4,9 +4,10 @@ open Giraffe
 
 open ArrangementService.Handler
 open ArrangementService.Operators
-open ArrangementService.Events.Models
 
-module EventHandlers =
+open Models
+
+module Handlers =
 
     let getEvents =
         Service.getEvents

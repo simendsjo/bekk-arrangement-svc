@@ -1,12 +1,11 @@
 namespace ArrangementService.Events
 
 open Giraffe
+open System.Linq
 
-open ArrangementService
 open ArrangementService.Operators
 
 open Models
-open System.Linq
 
 module Service =
 
