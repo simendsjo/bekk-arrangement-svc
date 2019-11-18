@@ -15,17 +15,24 @@ module Repo =
           domainToView: 'DomainModel -> 'ViewModel
           writeToDomain: 'key -> 'WriteModel -> 'DomainModel }
 
-    let from (models: Models<'db, 'd, 'v, 'w, 'k, 't>) =
-        {| create =
-               fun createRow ctx ->
-                   let row = models.table ctx |> models.create
-                   let newEvent = models.key row |> createRow
-                   models.updateDbWithDomain row newEvent |> ignore
-                   newEvent
-           read = models.table >> Seq.map models.dbToDomain
-           update =
-               fun newEvent event ->
-                   models.updateDbWithDomain event newEvent |> ignore
-                   event |> models.dbToDomain
-           del = fun row -> models.delete row
-           query = models.table |}
+    type Repo<'db, 'd, 'v, 'w, 'k, 't> =
+        { create: ('k -> 'd) -> HttpContext -> 'd
+          read: HttpContext -> 'd seq
+          update: 'd -> 'db -> 'd
+          del: 'db -> Unit
+          query: HttpContext -> 't }
+
+    let from (models: Models<'db, 'd, 'v, 'w, 'k, 't>): Repo<'db, 'd, 'v, 'w, 'k, 't> =
+        { create =
+              fun createRow ctx ->
+                  let row = models.table ctx |> models.create
+                  let newEvent = models.key row |> createRow
+                  models.updateDbWithDomain row newEvent |> ignore
+                  newEvent
+          read = models.table >> Seq.map models.dbToDomain
+          update =
+              fun newEvent event ->
+                  models.updateDbWithDomain event newEvent |> ignore
+                  event |> models.dbToDomain
+          del = fun row -> models.delete row
+          query = models.table }
