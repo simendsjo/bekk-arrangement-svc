@@ -1,20 +1,22 @@
 namespace ArrangementService.Events
 
 open Giraffe
+
 open ArrangementService.Handler
 open ArrangementService.Operators
+open ArrangementService.Events.Models
 
 module EventHandlers =
 
     let getEvents =
         Service.getEvents
-        >> Seq.map Models.domainToView
+        >> Seq.map models.domainToView
         >> Ok
         |> handle
 
     let getEventsForEmployee employeeId =
         Service.getEventsForEmployee employeeId
-        >> Seq.map Models.domainToView
+        >> Seq.map models.domainToView
         >> Ok
         |> handle
 
@@ -27,17 +29,17 @@ module EventHandlers =
 
     let updateEvent id =
         getBody<Models.WriteModel>
-        >> Result.map (Models.writeToDomain id)
+        >> Result.map (models.writeToDomain id)
         >>= Service.updateEvent id
         >>= commitTransaction
-        >> Result.map Models.domainToView
+        >> Result.map models.domainToView
         |> handle
 
     let createEvent =
         getBody<Models.WriteModel>
         >>= resultOk Service.createEvent
         >>= commitTransaction
-        >> Result.map Models.domainToView
+        >> Result.map models.domainToView
         |> handle
 
     let EventRoutes: HttpHandler =

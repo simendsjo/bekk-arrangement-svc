@@ -1,9 +1,13 @@
 namespace ArrangementService.Events
 
 open System
+open Giraffe
+
+open ArrangementService.Repo
 open ArrangementService.Database
 
 module Models =
+
     type DomainModel =
         { Id: int
           Title: string
@@ -34,7 +38,7 @@ module Models =
 
     type DbModel = ArrangementDbContext.``dbo.EventsEntity``
 
-    let key (record: DbModel) = record.Id
+    type Key = int
 
     let dbToDomain (dbRecord: DbModel): DomainModel =
         { Id = dbRecord.Id
@@ -45,7 +49,7 @@ module Models =
           ToDate = dbRecord.ToDate
           ResponsibleEmployee = dbRecord.ResponsibleEmployee }
 
-    let updateDbWithDomain (db: DbModel) (event: DomainModel): DbModel =
+    let updateDbWithDomain (db: DbModel) (event: DomainModel) =
         db.Title <- event.Title
         db.Description <- event.Description
         db.Location <- event.Location
@@ -63,7 +67,7 @@ module Models =
           ToDate = domainModel.ToDate
           ResponsibleEmployee = domainModel.ResponsibleEmployee }
 
-    let writeToDomain id (writeModel: WriteModel): DomainModel =
+    let writeToDomain (id: Key) (writeModel: WriteModel): DomainModel =
         { Id = id
           Title = writeModel.Title
           Description = writeModel.Description
@@ -71,3 +75,21 @@ module Models =
           FromDate = writeModel.FromDate
           ToDate = writeModel.ToDate
           ResponsibleEmployee = writeModel.ResponsibleEmployee }
+
+
+    let models: Models<TableModel, DbModel, DomainModel, ViewModel, WriteModel, Key> =
+        { key = fun record -> record.Id
+
+          table = fun ctx -> ctx.GetService<ArrangementDbContext>().Dbo.Events
+          records = fun ctx -> ctx.GetService<ArrangementDbContext>().Dbo.Events |> Seq.map dbToDomain
+
+          create = fun table -> table.Create()
+          delete = fun record -> record.Delete()
+
+          dbToDomain = dbToDomain
+
+          updateDbWithDomain = updateDbWithDomain
+
+          domainToView = domainToView
+
+          writeToDomain = writeToDomain }
