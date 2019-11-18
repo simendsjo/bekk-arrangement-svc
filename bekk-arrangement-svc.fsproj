@@ -27,6 +27,8 @@
     <Compile Include="Utils\Operators.fs" />
     <Compile Include="Utils\Http.fs" />
     <Compile Include="Events\Models.fs" />
+    <Compile Include="Events\Queries.fs" />
+    <Compile Include="Events\ErrorMessages.fs" />
     <Compile Include="Events\Service.fs" />
     <Compile Include="Events\Handlers.fs" />
     <Compile Include="Health\Health.fs" />

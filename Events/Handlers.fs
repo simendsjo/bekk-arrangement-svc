@@ -2,7 +2,7 @@ namespace ArrangementService.Events
 
 open Giraffe
 
-open ArrangementService.Handler
+open ArrangementService.Http
 open ArrangementService.Operators
 
 open Models
@@ -13,20 +13,15 @@ module Handlers =
         Service.getEvents
         >> Seq.map models.domainToView
         >> Ok
-        |> handle
 
     let getEventsForEmployee employeeId =
         Service.getEventsForEmployee employeeId
         >> Seq.map models.domainToView
         >> Ok
-        |> handle
 
-    let getEvent id = Service.getEvent id |> handle
+    let getEvent id = Service.getEvent id
 
-    let deleteEvent id =
-        Service.deleteEvent id
-        >>= commitTransaction
-        |> handle
+    let deleteEvent id = Service.deleteEvent id >>= commitTransaction
 
     let updateEvent id =
         getBody<Models.WriteModel>
@@ -34,21 +29,19 @@ module Handlers =
         >>= Service.updateEvent id
         >>= commitTransaction
         >> Result.map models.domainToView
-        |> handle
 
     let createEvent =
         getBody<Models.WriteModel>
         >>= resultOk Service.createEvent
         >>= commitTransaction
         >> Result.map models.domainToView
-        |> handle
 
     let EventRoutes: HttpHandler =
         choose
             [ GET >=> choose
-                          [ route "/events" >=> getEvents
-                            routef "/events/%i" getEvent
-                            routef "/events/employee/%i" getEventsForEmployee ]
-              DELETE >=> choose [ routef "/events/%i" deleteEvent ]
-              PUT >=> choose [ routef "/events/%i" updateEvent ]
-              POST >=> choose [ route "/events" >=> createEvent ] ]
+                          [ route "/events" >=> handle getEvents
+                            routef "/events/%i" (handle << getEvent)
+                            routef "/events/employee/%i" (handle << getEventsForEmployee) ]
+              DELETE >=> choose [ routef "/events/%i" (handle << deleteEvent) ]
+              PUT >=> choose [ routef "/events/%i" (handle << updateEvent) ]
+              POST >=> choose [ route "/events" >=> handle createEvent ] ]

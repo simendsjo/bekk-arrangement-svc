@@ -1,31 +1,22 @@
 namespace ArrangementService.Events
 
-open Giraffe
-open System.Linq
-
 open ArrangementService.Operators
+open ArrangementService
 
 open Models
+open Queries
+open ErrorMessages
 
 module Service =
 
     let repo = Repo.from models
 
-    let queryEventBy id (events: IQueryable<DbModel>) =
-        query {
-            for event in events do
-                where (event.Id = id)
-                select (Some event)
-                exactlyOne
-        }
-
-    let eventNotFound id = sprintf "Kan ikke finne event %d" id |> RequestErrors.NOT_FOUND
-    let cantUpdateEvent id = sprintf "Kan ikke oppdatere event %d" id |> RequestErrors.BAD_REQUEST
-    let eventSuccessfullyDeleted id = sprintf "Event %d blei sletta" id |> Ok
-
     let getEvents = repo.read
 
-    let getEventsForEmployee employeeId = repo.read >> Seq.filter (fun event -> event.ResponsibleEmployee = employeeId)
+    let getEventsForEmployee employeeId =
+        repo.query
+        >> queryEventsForEmployee employeeId
+        >> Seq.map models.dbToDomain
 
     let getEvent id =
         repo.query
