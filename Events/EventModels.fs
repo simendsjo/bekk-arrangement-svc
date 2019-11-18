@@ -77,11 +77,10 @@ module Models =
           ResponsibleEmployee = writeModel.ResponsibleEmployee }
 
 
-    let models: Models<TableModel, DbModel, DomainModel, ViewModel, WriteModel, Key> =
+    let models: Models<DbModel, DomainModel, ViewModel, WriteModel, Key, TableModel> =
         { key = fun record -> record.Id
 
           table = fun ctx -> ctx.GetService<ArrangementDbContext>().Dbo.Events
-          records = fun ctx -> ctx.GetService<ArrangementDbContext>().Dbo.Events |> Seq.map dbToDomain
 
           create = fun table -> table.Create()
           delete = fun record -> record.Delete()

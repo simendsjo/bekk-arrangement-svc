@@ -1,12 +1,12 @@
 namespace ArrangementService
 
 open Microsoft.AspNetCore.Http
+open System.Collections.Generic
 
 module Repo =
 
-    type Models<'table, 'dbModel, 'DomainModel, 'ViewModel, 'WriteModel, 'key> =
+    type Models<'dbModel, 'DomainModel, 'ViewModel, 'WriteModel, 'key, 'table when 'table :> IEnumerable<'dbModel>> =
         { table: HttpContext -> 'table
-          records: HttpContext -> 'DomainModel seq
           create: 'table -> 'dbModel
           delete: 'dbModel -> Unit
           key: 'dbModel -> 'key
@@ -15,16 +15,17 @@ module Repo =
           domainToView: 'DomainModel -> 'ViewModel
           writeToDomain: 'key -> 'WriteModel -> 'DomainModel }
 
-    let from (models: Models<'t, 'db, 'd, 'v, 'w, 'k>) =
+    let from (models: Models<'db, 'd, 'v, 'w, 'k, 't>) =
         {| create =
                fun createRow ctx ->
                    let row = models.table ctx |> models.create
                    let newEvent = models.key row |> createRow
                    models.updateDbWithDomain row newEvent |> ignore
                    newEvent
-           read = models.records
+           read = models.table >> Seq.map models.dbToDomain
            update =
                fun newEvent event ->
                    models.updateDbWithDomain event newEvent |> ignore
                    event |> models.dbToDomain
-           del = fun row -> models.delete row |}
+           del = fun row -> models.delete row
+           query = models.table |}

@@ -6,16 +6,17 @@ open ArrangementService
 open ArrangementService.Operators
 
 open Models
+open System.Linq
 
 module Service =
 
     let repo = Repo.from models
 
-    let eventQuery id ctx =
+    let queryEventBy id (events: IQueryable<DbModel>) =
         query {
-            for e in models.table ctx do
-                where (models.key e = id)
-                select (Some e)
+            for event in events do
+                where (event.Id = id)
+                select (Some event)
                 exactlyOne
         }
 
@@ -25,22 +26,24 @@ module Service =
 
     let getEvents = repo.read
 
-    let getEventsForEmployee employeeId = getEvents >> Seq.filter (fun event -> event.ResponsibleEmployee = employeeId)
+    let getEventsForEmployee employeeId = repo.read >> Seq.filter (fun event -> event.ResponsibleEmployee = employeeId)
 
     let getEvent id =
-        repo.read
-        >> Seq.tryFind (fun event -> event.Id = id)
+        repo.query
+        >> queryEventBy id
         >> withError (eventNotFound id)
 
     let createEvent writemodel = repo.create (fun id -> models.writeToDomain id writemodel)
 
     let updateEvent id event =
-        eventQuery id
+        repo.query
+        >> queryEventBy id
         >> withError (eventNotFound id)
         >> Result.map (repo.update event)
 
     let deleteEvent id =
-        eventQuery id
+        repo.query
+        >> queryEventBy id
         >> withError (eventNotFound id)
         >> Result.map repo.del
         >> Result.map (fun _ -> eventSuccessfullyDeleted id)
