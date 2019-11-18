@@ -1,11 +1,11 @@
 namespace arrangementSvc
 
 open System
-open Serilog
 open Giraffe
+open Serilog
 open Microsoft.AspNetCore.Http
 open Giraffe.SerilogExtensions
-open Serilog.Formatting.Compact
+open Serilog.Formatting.Json
 open Microsoft.Extensions.Logging
 open Serilog.Events
 
@@ -65,7 +65,8 @@ module Logging =
     let errorHandler (ex : Exception) : HttpHandler =
         fun (next : HttpFunc) (ctx : HttpContext) ->
             let exceptionMessage = createExceptionMessage ex ctx
-            Log.Error("{Logmessage}", exceptionMessage)
+            let logger = ctx.Logger()
+            logger.Error("{@Logmessage}", exceptionMessage)
             json exceptionMessage next ctx
 
     let config = { SerilogConfig.defaults with ErrorHandler = fun ex _ -> setStatusCode 500 >=> errorHandler ex }
@@ -73,10 +74,9 @@ module Logging =
 
     Log.Logger <- 
       LoggerConfiguration()
-        .Destructure.FSharpTypes()
         .Enrich.FromLogContext()
         .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
         .MinimumLevel.Override("System", LogEventLevel.Warning)
         .MinimumLevel.Warning()
-        .WriteTo.Console(CompactJsonFormatter())
+        .WriteTo.Console(JsonFormatter())
         .CreateLogger()
