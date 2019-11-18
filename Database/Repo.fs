@@ -15,7 +15,7 @@ module Repo =
           domainToView: 'DomainModel -> 'ViewModel
           writeToDomain: 'key -> 'WriteModel -> 'DomainModel }
 
-    let from (models: Models<'db, 'd, 'v, 'w, 'k, 't>) =
+    let from models =
         {| create =
                fun createRow ctx ->
                    let row = models.table ctx |> models.create
