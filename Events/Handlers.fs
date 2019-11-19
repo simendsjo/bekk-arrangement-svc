@@ -19,7 +19,7 @@ module Handlers =
         >> Seq.map models.domainToView
         >> Ok
 
-    let getEvent id = Service.getEvent id
+    let getEvent = Service.getEvent
 
     let deleteEvent id = Service.deleteEvent id >>= commitTransaction
 
