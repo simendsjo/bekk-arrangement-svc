@@ -4,6 +4,7 @@ open Giraffe
 
 open ArrangementService.Http
 open ArrangementService.Operators
+open ArrangementService.Repo
 
 open Models
 

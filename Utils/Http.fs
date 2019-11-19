@@ -2,7 +2,6 @@ namespace ArrangementService
 
 open Giraffe
 open Microsoft.AspNetCore.Http
-open ArrangementService.Database
 
 module Http =
 
@@ -22,9 +21,3 @@ module Http =
             "Feilformatert writemodel"
             |> RequestErrors.BAD_REQUEST
             |> Error
-
-    let save (ctx: HttpContext) = ctx.GetService<ArrangementDbContext>().SubmitUpdates()
-
-    let commitTransaction x ctx =
-        save ctx
-        Ok x

@@ -3,8 +3,8 @@ namespace ArrangementService.Events
 open System
 open Giraffe
 
-open ArrangementService.Repo
 open ArrangementService.Database
+open ArrangementService.Repo
 
 module Models =
 

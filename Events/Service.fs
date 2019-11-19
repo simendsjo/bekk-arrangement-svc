@@ -1,6 +1,7 @@
 namespace ArrangementService.Events
 
 open ArrangementService.Operators
+open ArrangementService.Database
 open ArrangementService
 
 open Models

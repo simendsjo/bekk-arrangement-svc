@@ -1,6 +1,9 @@
 namespace ArrangementService
 
+open Giraffe
 open Microsoft.AspNetCore.Http
+
+open Database
 
 module Repo =
 
@@ -20,13 +23,21 @@ module Repo =
           del: 'db -> Unit
           read: HttpContext -> 't }
 
+    let save (ctx: HttpContext) = ctx.GetService<ArrangementDbContext>().SubmitUpdates()
+
+    let commitTransaction x ctx =
+        save ctx
+        Ok x
+
     let from (models: Models<'db, 'd, 'v, 'w, 'k, 't>): Repo<'db, 'd, 'v, 'w, 'k, 't> =
         { create =
               fun createRow ctx ->
                   let row = models.table ctx |> models.create
                   let newEvent = models.key row |> createRow
                   models.updateDbWithDomain row newEvent |> ignore
-                  newEvent
+                  save ctx
+                  models.key row |> createRow
+
           read = models.table
           update =
               fun newEvent event ->
