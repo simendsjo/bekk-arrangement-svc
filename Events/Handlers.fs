@@ -32,7 +32,7 @@ module Handlers =
 
     let createEvent =
         getBody<Models.WriteModel>
-        >>= resultOk Service.createEvent
+        >>= resultLift Service.createEvent
         >>= commitTransaction
         >> Result.map models.domainToView
 

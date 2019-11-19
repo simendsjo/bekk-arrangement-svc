@@ -11,28 +11,28 @@ module Service =
 
     let repo = Repo.from models
 
-    let getEvents = repo.read
+    let getEvents = repo.read >> Seq.map models.dbToDomain
 
     let getEventsForEmployee employeeId =
-        repo.query
+        repo.read
         >> queryEventsForEmployee employeeId
         >> Seq.map models.dbToDomain
 
     let getEvent id =
-        repo.query
+        repo.read
         >> queryEventBy id
         >> withError (eventNotFound id)
 
     let createEvent writemodel = repo.create (fun id -> models.writeToDomain id writemodel)
 
     let updateEvent id event =
-        repo.query
+        repo.read
         >> queryEventBy id
         >> withError (eventNotFound id)
         >> Result.map (repo.update event)
 
     let deleteEvent id =
-        repo.query
+        repo.read
         >> queryEventBy id
         >> withError (eventNotFound id)
         >> Result.map repo.del
