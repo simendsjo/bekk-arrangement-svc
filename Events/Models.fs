@@ -76,7 +76,6 @@ module Models =
           ToDate = writeModel.ToDate
           ResponsibleEmployee = writeModel.ResponsibleEmployee }
 
-
     let models: Models<DbModel, DomainModel, ViewModel, WriteModel, Key, TableModel> =
         { key = fun record -> record.Id
 

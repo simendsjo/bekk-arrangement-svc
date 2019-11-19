@@ -5,12 +5,12 @@ open System.Linq
 
 module Queries =
 
-    let queryEventBy id events =
+    let queryEventBy id (events: IQueryable<DbModel>) =
         query {
             for event in events do
-                where (models.key event = id)
+                where (event.Id = id)
                 select (Some event)
-                exactlyOne
+                exactlyOneOrDefault
         }
 
     let queryEventsForEmployee (employeeId: int) (events: IQueryable<DbModel>) =
