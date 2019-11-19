@@ -22,6 +22,7 @@ module Service =
         repo.read
         >> queryEventBy id
         >> withError (eventNotFound id)
+        >> Result.map models.dbToDomain
 
     let createEvent writemodel = repo.create (fun id -> models.writeToDomain id writemodel)
 
@@ -36,4 +37,4 @@ module Service =
         >> queryEventBy id
         >> withError (eventNotFound id)
         >> Result.map repo.del
-        >> Result.map (fun _ -> eventSuccessfullyDeleted id)
+        >> Result.bind (fun _ -> eventSuccessfullyDeleted id)
