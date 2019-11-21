@@ -13,11 +13,12 @@ open Microsoft.IdentityModel.Tokens
 open Microsoft.Extensions.Configuration
 open Microsoft.AspNetCore.Http
 
-open ArrangementService.Database
-open ArrangementService.Health
 open ArrangementService
 
-let webApp = choose [ Events.Handlers.routes; healthCheck ]
+open Database
+open Logging
+
+let webApp = choose [ Events.Handlers.routes; Health.healthCheck ]
 
 let private configuration =
     let builder = ConfigurationBuilder()
@@ -25,19 +26,14 @@ let private configuration =
     builder.AddEnvironmentVariables() |> ignore
     builder.Build()
 
-let errorHandler (ex: Exception) (logger: ILogger) =
-    logger.LogError(ex, "An unhandled exception has occurred while executing the request.")
-    clearResponse >=> setStatusCode 500 >=> text ex.Message
-
-let configureCors (builder: CorsPolicyBuilder) =
-    builder.WithOrigins("http://localhost:8080").AllowAnyMethod().AllowAnyHeader() |> ignore
+let configureCors (builder: CorsPolicyBuilder) = builder.AllowAnyMethod().AllowAnyHeader() |> ignore
 
 let configureApp (app: IApplicationBuilder) =
     app.Use(fun context next ->
         context.Request.Path <- context.Request.Path.Value.Replace(configuration.["VIRTUAL_PATH"], "") |> PathString
         next.Invoke())
     |> ignore
-    (app.UseGiraffeErrorHandler errorHandler).UseAuthentication().UseCors(configureCors).UseGiraffe(webApp)
+    app.UseAuthentication().UseCors(configureCors).UseGiraffe(createLoggingApp webApp config)
 
 let configureServices (services: IServiceCollection) =
     services.AddCors() |> ignore
@@ -60,11 +56,9 @@ let main _ =
     let contentRoot = Directory.GetCurrentDirectory()
     let webRoot = Path.Combine(contentRoot, "WebRoot")
     WebHostBuilder().UseKestrel().UseContentRoot(contentRoot).UseIISIntegration().UseWebRoot(webRoot)
-        //.UseUrls(sprintf "http://0.0.0.0:%s/" configuration.["PORT"])
         .Configure(Action<IApplicationBuilder> configureApp).ConfigureServices(configureServices).Build().Run()
 
     // TODO: FIX
     let foo = createDbContext ConnectionString
     foo.SaveContextSchema() |> ignore
     0
- 
