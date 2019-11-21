@@ -5,7 +5,6 @@ open Giraffe
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Cors.Infrastructure
 open Microsoft.Extensions.DependencyInjection
-open Microsoft.Extensions.Logging
 open Microsoft.AspNetCore.Authentication.JwtBearer
 open Microsoft.AspNetCore.Hosting
 open System.IO
@@ -56,7 +55,9 @@ let main _ =
     let contentRoot = Directory.GetCurrentDirectory()
     let webRoot = Path.Combine(contentRoot, "WebRoot")
     WebHostBuilder().UseKestrel().UseContentRoot(contentRoot).UseIISIntegration().UseWebRoot(webRoot)
-        .Configure(Action<IApplicationBuilder> configureApp).ConfigureServices(configureServices).Build().Run()
+        .Configure(Action<IApplicationBuilder> configureApp)
+        .ConfigureKestrel(fun context options -> options.AllowSynchronousIO <- true)
+        .ConfigureServices(configureServices).Build().Run()
 
     // TODO: FIX
     let foo = createDbContext ConnectionString

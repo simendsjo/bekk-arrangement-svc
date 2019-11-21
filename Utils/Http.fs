@@ -2,6 +2,7 @@ namespace ArrangementService
 
 open Giraffe
 open Microsoft.AspNetCore.Http
+open System
 
 module Http =
 
@@ -18,6 +19,13 @@ module Http =
         try
             Ok(ctx.BindJsonAsync<'WriteModel>().Result)
         with ex ->
+            Console.WriteLine(ex)
             "Feilformatert writemodel"
             |> RequestErrors.BAD_REQUEST
             |> Error
+
+    let log x = x.ToString() |> Console.WriteLine
+
+    let tap f x =
+        f x |> ignore
+        x
