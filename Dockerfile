@@ -1,4 +1,4 @@
-FROM fsharp:10.6.0-netcore AS build-env
+FROM fsharp:10.2.3-netcore AS build-env
 WORKDIR /app
 
 COPY . ./
@@ -25,7 +25,8 @@ RUN dotnet publish -c Release -o out ./bekk-arrangement-svc.fsproj
 #CMD ./hahaha.sh
 
 #FROM mcr.microsoft.com/dotnet/core/aspnet:3.0 AS runtime
-FROM mcr.microsoft.com/dotnet/core/aspnet:3.0
+#FROM mcr.microsoft.com/dotnet/core/aspnet:2.0
+FROM microsoft/dotnet:2.2-aspnetcore-runtime
 ENV ASPNETCORE_URLS=http://+:80
 WORKDIR /app
 COPY --from=build-env /app/out .
