@@ -34,7 +34,6 @@ module Handlers =
     let createEvent =
         getBody<Models.WriteModel>
         >>= resultLift Service.createEvent
-        >>= commitTransaction
         >> Result.map models.domainToView
 
     let routes: HttpHandler =
