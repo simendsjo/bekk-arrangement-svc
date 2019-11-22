@@ -25,7 +25,7 @@ let private configuration =
     builder.AddEnvironmentVariables() |> ignore
     builder.Build()
 
-let configureCors (builder: CorsPolicyBuilder) = builder.AllowAnyMethod().AllowAnyHeader() |> ignore
+let configureCors (builder: CorsPolicyBuilder) = builder.AllowAnyMethod().AllowAnyHeader().AllowAnyOrigin() |> ignore
 
 let configureApp (app: IApplicationBuilder) =
     app.Use(fun context next ->
