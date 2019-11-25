@@ -1,6 +1,8 @@
 namespace ArrangementService
 
 open FSharp.Data.Sql
+open Microsoft.EntityFrameworkCore.Storage
+open Microsoft.EntityFrameworkCore.Storage.Internal
 
 module Database =
     [<Literal>]
@@ -18,3 +20,6 @@ module Database =
 
     let createDbContext (connectionString: string): ArrangementSql.dataContext =
         ArrangementSql.GetDataContext(connectionString)
+
+
+            

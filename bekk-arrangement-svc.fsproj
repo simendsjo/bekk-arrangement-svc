@@ -30,6 +30,10 @@
     <PackageReference Include="Serilog.Formatting.Compact" Version="1.1.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
     <PackageReference Include="Giraffe" Version="3.4.*" />
+    <ProjectReference Include=".\Migrator\Migrator.csproj">
+      <Project>{2c4b1776-3d34-4534-8520-8a1e6daa0e6e}</Project>
+      <Name>Migrator</Name>
+    </ProjectReference>
   </ItemGroup>
 
   <ItemGroup>
@@ -50,6 +54,7 @@
     <Content Include="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="global.json" />
   </ItemGroup>
   <Import Project=".paket\Paket.Restore.targets" />
 </Project>
