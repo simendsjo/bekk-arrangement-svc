@@ -24,6 +24,12 @@
       <HintPath>../../packages/SQLProvider/lib/net451/FSharp.Data.SqlProvider.dll</HintPath>
     </Reference>
   </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../migration/migrator.csproj">
+      <Name>migrator</Name>
+    </ProjectReference>
+  </ItemGroup>
   
   <ItemGroup>
     <PackageReference Include="Giraffe.SerilogExtensions" Version="1.3.0" />

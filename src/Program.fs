@@ -14,6 +14,7 @@ open Microsoft.AspNetCore.Http
 
 open ArrangementService
 
+open migrator
 open Database
 open Logging
 
@@ -54,6 +55,7 @@ let configureServices (services: IServiceCollection) =
 let main _ =
     let contentRoot = Directory.GetCurrentDirectory()
     let webRoot = Path.Combine(contentRoot, "WebRoot")
+    Migrate.Run(configuration.["ConnectionStrings:EventDb"])
     WebHostBuilder().UseKestrel().UseContentRoot(contentRoot).UseIISIntegration().UseWebRoot(webRoot)
         .Configure(Action<IApplicationBuilder> configureApp)
         .ConfigureKestrel(fun context options -> options.AllowSynchronousIO <- true)
