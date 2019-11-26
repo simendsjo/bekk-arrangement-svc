@@ -10,7 +10,7 @@ module Database =
     let DatabaseVendor = Common.DatabaseProviderTypes.MSSQLSERVER
 
     [<Literal>]
-    let ResolutionPath = "./packages/System.Data.SqlClient/lib/netcoreapp2.1"
+    let ResolutionPath = "~/.nuget/packages/system.data.sqlclient/4.7.0/lib/netcoreapp2.1"
 
     type ArrangementSql = SqlDataProvider<ContextSchemaPath="DbSchema.xml", ConnectionString=ConnectionString, DatabaseVendor=DatabaseVendor, ResolutionPath=ResolutionPath>
 
