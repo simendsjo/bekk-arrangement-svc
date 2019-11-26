@@ -1,15 +1,20 @@
 ﻿namespace migrator
 {
-        public class Migration
+    public class Migration
+    {
+
+        public Migration(string name, string query, int number)
         {
-            public Migration(string name, string query)
-            {
-                Name = name;
-                Query = query;
-            }
+            Number = number;
+            Name = name;
+            Query = query;
 
-            public string Query { get; }
-
-            public string Name { get; }
         }
+
+        public readonly int Number;
+
+        public string Query { get; }
+
+        public string Name { get; }
+    }
 }
