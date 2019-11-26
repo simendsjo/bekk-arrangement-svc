@@ -91,7 +91,8 @@ namespace migrator
         private static IEnumerable<Migration> GetLocalMigrations()
         {
             var migrations = new List<Migration>();
-            var migrationsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Migrations");
+            var migrationsPath = "./Migrations"; //Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Migrations");
+            System.Console.WriteLine($"Looking for local migrations here: {migrationsPath}");
             var migrationsFiles = Directory.GetFiles(migrationsPath);
             foreach (var migrationsFile in migrationsFiles)
             {

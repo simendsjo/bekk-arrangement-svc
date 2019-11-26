@@ -4,8 +4,6 @@ WORKDIR /app
 COPY . ./
 RUN dotnet publish -c Release -o out ./src/bekk-arrangement-svc.fsproj
 
-RUN ls
-
 FROM microsoft/dotnet:2.2-aspnetcore-runtime
 COPY --from=build-env /app/src/out .
 
