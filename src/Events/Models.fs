@@ -9,22 +9,22 @@ open ArrangementService.Repo
 module Models =
 
     type DomainModel =
-        { Id: int
+        { Id: Guid
           Title: string
           Description: string
           Location: string
           FromDate: DateTimeOffset
           ToDate: DateTimeOffset
-          ResponsibleEmployee: int }
+          OrganizerEmail: string }
 
     type ViewModel =
-        { Id: int
+        { Id: Guid
           Title: string
           Description: string
           Location: string
           FromDate: DateTimeOffset
           ToDate: DateTimeOffset
-          ResponsibleEmployee: int }
+          OrganizerEmail: string }
 
     type WriteModel =
         { Title: string
@@ -32,13 +32,13 @@ module Models =
           Location: string
           FromDate: DateTimeOffset
           ToDate: DateTimeOffset
-          ResponsibleEmployee: int }
+          OrganizerEmail: string }
 
     type TableModel = ArrangementDbContext.dboSchema.``dbo.Events``
 
     type DbModel = ArrangementDbContext.``dbo.EventsEntity``
 
-    type Key = int
+    type Key = Guid
 
     let dbToDomain (dbRecord: DbModel): DomainModel =
         { Id = dbRecord.Id
@@ -47,7 +47,7 @@ module Models =
           Location = dbRecord.Location
           FromDate = dbRecord.FromDate
           ToDate = dbRecord.ToDate
-          ResponsibleEmployee = dbRecord.ResponsibleEmployee }
+          OrganizerEmail = dbRecord.OrganizerEmail }
 
     let updateDbWithDomain (db: DbModel) (event: DomainModel) =
         db.Title <- event.Title
@@ -55,7 +55,7 @@ module Models =
         db.Location <- event.Location
         db.FromDate <- event.FromDate
         db.ToDate <- event.ToDate
-        db.ResponsibleEmployee <- event.ResponsibleEmployee
+        db.OrganizerEmail <- event.OrganizerEmail
         db
 
     let domainToView (domainModel: DomainModel): ViewModel =
@@ -65,7 +65,7 @@ module Models =
           Location = domainModel.Location
           FromDate = domainModel.FromDate
           ToDate = domainModel.ToDate
-          ResponsibleEmployee = domainModel.ResponsibleEmployee }
+          OrganizerEmail = domainModel.OrganizerEmail }
 
     let writeToDomain (id: Key) (writeModel: WriteModel): DomainModel =
         { Id = id
@@ -74,7 +74,7 @@ module Models =
           Location = writeModel.Location
           FromDate = writeModel.FromDate
           ToDate = writeModel.ToDate
-          ResponsibleEmployee = writeModel.ResponsibleEmployee }
+          OrganizerEmail = writeModel.OrganizerEmail }
 
     let models: Models<DbModel, DomainModel, ViewModel, WriteModel, Key, TableModel> =
         { key = fun record -> record.Id
