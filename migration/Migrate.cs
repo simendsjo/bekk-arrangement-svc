@@ -42,10 +42,13 @@ namespace migrator
                     {
                         using (var reader = command.ExecuteReader())
                         {
-                            while (reader.Read())
+                            if (reader.HasRows)
                             {
-                                var t = reader.GetString(0);
-                                list.Add(t);
+                                while (reader.Read())
+                                {
+                                    var t = reader.GetString(0);
+                                    list.Add(t);
+                                }
                             }
                         }
                     }
