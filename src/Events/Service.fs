@@ -1,7 +1,6 @@
 namespace ArrangementService.Events
 
 open ArrangementService.Operators
-open ArrangementService.Database
 open ArrangementService
 
 open Models
@@ -25,7 +24,8 @@ module Service =
         >> withError (eventNotFound id)
         >> Result.map models.dbToDomain
 
-    let createEvent writemodel = repo.create (fun id -> models.writeToDomain id writemodel)
+    let createEvent writemodel =
+      repo.create (fun id -> models.writeToDomain id writemodel)
 
     let updateEvent id event =
         repo.read

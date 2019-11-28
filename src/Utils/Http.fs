@@ -17,7 +17,7 @@ module Http =
 
     let getBody<'WriteModel> (ctx: HttpContext) =
         try
-            Ok(ctx.BindJsonAsync<'WriteModel>().Result)
+          Ok(ctx.BindJsonAsync<'WriteModel>().Result)
         with ex ->
             Console.WriteLine(ex)
             "Feilformatert writemodel"

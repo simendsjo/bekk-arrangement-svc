@@ -24,10 +24,11 @@ module Handlers =
 
     let deleteEvent id = Service.deleteEvent id >>= commitTransaction
 
-    let updateEvent id =
-        getBody<Models.WriteModel>
-        >> Result.map (models.writeToDomain id)
-        >>= Service.updateEvent id
+    let updateEvent (id: int) =
+        getBody<WriteModel>
+        >> Result.bind (validateWriteModel (Id id))
+        >> Result.map (writeToDomain (Id id)) 
+        >>= Service.updateEvent id 
         >>= commitTransaction
         >> Result.map models.domainToView
 
@@ -38,10 +39,23 @@ module Handlers =
 
     let routes: HttpHandler =
         choose
-            [ GET >=> choose
-                          [ route "/events" >=> handle getEvents
-                            routef "/events/%i" (handle << getEvent)
-                            routef "/events/employee/%i" (handle << getEventsForEmployee) ]
-              DELETE >=> choose [ routef "/events/%i" (handle << deleteEvent) ]
-              PUT >=> choose [ routef "/events/%i" (handle << updateEvent) ]
-              POST >=> choose [ route "/events" >=> handle createEvent ] ]
+            [
+              GET >=> choose
+                [
+                  route "/events" >=> handle getEvents
+                  routef "/events/%i" (handle << getEvent)
+                  routef "/events/employee/%i" (handle << getEventsForEmployee)
+                ]
+              DELETE >=> choose 
+                [ 
+                  routef "/events/%i" (handle << deleteEvent)
+                ]
+              PUT >=> choose 
+                [ 
+                  routef "/events/%i" (handle << updateEvent) 
+                ]
+              POST >=> choose 
+                [ 
+                  route "/events" >=> handle createEvent 
+                ]
+            ]
