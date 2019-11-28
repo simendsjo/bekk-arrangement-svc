@@ -25,6 +25,13 @@
     </Reference>
   </ItemGroup>
 
+  <PropertyGroup Condition="'$(IsOSX)'">
+   <DisableAutoSetFscCompilerPath>true</DisableAutoSetFscCompilerPath>
+   <DotnetFscCompilerPath></DotnetFscCompilerPath>
+   <FscToolPath>/Library/Frameworks/Mono.framework/Versions/Current/Commands</FscToolPath>
+   <FscToolExe>fsharpc</FscToolExe>
+ </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="../migration/migrator.csproj">
       <Name>migrator</Name>
