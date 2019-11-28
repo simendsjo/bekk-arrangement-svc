@@ -15,10 +15,10 @@ module Handlers =
         >> Seq.map models.domainToView
         >> Ok
 
-    let getEventsForEmployee employeeId =
-        Service.getEventsForEmployee employeeId
-        >> Seq.map models.domainToView
-        >> Ok
+//    let getEventsForEmployee employeeId =
+//        Service.getEventsForEmployee employeeId
+//        >> Seq.map models.domainToView
+//        >> Ok
 
     let getEvent = Service.getEvent
 
@@ -40,8 +40,8 @@ module Handlers =
         choose
             [ GET >=> choose
                           [ route "/events" >=> handle getEvents
-                            routef "/events/%i" (handle << getEvent)
-                            routef "/events/employee/%i" (handle << getEventsForEmployee) ]
-              DELETE >=> choose [ routef "/events/%i" (handle << deleteEvent) ]
-              PUT >=> choose [ routef "/events/%i" (handle << updateEvent) ]
+                            routef "/events/%A" (handle << getEvent) ]
+//                            routef "/events/employee/%i" (handle << getEventsForEmployee) ]
+              DELETE >=> choose [ routef "/events/%A" (handle << deleteEvent) ]
+              PUT >=> choose [ routef "/events/%A" (handle << updateEvent) ]
               POST >=> choose [ route "/events" >=> handle createEvent ] ]

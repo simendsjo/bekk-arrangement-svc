@@ -13,9 +13,9 @@ module Queries =
                 exactlyOneOrDefault
         }
 
-    let queryEventsForEmployee (employeeId: int) (events: IQueryable<DbModel>) =
-        query {
-            for event in events do
-                where (event.ResponsibleEmployee = employeeId)
-                select event
-        }
+ //   let queryEventsForEmployee (employeeId: int) (events: IQueryable<DbModel>) =
+ //       query {
+ //           for event in events do
+  //              where (event.ResponsibleEmployee = employeeId)
+   //             select event
+    //    }
