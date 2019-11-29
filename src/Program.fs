@@ -38,7 +38,9 @@ let configureApp (app: IApplicationBuilder) =
 let configureServices (services: IServiceCollection) =
     services.AddCors() |> ignore
     services.AddGiraffe() |> ignore
-    services.AddSingleton<ArrangementDbContext>(createDbContext configuration.["ConnectionStrings:EventDb"]) |> ignore
+    let dbContext = createDbContext configuration.["ConnectionStrings:EventDb"]
+    services.AddSingleton<ArrangementDbContext>(dbContext) |> ignore
+    dbContext.SaveContextSchema() |> ignore
     services.AddAuthentication(fun options ->
             options.DefaultAuthenticateScheme <- JwtBearerDefaults.AuthenticationScheme
             options.DefaultChallengeScheme <- JwtBearerDefaults.AuthenticationScheme)
@@ -57,14 +59,14 @@ let main _ =
     let webRoot = Path.Combine(contentRoot, "WebRoot")
     Migrate.Run(configuration.["ConnectionStrings:EventDb"])
     
-    WebHostBuilder().UseKestrel().UseContentRoot(contentRoot).UseIISIntegration().UseWebRoot(webRoot)
+    WebHostBuilder()
+        .UseKestrel()
+        .UseContentRoot(contentRoot)
+        .UseIISIntegration()
+        .UseWebRoot(webRoot)
         .Configure(Action<IApplicationBuilder> configureApp)
         .ConfigureKestrel(fun context options -> options.AllowSynchronousIO <- true)
         .ConfigureServices(configureServices)
         .Build()
         .Run()
-
-    let schema = createDbContext configuration.["ConnectionStrings:EventDb"]
-    schema.SaveContextSchema() |> ignore
-
     0
