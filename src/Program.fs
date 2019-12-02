@@ -14,6 +14,7 @@ open Microsoft.AspNetCore.Http
 
 open ArrangementService
 
+open migrator
 open Database
 open Logging
 
@@ -37,7 +38,9 @@ let configureApp (app: IApplicationBuilder) =
 let configureServices (services: IServiceCollection) =
     services.AddCors() |> ignore
     services.AddGiraffe() |> ignore
-    services.AddSingleton<ArrangementDbContext>(createDbContext configuration.["ConnectionStrings:EventDb"]) |> ignore
+    let dbContext = createDbContext configuration.["ConnectionStrings:EventDb"]
+    services.AddSingleton<ArrangementDbContext>(dbContext) |> ignore
+    dbContext.SaveContextSchema() |> ignore
     services.AddAuthentication(fun options ->
             options.DefaultAuthenticateScheme <- JwtBearerDefaults.AuthenticationScheme
             options.DefaultChallengeScheme <- JwtBearerDefaults.AuthenticationScheme)
@@ -54,12 +57,16 @@ let configureServices (services: IServiceCollection) =
 let main _ =
     let contentRoot = Directory.GetCurrentDirectory()
     let webRoot = Path.Combine(contentRoot, "WebRoot")
-    WebHostBuilder().UseKestrel().UseContentRoot(contentRoot).UseIISIntegration().UseWebRoot(webRoot)
+    Migrate.Run(configuration.["ConnectionStrings:EventDb"])
+    
+    WebHostBuilder()
+        .UseKestrel()
+        .UseContentRoot(contentRoot)
+        .UseIISIntegration()
+        .UseWebRoot(webRoot)
         .Configure(Action<IApplicationBuilder> configureApp)
         .ConfigureKestrel(fun context options -> options.AllowSynchronousIO <- true)
-        .ConfigureServices(configureServices).Build().Run()
-
-    // TODO: FIX
-    let foo = createDbContext ConnectionString
-    foo.SaveContextSchema() |> ignore
+        .ConfigureServices(configureServices)
+        .Build()
+        .Run()
     0

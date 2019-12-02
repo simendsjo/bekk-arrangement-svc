@@ -14,10 +14,10 @@ module Service =
 
     let getEvents = repo.read >> Seq.map models.dbToDomain
 
-    let getEventsForEmployee employeeId =
-        repo.read
-        >> queryEventsForEmployee employeeId
-        >> Seq.map models.dbToDomain
+//    let getEventsForEmployee employeeId =
+//        repo.read
+//        >> queryEventsForEmployee employeeId
+//        >> Seq.map models.dbToDomain
 
     let getEvent id =
         repo.read
