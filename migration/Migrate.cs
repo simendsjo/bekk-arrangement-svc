@@ -68,19 +68,26 @@ namespace migrator
         {
             var list = new List<string>();
 
-            using (var command = new SqlCommand("SELECT * FROM Migrations", connection))
+            try
             {
-                using (var reader = command.ExecuteReader())
+                using (var command = new SqlCommand("SELECT * FROM Migrations", connection))
                 {
-                    if (reader.HasRows)
+                    using (var reader = command.ExecuteReader())
                     {
-                        while (reader.Read())
+                        if (reader.HasRows)
                         {
-                            var t = reader.GetString(0);
-                            list.Add(t);
+                            while (reader.Read())
+                            {
+                                var t = reader.GetString(0);
+                                list.Add(t);
+                            }
                         }
                     }
                 }
+
+            }
+            catch (System.Exception)
+            {
             }
 
             var pendingMigrations = allMigrations.Where(m => list.All(l => l != m.Name)).ToList();
@@ -91,7 +98,8 @@ namespace migrator
         private static IEnumerable<Migration> GetLocalMigrations()
         {
             var migrations = new List<Migration>();
-            const string migrationsPath = "./Migrations"; //Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Migrations");
+
+            string migrationsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Migrations");
             System.Console.WriteLine($"Looking for local migrations here: {migrationsPath}");
             var migrationsFiles = Directory.GetFiles(migrationsPath);
             foreach (var migrationsFile in migrationsFiles)

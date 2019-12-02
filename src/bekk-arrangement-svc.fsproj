@@ -25,7 +25,7 @@
     </Reference>
   </ItemGroup>
 
-  <PropertyGroup Condition="'$(IsOSX)'">
+  <PropertyGroup Condition="'$(IsOSX)' == 'true'">
    <DisableAutoSetFscCompilerPath>true</DisableAutoSetFscCompilerPath>
    <DotnetFscCompilerPath></DotnetFscCompilerPath>
    <FscToolPath>/Library/Frameworks/Mono.framework/Versions/Current/Commands</FscToolPath>
