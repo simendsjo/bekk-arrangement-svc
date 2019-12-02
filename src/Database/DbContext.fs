@@ -4,8 +4,7 @@ open FSharp.Data.Sql
 
 module Database =
     [<Literal>]
-    let ConnectionString = "Data Source=rds-dev.bekk.local;Database=arrangement-db;User ID=event-svc;Password=L8v*vx8BPSBC"
-    // "Server=localhost,1433;User=sa;Password=<YourStrong!Passw0rd>;Database=arrangement-db"
+    let ConnectionString = "Server=localhost,1433;User=sa;Password=<YourStrong!Passw0rd>;Database=arrangement-db"
 
     [<Literal>]
     let DatabaseVendor = Common.DatabaseProviderTypes.MSSQLSERVER
