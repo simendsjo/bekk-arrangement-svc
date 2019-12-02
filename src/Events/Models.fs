@@ -53,33 +53,65 @@ module Models =
     let unwrapLocation = function | Location l -> l
     let unwrapEmployee = function | ResponsibleEmployee re -> re
 
-    let validateId id = unwrapId id > 0
-    let validateTitle title = 
-      let title = unwrapTitle title
-      let isShorterThan title = stringLength (<) 60 title
-      let isLongerThan title = stringLength (>) 3 title
-
+    let idValidator id =
       validator {
-          return isShorterThan title
-          return isLongerThan title
-        }
+        // Id: Må være et positivt tall
+        yield validate (fun x -> x > 0) id "Id må være et positivt tall."
+      }
 
-    // Id: Må være et positivt tall
-    // Title: må være lengre enn 3 og kortere enn 60 bokstaver
-    // Description: må være kortere enn 255 bokstaver
+    let titleValidator title =
+      validator {
+        // Title: må være lengre enn 3 og kortere enn 60 bokstaver
+        yield validate (fun x -> String.length x > 3) title "Tittel må ha minst 3 tegn" 
+        yield validate (fun x -> String.length x < 60) title "Tittel må være mindre enn 60 tegn"
+      }
+
+    let descriptionValidator description =
+      validator {
+        // Description: må være kortere enn 255 bokstaver
+        yield validate (fun x -> String.length x > 3) description "Beskrivelse må ha minst 3 tegn"
+        yield validate (fun x -> String.length x < 255) description "Beskrivelse må være mindre enn 255 tegn"
+      }
+
+    let locationValidator location =
     // Location: må være lengre enn 3 og kortere enn 30 bokstaver
-    // FromDate: Må være i fremtiden
-    // ToDate: Må være i fremtiden og etter fromDate
-    // ResponsibleEmployee: Må være et positivt tall
+      validator {
+        yield validate (fun x -> String.length x > 3) location "Sted må ha minst 3 tegn"
+        yield validate (fun x -> String.length x < 30) location "Sted må være mindre enn 30 tegn"
+      }
+
+    let dateValidator fromDate toDate =
+      // FromDate: Må være i fremtiden
+      // ToDate: Må være i fremtiden og etter fromDate
+      let something fromD toD = 
+        if fromD < toD then 
+          Ok fromDate 
+        else 
+          Error ["Til-dato må være etter fra-dato."]
+      validator {
+        yield validate (fun _ -> fromDate > DateTimeOffset.Now) fromDate "Fra-dato må være i fremtiden"
+        yield validate (fun _ -> toDate > DateTimeOffset.Now) toDate "Til-dato må være i fremtiden"
+        yield something fromDate toDate
+      }
+
+    let responsibleEmployeeValidator employee =
+      // ResponsibleEmployee: Må være et positivt tall
+      validator {
+        yield validate (fun x -> x > 0) employee "Ansvarlig ansatt id må være et positivt tall"
+      }
 
     let validateWriteModel (id: Id) (writeModel : WriteModel) : Result<WriteModel, HttpErr> =
       validator {
-        return validateId id
-        return validateTitle (Title writeModel.Title)
+        yield idValidator (unwrapId id)
+        yield titleValidator writeModel.Title
+        yield descriptionValidator writeModel.Description
+        yield locationValidator writeModel.Location
+        yield dateValidator writeModel.FromDate writeModel.ToDate
+        yield responsibleEmployeeValidator writeModel.ResponsibleEmployee
       }
       |> function
-      | true -> Ok writeModel
-      | false -> invalidWriteModel id |> Error
+      | Ok _ -> Ok writeModel
+      | Error e -> badRequest id e |> Error
    
     let dbToDomain (dbRecord: DbModel): DomainModel =
         { Id = dbRecord.Id |> Id
