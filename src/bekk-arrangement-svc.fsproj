@@ -24,6 +24,19 @@
       <HintPath>../../packages/SQLProvider/lib/net451/FSharp.Data.SqlProvider.dll</HintPath>
     </Reference>
   </ItemGroup>
+
+  <PropertyGroup Condition="'$(IsOSX)' == 'true'">
+   <DisableAutoSetFscCompilerPath>true</DisableAutoSetFscCompilerPath>
+   <DotnetFscCompilerPath></DotnetFscCompilerPath>
+   <FscToolPath>/Library/Frameworks/Mono.framework/Versions/Current/Commands</FscToolPath>
+   <FscToolExe>fsharpc</FscToolExe>
+ </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../migration/migrator.csproj">
+      <Name>migrator</Name>
+    </ProjectReference>
+  </ItemGroup>
   
   <ItemGroup>
     <PackageReference Include="Giraffe.SerilogExtensions" Version="1.3.0" />

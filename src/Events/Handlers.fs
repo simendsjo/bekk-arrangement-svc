@@ -1,6 +1,7 @@
 namespace ArrangementService.Events
 
 open Giraffe
+open System
 
 open ArrangementService.Http
 open ArrangementService.Operators
@@ -15,16 +16,16 @@ module Handlers =
         >> Seq.map models.domainToView
         >> Ok
 
-    let getEventsForEmployee employeeId =
-        Service.getEventsForEmployee employeeId
-        >> Seq.map models.domainToView
-        >> Ok
+//    let getEventsForEmployee employeeId =
+//        Service.getEventsForEmployee employeeId
+//        >> Seq.map models.domainToView
+//        >> Ok
 
     let getEvent = Service.getEvent
 
     let deleteEvent id = Service.deleteEvent id >>= commitTransaction
 
-    let updateEvent (id: int) =
+    let updateEvent (id: Guid) =
         getBody<WriteModel>
         >> Result.bind (validateWriteModel (Id id))
         >> Result.map (writeToDomain (Id id)) 
@@ -39,23 +40,11 @@ module Handlers =
 
     let routes: HttpHandler =
         choose
-            [
-              GET >=> choose
-                [
-                  route "/events" >=> handle getEvents
-                  routef "/events/%i" (handle << getEvent)
-                  routef "/events/employee/%i" (handle << getEventsForEmployee)
-                ]
-              DELETE >=> choose 
-                [ 
-                  routef "/events/%i" (handle << deleteEvent)
-                ]
-              PUT >=> choose 
-                [ 
-                  routef "/events/%i" (handle << updateEvent) 
-                ]
-              POST >=> choose 
-                [ 
-                  route "/events" >=> handle createEvent 
-                ]
-            ]
+            [ GET >=> choose
+                          [ route "/events" >=> handle getEvents
+                            routef "/events/%O" (handle << getEvent)
+                          ]
+//                            routef "/events/employee/%i" (handle << getEventsForEmployee) ]
+              DELETE >=> choose [ routef "/events/%O" (handle << deleteEvent) ]
+              PUT >=> choose [ routef "/events/%O" (handle << updateEvent) ]
+              POST >=> choose [ route "/events" >=> handle createEvent ] ]
