@@ -14,8 +14,8 @@ module Models =
     type Title = Title of string
     type Description = Description of string
     type Location = Location of string
-    type FromDate = DateTimeOffset
-    type ToDate = DateTimeOffset
+    type StartDate = DateTimeOffset
+    type EndDate = DateTimeOffset
     type ResponsibleEmployee = ResponsibleEmployee of int
     type TableModel = ArrangementDbContext.dboSchema.``dbo.Events``
     type DbModel = ArrangementDbContext.``dbo.EventsEntity``
@@ -89,76 +89,44 @@ module Models =
 
     let titleValidator title =
       validator {
-        // Title: må være lengre enn 3 og kortere enn 60 bokstaver
-        yield validate (fun x -> String.length x > 3) title "Tittel må ha minst 3 tegn" 
-        yield validate (fun x -> String.length x < 60) title "Tittel må være mindre enn 60 tegn"
+        yield validateMinLength title 3 "Tittel må ha minst 3 tegn" 
+        yield validateMaxLength title 60 "Tittel må være mindre enn 60 tegn"
       }
 
     let descriptionValidator description =
       validator {
-        // Description: må være kortere enn 255 bokstaver
-        yield validate (fun x -> String.length x > 3) description "Beskrivelse må ha minst 3 tegn"
-        yield validate (fun x -> String.length x < 255) description "Beskrivelse må være mindre enn 255 tegn"
+        yield validateMinLength description 3 "Beskrivelse må ha minst 3 tegn"
+        yield validateMaxLength description 255 "Beskrivelse må være mindre enn 255 tegn"
       }
 
     let locationValidator location =
-    // Location: må være lengre enn 3 og kortere enn 30 bokstaver
       validator {
-        yield validate (fun x -> String.length x > 3) location "Sted må ha minst 3 tegn"
-        yield validate (fun x -> String.length x < 30) location "Sted må være mindre enn 30 tegn"
+        yield validateMinLength location 3 "Sted må ha minst 3 tegn"
+        yield validateMaxLength location 30 "Sted må være mindre enn 30 tegn"
       }
 
     let organizerEmailValidator email=
-      let emailRegex = """^(?(")(".+?(?<!\\)"@)|(([0-9a-z]((\.(?!\.))|[-!#\$%&'\*\+/=\?\^`\{\}\|~\w])*)(?<=[0-9a-z])@))(?(\[)(\[(\d{1,3}\.){3}\d{1,3}\])|(([0-9a-z][-0-9a-z]*[0-9a-z]*\.)+[a-z0-9][\-a-z0-9]{0,22}[a-z0-9]))$"""
-      let validateEmail text =
-        match RegexMatch emailRegex text with
-        | Some _ -> true
-        | None   -> false
-      // Organizer email: Må være en valid epost addresse
       validator {
-        yield validate validateEmail email "Ansvarlig må ha en gyldig epost-addresse"
+        yield validateEmail email "Ansvarlig må ha en gyldig epost-addresse"
       }
     
     let dateValidator startDate endDate =
-      // FromDate: Må være i fremtiden
-      // ToDate: Må være i fremtiden og etter fromDate
       let startDate = customToDateTime startDate
       let endDate = customToDateTime endDate
-      let ``startDate is before endDate`` startDate endDate = 
-        if startDate < endDate then 
-          Ok startDate 
-        else 
-          Error ["Til-dato må være etter fra-dato."]
       validator {
-        yield validate (fun _ -> startDate > DateTime.Now) startDate "Fra-dato må være i fremtiden"
-        yield validate (fun _ -> endDate > DateTime.Now) endDate "Til-dato må være i fremtiden"
-        yield ``startDate is before endDate`` startDate endDate
+        yield validateAfter startDate DateTime.Now "Fra-dato må være i fremtiden"
+        yield validateAfter endDate DateTime.Now "Til-dato må være i fremtiden"
+        yield validateBefore startDate endDate "Til-dato må være etter fra-dato"
       }
 
     let openForRegistrationValidator openDate startDate endDate =
-      // Open for registration date må være før start date og end date
       let startDate = customToDateTime startDate
       let endDate = customToDateTime endDate
       let openDate = customToDateTime openDate
-      let beforeStart openDate startDate =
-        if openDate < startDate then
-          Ok openDate
-        else
-          Error ["Registreringsdato må være før åpningsdato"]
-      let beforeEnd openDate endDate =
-        if openDate < endDate then
-          Ok openDate
-        else
-          Error ["Registreringsdato må være før sluttdato"]
-      let inFuture openDate =
-        if openDate > DateTime.Now then
-          Ok openDate
-        else
-          Error ["Åpningsdato må være i fremtiden"]
       validator {
-        yield beforeStart openDate startDate
-        yield beforeEnd openDate endDate
-        yield inFuture openDate
+        yield validateBefore openDate startDate "Registreringsdato må være før åpningsdato"
+        yield validateBefore openDate endDate "Registreringsdato må være før sluttdato"
+        yield validateBefore DateTime.Now openDate "Åpningsdato må være i fremtiden"
       }
 
     let validateWriteModel (id: Id) (writeModel : WriteModel) : Result<WriteModel, HttpErr> =
