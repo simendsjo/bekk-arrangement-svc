@@ -73,14 +73,13 @@ module Models =
                   Minute = time.Minutes }
         }
     
-    let customToDateTime (date : Date) : DateTime =
-        DateTime(date.Year, date.Month, date.Day)
+    let customToDateTime (dateTime : DateTimeCustom) : DateTime =
+      let date = dateTime.Date
+      let time = dateTime.Time
+      DateTime(date.Year, date.Month, date.Day, time.Hour, time.Minute, 0)
     
     let customToTimeSpan (time: Time) : TimeSpan =
         TimeSpan(time.Hour, time.Minute, 0)
-
-    let customDateTimeOffset someTime =
-      DateTimeOffset(customToDateTime someTime.Date, customToTimeSpan someTime.Time)
 
     let unwrapId = function | Id id -> id
     let unwrapTitle = function | Title t -> t
@@ -109,31 +108,57 @@ module Models =
         yield validate (fun x -> String.length x < 30) location "Sted må være mindre enn 30 tegn"
       }
 
-    let dateValidator startDate endDate =
-      // FromDate: Må være i fremtiden
-      // ToDate: Må være i fremtiden og etter fromDate
-      let fromDate = customDateTimeOffset startDate
-      let toDate = customDateTimeOffset endDate
-      let foo fromD toD = 
-        if fromD < toD then 
-          Ok fromDate 
-        else 
-          Error ["Til-dato må være etter fra-dato."]
-      validator {
-        yield validate (fun _ -> fromDate > DateTimeOffset.Now) fromDate "Fra-dato må være i fremtiden"
-        yield validate (fun _ -> toDate > DateTimeOffset.Now) toDate "Til-dato må være i fremtiden"
-        yield foo fromDate toDate
-      }
-
     let organizerEmailValidator email=
-      let emailRegex = "^(?(\"\")(\"\".+?(?<!\\)\"\"@)|(([0-9a-z]((\.(?!\.))|[-!#\$%&'\*\+/=\?\^`\{\}\|~\w])*)(?<=[0-9a-z])@))"
-      let foo text =
+      let emailRegex = """^(?(")(".+?(?<!\\)"@)|(([0-9a-z]((\.(?!\.))|[-!#\$%&'\*\+/=\?\^`\{\}\|~\w])*)(?<=[0-9a-z])@))(?(\[)(\[(\d{1,3}\.){3}\d{1,3}\])|(([0-9a-z][-0-9a-z]*[0-9a-z]*\.)+[a-z0-9][\-a-z0-9]{0,22}[a-z0-9]))$"""
+      let validateEmail text =
         match RegexMatch emailRegex text with
         | Some _ -> true
         | None   -> false
       // Organizer email: Må være en valid epost addresse
       validator {
-        yield validate (fun x -> foo x) email "Ansvarlig må ha en gyldig epost-addresse"
+        yield validate validateEmail email "Ansvarlig må ha en gyldig epost-addresse"
+      }
+    
+    let dateValidator startDate endDate =
+      // FromDate: Må være i fremtiden
+      // ToDate: Må være i fremtiden og etter fromDate
+      let startDate = customToDateTime startDate
+      let endDate = customToDateTime endDate
+      let ``startDate is before endDate`` startDate endDate = 
+        if startDate < endDate then 
+          Ok startDate 
+        else 
+          Error ["Til-dato må være etter fra-dato."]
+      validator {
+        yield validate (fun _ -> startDate > DateTime.Now) startDate "Fra-dato må være i fremtiden"
+        yield validate (fun _ -> endDate > DateTime.Now) endDate "Til-dato må være i fremtiden"
+        yield ``startDate is before endDate`` startDate endDate
+      }
+
+    let openForRegistrationValidator openDate startDate endDate =
+      // Open for registration date må være før start date og end date
+      let startDate = customToDateTime startDate
+      let endDate = customToDateTime endDate
+      let openDate = customToDateTime openDate
+      let beforeStart openDate startDate =
+        if openDate < startDate then
+          Ok openDate
+        else
+          Error ["Registreringsdato må være før åpningsdato"]
+      let beforeEnd openDate endDate =
+        if openDate < endDate then
+          Ok openDate
+        else
+          Error ["Registreringsdato må være før sluttdato"]
+      let inFuture openDate =
+        if openDate > DateTime.Now then
+          Ok openDate
+        else
+          Error ["Åpningsdato må være i fremtiden"]
+      validator {
+        yield beforeStart openDate startDate
+        yield beforeEnd openDate endDate
+        yield inFuture openDate
       }
 
     let validateWriteModel (id: Id) (writeModel : WriteModel) : Result<WriteModel, HttpErr> =
@@ -141,8 +166,9 @@ module Models =
         yield titleValidator writeModel.Title
         yield descriptionValidator writeModel.Description
         yield locationValidator writeModel.Location
-        yield dateValidator writeModel.StartDate writeModel.EndDate
         yield organizerEmailValidator writeModel.OrganizerEmail
+        yield dateValidator writeModel.StartDate writeModel.EndDate
+        yield openForRegistrationValidator writeModel.OpenForRegistrationDate writeModel.StartDate writeModel.EndDate
       }
       |> function
       | Ok _ -> Ok writeModel
@@ -164,11 +190,11 @@ module Models =
         db.Description <- unwrapDescription event.Description
         db.Location <- unwrapLocation event.Location
         db.OrganizerEmail <- unwrapEmail event.OrganizerEmail
-        db.StartDate <- customToDateTime event.StartDate.Date
+        db.StartDate <- customToDateTime event.StartDate
         db.StartTime <- customToTimeSpan event.StartDate.Time
-        db.EndDate <- customToDateTime event.EndDate.Date
+        db.EndDate <- customToDateTime event.EndDate
         db.EndTime <- customToTimeSpan event.EndDate.Time
-        db.OpenForRegistrationDate <-customToDateTime event.OpenForRegistrationDate.Date
+        db.OpenForRegistrationDate <-customToDateTime event.OpenForRegistrationDate
         db.OpenForRegistrationTime <- customToTimeSpan event.OpenForRegistrationDate.Time
         db
 
