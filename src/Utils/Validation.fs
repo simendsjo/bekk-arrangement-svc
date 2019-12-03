@@ -6,9 +6,9 @@ module Validation =
   type ResultBuilder() =
     member this.Yield(x) = x
     member this.Delay(f) = f()
-    member this.Combine(a, b) =
-      match a, b with
-      | Ok _    , Ok _     -> a
+    member this.Combine(result1, result2) =
+      match result1, result2 with
+      | Ok _    , Ok _     -> result1
       | Ok _    , Error e  -> Error e
       | Error e , Ok _     -> Error e
       | Error e1, Error e2 -> Error (List.concat [e1; e2])
