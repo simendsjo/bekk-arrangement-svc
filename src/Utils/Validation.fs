@@ -5,7 +5,7 @@ open System.Text.RegularExpressions
 module Validation =
   type ResultBuilder() =
     member this.Yield(x) = x
-    member this.Delay(fn) = fn()
+    member this.Delay(f) = f()
     member this.Combine(a, b) =
       match a, b with
       | Ok _    , Ok _     -> a
@@ -18,15 +18,15 @@ module Validation =
 
   let validator = ResultBuilder()
 
-  let validateOne f (x: 'a) errorMessage =
-    if f x then
-      Ok x
+  let validateOne f (input: 'Type) errorMessage =
+    if f input then
+      Ok input
     else
       Error [errorMessage]
 
-  let validateTwo f (x: 'a) (y: 'b) errorMessage =
-    if f x y then
-      Ok (x, y)
+  let validateTwo f (input1: 'Type1) (input2: 'Type2) errorMessage =
+    if f input1 input2 then
+      Ok (input1, input2)
     else
       Error [errorMessage]
 
