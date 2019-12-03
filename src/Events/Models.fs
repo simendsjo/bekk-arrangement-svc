@@ -129,7 +129,7 @@ module Models =
         yield validateBefore DateTime.Now openDate "Åpningsdato må være i fremtiden"
       }
 
-    let validateWriteModel (id: Id) (writeModel : WriteModel) : Result<WriteModel, HttpErr> =
+    let validateWriteModel (writeModel : WriteModel) : Result<WriteModel, HttpErr> =
       validator {
         yield titleValidator writeModel.Title
         yield descriptionValidator writeModel.Description
