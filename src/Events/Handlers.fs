@@ -20,7 +20,7 @@ module Handlers =
 //        >> Seq.map models.domainToView
 //        >> Ok
 
-    let getEvent = Service.getEvent
+    let getEvent = Service.getEvent 
 
     let deleteEvent id = Service.deleteEvent id >>= sideEffect commitTransaction
 
