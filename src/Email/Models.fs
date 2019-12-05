@@ -3,7 +3,7 @@ namespace ArrangementService.Email
 module Models =
 
     type EmailAddress = EmailAddress of string
-    let emailAddressToString emailAddress = match emailAddress with | EmailAddress a -> a
+    let emailAddressToString = function | EmailAddress a -> a
 
     type Email =
         { Subject: string
@@ -14,11 +14,11 @@ module Models =
 
     // Sendgrid models
     
-    type Receiver = { Email: string }
+    type SendGridEmailAddress = { Email: string }
 
     type Personalization =
-        { To: Receiver list
-          Cc: Receiver list }
+        { To: SendGridEmailAddress list
+          Cc: SendGridEmailAddress list }
 
     type Content =
         { Type: string
@@ -26,7 +26,7 @@ module Models =
 
     type SendGridFormat =
         { Personalizations: Personalization list
-          From: string
+          From: SendGridEmailAddress
           Subject: string
           Content: Content list }
 
@@ -38,6 +38,6 @@ module Models =
     let emailToSendgridFormat (email: Email) =
         { Personalizations = [ { To = [ { Email = emailAddressToString email.To } ]
                                  Cc = [ { Email = emailAddressToString email.Cc } ] } ]
-          From = emailAddressToString email.From
+          From = { Email = emailAddressToString email.From}
           Subject = email.Subject
           Content = [ { Value = email.Message; Type = "text/html" } ] }
