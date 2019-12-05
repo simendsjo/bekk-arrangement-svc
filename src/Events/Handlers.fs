@@ -16,8 +16,6 @@ module Handlers =
         Service.getEvents
         >> Seq.map models.domainToView
         >> Ok
-        >> (fun _ -> Ok {Subject = "Hei, Henrik"; Message = "Til den det måtte angå"; From = EmailAddress"arrangement@bekk.no"; To=EmailAddress"henrik.limseth@bekk.no"; Cc=EmailAddress"tarjei.skjarset@bekk.no"})
-        >>= sideEffect sendMail 
 
 //    let getEventsForEmployee employeeId =
 //        Service.getEventsForEmployee employeeId
