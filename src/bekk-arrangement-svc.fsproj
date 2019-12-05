@@ -50,11 +50,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="Utils.fs" />
     <Compile Include="Database\DbContext.fs" />
+    <Compile Include="Utils\Validation.fs" />
     <Compile Include="Database\Repo.fs" />
     <Compile Include="Utils\Http.fs" /> 
     <Compile Include="Utils\Operators.fs" /> 
-    <Compile Include="Utils\Validation.fs" />
     <Compile Include="Events\ErrorMessages.fs" />
     <Compile Include="Events\Models.fs" />
     <Compile Include="Events\Queries.fs" />

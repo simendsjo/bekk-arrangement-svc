@@ -6,8 +6,8 @@ open Giraffe
 open ArrangementService.Database
 open ArrangementService.Repo
 open ArrangementService.Events.ErrorMessages
-open ArrangementService.Http
 open ArrangementService.Validation
+open ArrangementService
 
 module Models =
     type Id = Id of Guid
@@ -87,16 +87,16 @@ module Models =
     let unwrapLocation = function | Location l -> l
     let unwrapEmail = function | Email e -> e
 
-    let titleValidator title =
+    let titleValidator title : Result<Title, 'b> =
       validator {
-        yield validateMinLength title 3 "Tittel må ha minst 3 tegn" 
-        yield validateMaxLength title 60 "Tittel må være mindre enn 60 tegn"
+        yield Result.map Title (validateMinLength title 3 "Tittel må ha minst 3 tegn")
+        yield Result.map Title (validateMaxLength title 60 "Tittel må være mindre enn 60 tegn")
       }
 
     let descriptionValidator description =
       validator {
-        yield validateMinLength description 3 "Beskrivelse må ha minst 3 tegn"
-        yield validateMaxLength description 255 "Beskrivelse må være mindre enn 255 tegn"
+        yield Result.map Description (validateMinLength description 3 "Beskrivelse må ha minst 3 tegn")
+        yield Result.map Description (validateMaxLength description 255 "Beskrivelse må være mindre enn 255 tegn")
       }
 
     let locationValidator location =
@@ -129,7 +129,7 @@ module Models =
         yield validateBefore DateTime.Now openDate "Åpningsdato må være i fremtiden"
       }
 
-    let validateWriteModel (writeModel : WriteModel) : Result<WriteModel, HttpErr> =
+    let validateWriteModel (writeModel : WriteModel) : Result<WriteModel, CustomErrorMessage> =
       validator {
         yield titleValidator writeModel.Title
         yield descriptionValidator writeModel.Description
@@ -140,7 +140,7 @@ module Models =
       }
       |> function
       | Ok _ -> Ok writeModel
-      | Error e -> badRequest id e |> Error
+      | Error e -> badRequest e |> Error
    
     let dbToDomain (dbRecord: DbModel): DomainModel =
         { Id = dbRecord.Id
@@ -176,15 +176,21 @@ module Models =
           EndDate = domainModel.EndDate
           OpenForRegistrationDate = domainModel.OpenForRegistrationDate }
 
-    let writeToDomain (id: Id) (writeModel: WriteModel): DomainModel =
-        { Id = unwrapId id
-          Title = Title writeModel.Title
-          Description = Description writeModel.Description
-          Location = Location writeModel.Location
-          OrganizerEmail = Email writeModel.OrganizerEmail
-          StartDate = writeModel.StartDate
-          EndDate = writeModel.EndDate
-          OpenForRegistrationDate = writeModel.OpenForRegistrationDate 
+    let writeToDomain (id: Id) (writeModel: WriteModel): Result<DomainModel, CustomErrorMessage> =
+      validator {
+          let! description = descriptionValidator writeModel.Title
+          let! title = titleValidator writeModel.Title 
+
+          return { 
+            Id = unwrapId id
+            Title = title
+            Description = description 
+            Location = Location writeModel.Location
+            OrganizerEmail = Email writeModel.OrganizerEmail
+            StartDate = writeModel.StartDate
+            EndDate = writeModel.EndDate
+            OpenForRegistrationDate = writeModel.OpenForRegistrationDate 
+          }
         }
 
     let models: Models<DbModel, DomainModel, ViewModel, WriteModel, Id, TableModel> =

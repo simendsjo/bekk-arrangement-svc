@@ -27,16 +27,14 @@ module Handlers =
 
     let updateEvent (id: Guid) =
         getBody<WriteModel>
-        >> Result.bind validateWriteModel
-        >> Result.map (writeToDomain (Id id)) 
-        >>= Service.updateEvent id 
+        >> Result.bind (writeToDomain (Id id))
+        >>= Service.updateEvent id
         >>= commitTransaction
         >> Result.map models.domainToView
 
     let createEvent =
         getBody<Models.WriteModel>
-        >> Result.bind validateWriteModel
-        >>= resultLift Service.createEvent
+        >>= Service.createEvent
         >> Result.map models.domainToView
 
     let routes: HttpHandler =

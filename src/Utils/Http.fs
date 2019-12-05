@@ -8,24 +8,26 @@ module Http =
 
     type HttpErr = HttpFunc -> HttpContext -> HttpFuncResult
 
-    type Handler<'t> = HttpContext -> Result<'t, HttpErr>
+    type Handler<'t> = HttpContext -> Result<'t, CustomErrorMessage>
+  
+    let convertCustomErrorToHttpErr (error: CustomErrorMessage): HttpErr =
+      RequestErrors.BAD_REQUEST error
 
-    let handle (f: Handler<'t>) (next: HttpFunc) (ctx: HttpContext) =
-        match f ctx with
-        | Ok result -> json result next ctx
-        | Error errorMessage -> errorMessage next ctx
+    let handle (f: Handler<'t>) (next: HttpFunc) (context: HttpContext) =
+        match f context with
+        | Ok result -> json result next context
+        | Error errorMessage -> (convertCustomErrorToHttpErr errorMessage) next context
 
-    let getBody<'WriteModel> (ctx: HttpContext) =
+
+    let getBody<'WriteModel> (context: HttpContext) : Result<'WriteModel, CustomErrorMessage> =
         try
-          Ok(ctx.BindJsonAsync<'WriteModel>().Result)
+          Ok(context.BindJsonAsync<'WriteModel>().Result)
         with ex ->
-            Console.WriteLine(ex)
-            "Feilformatert writemodel"
-            |> RequestErrors.BAD_REQUEST
-            |> Error
+          Error ["Feilformatert writemodel"]
 
     let log x = x.ToString() |> Console.WriteLine
 
     let tap f x =
         f x |> ignore
         x
+
