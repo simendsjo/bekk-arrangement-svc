@@ -45,6 +45,9 @@ let configureServices (services: IServiceCollection) =
         ApiKey = configuration.["Sendgrid:Apikey"]
         SendgridUrl= configuration.["Sendgrid:SendgridUrl"]
     }) |> ignore
+    services.AddSingleton<Config>({
+       isProd = configuration.["Auth0:Scheduled_Tasks_Audience"] = "https://api.bekk.no"
+    }) |> ignore
     dbContext.SaveContextSchema() |> ignore
     services.AddAuthentication(fun options ->
             options.DefaultAuthenticateScheme <- JwtBearerDefaults.AuthenticationScheme

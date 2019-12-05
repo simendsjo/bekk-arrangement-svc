@@ -1,31 +1,43 @@
 namespace ArrangementService.Email
+
 open System.Text
 open Giraffe
 open FSharp.Data
 open Microsoft.AspNetCore.Http
-open Models
 open Newtonsoft.Json
 open Newtonsoft.Json.Serialization
 
+open ArrangementService
+open Models
+
 module Service =
 
-    let sendMail (email: Email) (context: HttpContext) =
-        let sendgridConfig = context.GetService<SendgridOptions>()
-        let serializerSettings =
-            let a = JsonSerializerSettings()
-            a.ContractResolver <- CamelCasePropertyNamesContractResolver()
-            a
-            
-        let jsonBody = JsonConvert.SerializeObject ((emailToSendgridFormat email), serializerSettings)
-        let byteBody = UTF8Encoding().GetBytes(jsonBody)
-        
-        async {
-            printfn "%A" sendgridConfig.ApiKey
-            let! x = Http.AsyncRequestString
-                            (sendgridConfig.SendgridUrl,
+    let private sendMailProd (options: SendgridOptions) (jsonBody: string)  =
+         let byteBody = UTF8Encoding().GetBytes(jsonBody)
+         async {
+            let! _ = Http.AsyncRequestString
+                            (options.SendgridUrl,
                              httpMethod = "POST",
-                             headers = ["Authorization", (sprintf "Bearer %s" sendgridConfig.ApiKey)
+                             headers = ["Authorization", (sprintf "Bearer %s" options.ApiKey)
                                         "Content-Type", "application/json"],
                              body = BinaryUpload byteBody )
             ()
             } |> Async.Start
+         
+    let sendMail (email: Email) (context: HttpContext) =
+        let sendgridConfig = context.GetService<SendgridOptions>()
+        let mailFunction =
+            if context.GetService<Config>().isProd
+            then
+                sendMailProd sendgridConfig
+            else
+                printfn "%s"
+                
+        let serializerSettings =
+            let settings = JsonSerializerSettings()
+            settings.ContractResolver <- CamelCasePropertyNamesContractResolver()
+            settings
+            
+        (emailToSendgridFormat email, serializerSettings)
+        |> JsonConvert.SerializeObject
+        |> mailFunction

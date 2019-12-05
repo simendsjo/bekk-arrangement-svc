@@ -52,6 +52,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="Config.fs" />
     <Compile Include="Database\DbContext.fs" />
     <Compile Include="Database\Repo.fs" />
     <Compile Include="Utils\Http.fs" /> 
@@ -71,5 +72,6 @@
     <Content Include="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Compile Include="Config.fs" />
   </ItemGroup>
 </Project>
