@@ -14,7 +14,7 @@ open Microsoft.AspNetCore.Http
 
 open ArrangementService
 
-open ArrangementService.Email.Models
+open ArrangementService.Email.SendgridApiModels
 open migrator
 open Database
 open Logging
@@ -41,13 +41,12 @@ let configureServices (services: IServiceCollection) =
     services.AddGiraffe() |> ignore
     let dbContext = createDbContext configuration.["ConnectionStrings:EventDb"]
     services.AddSingleton<ArrangementDbContext>(dbContext) |> ignore
-    services.AddSingleton<SendgridOptions>({
-        ApiKey = configuration.["Sendgrid:Apikey"]
-        SendgridUrl= configuration.["Sendgrid:SendgridUrl"]
-    }) |> ignore
-    services.AddSingleton<Config>({
-       isProd = configuration.["Auth0:Scheduled_Tasks_Audience"] = "https://api.bekk.no"
-    }) |> ignore
+    services.AddSingleton<SendgridOptions>
+        ({ ApiKey = configuration.["Sendgrid:Apikey"]
+           SendgridUrl = configuration.["Sendgrid:SendgridUrl"] })
+    |> ignore
+    services.AddSingleton<AppConfig>
+        ({ isProd = configuration.["Auth0:Scheduled_Tasks_Audience"] = "https://api.bekk.no" }) |> ignore
     dbContext.SaveContextSchema() |> ignore
     services.AddAuthentication(fun options ->
             options.DefaultAuthenticateScheme <- JwtBearerDefaults.AuthenticationScheme
@@ -66,15 +65,9 @@ let main _ =
     let contentRoot = Directory.GetCurrentDirectory()
     let webRoot = Path.Combine(contentRoot, "WebRoot")
     Migrate.Run(configuration.["ConnectionStrings:EventDb"])
-    
-    WebHostBuilder()
-        .UseKestrel()
-        .UseContentRoot(contentRoot)
-        .UseIISIntegration()
-        .UseWebRoot(webRoot)
+
+    WebHostBuilder().UseKestrel().UseContentRoot(contentRoot).UseIISIntegration().UseWebRoot(webRoot)
         .Configure(Action<IApplicationBuilder> configureApp)
         .ConfigureKestrel(fun context options -> options.AllowSynchronousIO <- true)
-        .ConfigureServices(configureServices)
-        .Build()
-        .Run()
+        .ConfigureServices(configureServices).Build().Run()
     0

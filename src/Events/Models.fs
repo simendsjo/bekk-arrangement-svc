@@ -3,21 +3,20 @@ namespace ArrangementService.Events
 open System
 open Giraffe
 
-open System
 open ArrangementService.Database
 open ArrangementService.Repo
 
 module Models =
-    
+
     type Date =
         { Day: int
           Month: int
           Year: int }
-        
+
     type Time =
         { Hour: int
           Minute: int }
-        
+
     type DateTimeCustom =
         { Date: Date
           Time: Time }
@@ -49,30 +48,27 @@ module Models =
           OrganizerEmail: string
           StartDate: DateTimeCustom
           EndDate: DateTimeCustom
-          OpenForRegistrationDate: DateTimeCustom }
+          OpenForRegistrationDate: DateTimeCustom
+          Participants: string }
 
     type TableModel = ArrangementDbContext.dboSchema.``dbo.Events``
 
     type DbModel = ArrangementDbContext.``dbo.EventsEntity``
 
     type Key = Guid
-    
+
     let toCustomDateTime (date: DateTime) (time: TimeSpan): DateTimeCustom =
-        {
-            Date =
-                { Day = date.Day
-                  Month = date.Month
-                  Year = date.Year }
-            Time =
-                { Hour = time.Hours
-                  Minute = time.Minutes }
-        }
-    
-    let customToDateTime (date : Date) : DateTime =
-        DateTime(date.Year, date.Month, date.Day)
-    
-    let customToTimeSpan (time: Time) : TimeSpan =
-        TimeSpan(time.Hour, time.Minute, 0)
+        { Date =
+              { Day = date.Day
+                Month = date.Month
+                Year = date.Year }
+          Time =
+              { Hour = time.Hours
+                Minute = time.Minutes } }
+
+    let customToDateTime (date: Date): DateTime = DateTime(date.Year, date.Month, date.Day)
+
+    let customToTimeSpan (time: Time): TimeSpan = TimeSpan(time.Hour, time.Minute, 0)
 
     let dbToDomain (dbRecord: DbModel): DomainModel =
         { Id = dbRecord.Id
@@ -82,8 +78,7 @@ module Models =
           OrganizerEmail = dbRecord.OrganizerEmail
           StartDate = toCustomDateTime dbRecord.StartDate dbRecord.StartTime
           EndDate = toCustomDateTime dbRecord.EndDate dbRecord.EndTime
-          OpenForRegistrationDate = toCustomDateTime dbRecord.OpenForRegistrationDate dbRecord.OpenForRegistrationTime
-          }
+          OpenForRegistrationDate = toCustomDateTime dbRecord.OpenForRegistrationDate dbRecord.OpenForRegistrationTime }
 
     let updateDbWithDomain (db: DbModel) (event: DomainModel) =
         db.Title <- event.Title
@@ -94,7 +89,7 @@ module Models =
         db.StartTime <- customToTimeSpan event.StartDate.Time
         db.EndDate <- customToDateTime event.EndDate.Date
         db.EndTime <- customToTimeSpan event.EndDate.Time
-        db.OpenForRegistrationDate <-customToDateTime event.OpenForRegistrationDate.Date
+        db.OpenForRegistrationDate <- customToDateTime event.OpenForRegistrationDate.Date
         db.OpenForRegistrationTime <- customToTimeSpan event.OpenForRegistrationDate.Time
         db
 
@@ -117,6 +112,8 @@ module Models =
           StartDate = writeModel.StartDate
           EndDate = writeModel.EndDate
           OpenForRegistrationDate = writeModel.OpenForRegistrationDate }
+
+
 
     let models: Models<DbModel, DomainModel, ViewModel, WriteModel, Key, TableModel> =
         { key = fun record -> record.Id

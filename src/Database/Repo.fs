@@ -17,16 +17,15 @@ module Repo =
           domainToView: 'DomainModel -> 'ViewModel
           writeToDomain: 'key -> 'WriteModel -> 'DomainModel }
 
-    type Repo<'db, 'd, 'v, 'w, 'k, 't> =
-        { create: ('k -> 'd) -> HttpContext -> 'd
-          update: 'd -> 'db -> 'd
-          del: 'db -> Unit
-          read: HttpContext -> 't }
+    type Repo<'dbModel, 'DomainModel, 'ViewModel, 'WriteModel, 'key, 'table> =
+        { create: ('key -> 'DomainModel) -> HttpContext -> 'DomainModel
+          update: 'DomainModel -> 'dbModel -> 'DomainModel
+          del: 'dbModel -> Unit
+          read: HttpContext -> 'table }
 
     let save (ctx: HttpContext) = ctx.GetService<ArrangementDbContext>().SubmitUpdates()
 
-    let commitTransaction x ctx =
-        save ctx
+    let commitTransaction x ctx = save ctx
 
     let from (models: Models<'db, 'd, 'v, 'w, 'k, 't>): Repo<'db, 'd, 'v, 'w, 'k, 't> =
         { create =

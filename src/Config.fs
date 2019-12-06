@@ -1,3 +1,4 @@
 namespace ArrangementService
 
-type Config = {isProd: bool}
+type AppConfig =
+    { isProd: bool }

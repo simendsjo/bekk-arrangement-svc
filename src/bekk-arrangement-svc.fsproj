@@ -57,6 +57,7 @@
     <Compile Include="Database\Repo.fs" />
     <Compile Include="Utils\Http.fs" /> 
     <Compile Include="Utils\Operators.fs" /> 
+    <Compile Include="Email\SendgridApiModels.fs" />
     <Compile Include="Email\Models.fs" />
     <Compile Include="Email\Service.fs" />
     <Compile Include="Events\ErrorMessages.fs" />
@@ -72,6 +73,5 @@
     <Content Include="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Compile Include="Config.fs" />
   </ItemGroup>
 </Project>
