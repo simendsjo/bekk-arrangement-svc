@@ -14,6 +14,7 @@ open Microsoft.AspNetCore.Http
 
 open ArrangementService
 
+open ArrangementService.Email.Models
 open migrator
 open Database
 open Logging
@@ -40,6 +41,13 @@ let configureServices (services: IServiceCollection) =
     services.AddGiraffe() |> ignore
     let dbContext = createDbContext configuration.["ConnectionStrings:EventDb"]
     services.AddSingleton<ArrangementDbContext>(dbContext) |> ignore
+    services.AddSingleton<SendgridOptions>({
+        ApiKey = configuration.["Sendgrid:Apikey"]
+        SendgridUrl= configuration.["Sendgrid:SendgridUrl"]
+    }) |> ignore
+    services.AddSingleton<Config>({
+       isProd = configuration.["Auth0:Scheduled_Tasks_Audience"] = "https://api.bekk.no"
+    }) |> ignore
     dbContext.SaveContextSchema() |> ignore
     services.AddAuthentication(fun options ->
             options.DefaultAuthenticateScheme <- JwtBearerDefaults.AuthenticationScheme

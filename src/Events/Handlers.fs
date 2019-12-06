@@ -6,6 +6,8 @@ open ArrangementService.Http
 open ArrangementService.Operators
 open ArrangementService.Repo
 
+open ArrangementService.Email.Models
+open ArrangementService.Email.Service
 open Models
 
 module Handlers =
@@ -20,7 +22,7 @@ module Handlers =
 //        >> Seq.map models.domainToView
 //        >> Ok
 
-    let getEvent = Service.getEvent
+    let getEvent = Service.getEvent 
 
     let deleteEvent id = Service.deleteEvent id >>= sideEffect commitTransaction
 
