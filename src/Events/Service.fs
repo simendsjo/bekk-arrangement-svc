@@ -1,8 +1,9 @@
 namespace ArrangementService.Events
 
 open ArrangementService.Operators
+open ArrangementService.Email.Models
+open ArrangementService.Email.Service
 open ArrangementService
-open ArrangementService.Email
 
 open Models
 open Queries
@@ -32,10 +33,14 @@ module Service =
           To = EmailAddress participants
           Cc = EmailAddress event.OrganizerEmail }
 
+    let sendEventEmail participants event context =
+        let mail = createEmail participants event
+        sendMail mail context |> ignore
+
     let createEvent writemodel =
         repo.create (fun id -> models.writeToDomain id writemodel)
         >> Ok
-        >>= Http.sideEffect (fun event -> Service.sendMail (createEmail writemodel.Participants event))
+        >>= Http.sideEffect (sendEventEmail writemodel.Participants)
 
     let updateEvent id event =
         repo.read
