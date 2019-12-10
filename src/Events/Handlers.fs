@@ -36,6 +36,11 @@ module Handlers =
         >>= Service.createEvent
         >> Result.map models.domainToView
 
+    let registerForEvent id = 
+        getBody<Models.RegistrationWriteModel> 
+        >> Result.map (regModels.writeToDomain id)
+        >>= Service.registerParticipant
+
     let routes: HttpHandler =
         choose
             [ GET >=> choose
@@ -44,4 +49,6 @@ module Handlers =
               //                            routef "/events/employee/%i" (handle << getEventsForEmployee) ]
               DELETE >=> choose [ routef "/events/%O" (handle << deleteEvent) ]
               PUT >=> choose [ routef "/events/%O" (handle << updateEvent) ]
-              POST >=> choose [ route "/events" >=> handle createEvent ] ]
+              POST >=> choose
+                           [ route "/events" >=> handle createEvent 
+                             routef "/events/register/%O" (handle << registerForEvent) ] ]

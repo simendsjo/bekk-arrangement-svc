@@ -40,7 +40,7 @@ module Service =
     let createEvent writemodel =
         repo.create (fun id -> models.writeToDomain id writemodel)
         >> Ok
-        >>= Http.sideEffect (sendEventEmail writemodel.Participants)
+        //>>= Http.sideEffect (sendEventEmail writemodel.Participants)
 
     let updateEvent id event =
         repo.read
@@ -54,4 +54,11 @@ module Service =
         >> withError (eventNotFound id)
         >> Result.map repo.del
         >> Result.bind (fun _ -> eventSuccessfullyDeleted id)
- 
+    
+    let regRepo = Repo.register regModels
+
+    let registerParticipant (registration: Registration) =
+        //let event = (queryEventBy registration.EventId context).Value
+        regRepo.create (fun _ -> registration)
+        >> Ok
+        //>>= Http.sideEffect sendEventEmail registration.ParticipantEmail event 
