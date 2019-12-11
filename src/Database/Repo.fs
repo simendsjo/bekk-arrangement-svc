@@ -12,6 +12,7 @@ module Repo =
           create: 'table -> 'dbModel
           delete: 'dbModel -> Unit
           key: 'dbModel -> 'key
+
           dbToDomain: 'dbModel -> 'DomainModel
           updateDbWithDomain: 'dbModel -> 'DomainModel -> 'dbModel
           domainToView: 'DomainModel -> 'ViewModel
@@ -31,8 +32,8 @@ module Repo =
         { create =
               fun createRow ctx ->
                   let row = models.table ctx |> models.create
-                  let newEvent = models.key row |> createRow
-                  models.updateDbWithDomain row newEvent |> ignore
+                  let newThing = models.key row |> createRow
+                  models.updateDbWithDomain row newThing |> ignore
                   save ctx
                   models.key row |> createRow
 
@@ -42,23 +43,3 @@ module Repo =
                   models.updateDbWithDomain event newEvent |> ignore
                   event |> models.dbToDomain
           del = fun row -> models.delete row }
-
-    type RegModels<'dbModel, 'DomainModel, 'ViewModel, 'WriteModel, 'key, 'table> =
-        { table: HttpContext -> 'table
-          create: 'table -> 'dbModel
-          key: 'dbModel -> 'key
-          dbToDomain: 'dbModel -> 'DomainModel
-          updateDbWithDomain: 'dbModel -> 'DomainModel -> 'dbModel
-          writeToDomain: 'key -> 'WriteModel -> 'DomainModel }
-
-    type RegRepo<'dbModel, 'DomainModel, 'ViewModel, 'WriteModel, 'key, 'table> =
-        { create: ('key -> 'DomainModel) -> HttpContext -> 'DomainModel }
-
-    let register (models: RegModels<'db, 'd, 'v, 'w, 'k, 't>): RegRepo<'db, 'd, 'v, 'w, 'k, 't> =
-        { create =
-            fun createRow ctx ->
-                  let row = models.table ctx |> models.create
-                  let newRegistration = models.key row |> createRow
-                  models.updateDbWithDomain row newRegistration |> ignore
-                  save ctx
-                  models.key row |> createRow }

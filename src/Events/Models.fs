@@ -130,39 +130,5 @@ module Models =
 
           writeToDomain = writeToDomain }
 
-    type Registration =
-        { ParticipantEmail: string 
-          EventId: Guid }
-
-    type RegistrationWriteModel = 
-        { ParticipantEmail: string }
-    
-    type RegKey = Guid // Kompositt????
-
-    type RegistrationTableModel = ArrangementDbContext.dboSchema.``dbo.Participants``
-
-    type RegistrationDbModel = ArrangementDbContext.``dbo.ParticipantsEntity``
-
-    
-
-    let regDbToDomain (dbRecord: RegistrationDbModel): Registration =
-        { ParticipantEmail = dbRecord.Email
-          EventId = dbRecord.EventId }
-
-    let regWriteToDomain (id: Key) (writeModel: RegistrationWriteModel): Registration =
-        { ParticipantEmail = writeModel.ParticipantEmail 
-          EventId = id }
-
-    let updateRegDbWithDomain (db: RegistrationDbModel) (reg: Registration) =
-        db.Email <- reg.ParticipantEmail
-        db.EventId <- reg.EventId
-        db
-
-    let regModels: RegModels<RegistrationDbModel, Registration, Registration, RegistrationWriteModel, RegKey, RegistrationTableModel> = 
-      { key = fun record -> record.EventId
-        table = fun ctx -> ctx.GetService<ArrangementDbContext>().Dbo.Participants
-        create = fun table -> table.Create()
-        dbToDomain = regDbToDomain
-        updateDbWithDomain = updateRegDbWithDomain
-        writeToDomain = regWriteToDomain
-        }
+   
+        

@@ -5,14 +5,16 @@ open Giraffe
 open ArrangementService.Http
 open ArrangementService.Operators
 open ArrangementService.Repo
-
-open Models
+open ArrangementService
 
 module Handlers =
 
+    let eventModels = Events.Models.models
+    let participantModels = Participants.Models.models
+
     let getEvents =
         Service.getEvents
-        >> Seq.map models.domainToView
+        >> Seq.map eventModels.domainToView
         >> Ok
 
     //    let getEventsForEmployee employeeId =
@@ -25,21 +27,22 @@ module Handlers =
     let deleteEvent id = Service.deleteEvent id >>= sideEffect commitTransaction
 
     let updateEvent id =
-        getBody<Models.WriteModel>
-        >> Result.map (models.writeToDomain id)
+        getBody<Events.Models.WriteModel>
+        >> Result.map (eventModels.writeToDomain id)
         >>= Service.updateEvent id
         >>= sideEffect commitTransaction
-        >> Result.map models.domainToView
+        >> Result.map eventModels.domainToView
 
     let createEvent =
-        getBody<Models.WriteModel>
+        getBody<Events.Models.WriteModel>
         >>= Service.createEvent
-        >> Result.map models.domainToView
+        >> Result.map eventModels.domainToView
 
     let registerForEvent id = 
-        getBody<Models.RegistrationWriteModel> 
-        >> Result.map (regModels.writeToDomain id)
+        getBody<Participants.Models.WriteModel> 
+        >> Result.map (participantModels.writeToDomain (id, ""))
         >>= Service.registerParticipant
+        >> Result.map participantModels.domainToView
 
     let routes: HttpHandler =
         choose

@@ -60,6 +60,7 @@
     <Compile Include="Email\SendgridApiModels.fs" />
     <Compile Include="Email\Models.fs" />
     <Compile Include="Email\Service.fs" />
+    <Compile Include="Participants\Models.fs"/>
     <Compile Include="Events\ErrorMessages.fs" />
     <Compile Include="Events\Models.fs" />
     <Compile Include="Events\Queries.fs" />
