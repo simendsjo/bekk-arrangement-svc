@@ -116,18 +116,14 @@ module Models =
 
     let models: Models<DbModel, DomainModel, ViewModel, WriteModel, Key, TableModel> =
         { key = fun record -> record.Id
-
           table = fun ctx -> ctx.GetService<ArrangementDbContext>().Dbo.Events
 
           create = fun table -> table.Create()
           delete = fun record -> record.Delete()
 
           dbToDomain = dbToDomain
-
           updateDbWithDomain = updateDbWithDomain
-
           domainToView = domainToView
-
           writeToDomain = writeToDomain }
 
    
