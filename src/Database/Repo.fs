@@ -28,7 +28,7 @@ module Repo =
 
     let commitTransaction x ctx = save ctx
 
-    let from (models: Models<'db, 'd, 'v, 'w, 'k, 't>): Repo<'db, 'd, 'v, 'w, 'k, 't> =
+    let from (models: Models<'dbModel, 'domainModel, 'viewModel, 'writeModel, 'key, 'table>): Repo<'dbModel, 'domainModel, 'viewModel, 'writeModel, 'key, 'table> =
         { create =
               fun createRow ctx ->
                   let row = models.table ctx |> models.create
