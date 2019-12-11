@@ -25,7 +25,7 @@ module Handlers =
 
     let deleteEvent id = Service.deleteEvent id >>= commitTransaction
 
-    let updateEvent (id: Guid) =
+    let updateEvent id =
         getBody<WriteModel>
         >> Result.bind (writeToDomain (Id id))
         >>= Service.updateEvent id

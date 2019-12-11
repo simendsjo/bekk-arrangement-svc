@@ -1,9 +1,3 @@
 namespace ArrangementService
 
-
-
-
-
-type CustomErrorMessage = string list
-
-
+type CustomErrorMessage = string 

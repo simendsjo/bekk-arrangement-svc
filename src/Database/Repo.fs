@@ -15,10 +15,10 @@ module Repo =
           dbToDomain: 'dbModel -> 'DomainModel
           updateDbWithDomain: 'dbModel -> 'DomainModel -> 'dbModel
           domainToView: 'DomainModel -> 'ViewModel
-          writeToDomain: 'key -> 'WriteModel -> Result<'DomainModel, CustomErrorMessage> }
+          writeToDomain: 'key -> 'WriteModel -> Result<'DomainModel, CustomErrorMessage list> }
 
     type Repo<'db, 'd, 'v, 'w, 'k, 't> =
-        { create: ('k -> Result<'d, CustomErrorMessage>) -> HttpContext -> Result<'d, CustomErrorMessage>
+        { create: ('k -> Result<'d, CustomErrorMessage list>) -> HttpContext -> Result<'d, CustomErrorMessage list>
           update: 'd -> 'db -> 'd
           del: 'db -> Unit
           read: HttpContext -> 't }
