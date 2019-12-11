@@ -4,7 +4,6 @@ open Giraffe
 open Microsoft.AspNetCore.Http
 
 open Database
-open Validation
 
 module Repo =
     type Models<'dbModel, 'DomainModel, 'ViewModel, 'WriteModel, 'key, 'table> =
@@ -32,13 +31,13 @@ module Repo =
     let from (models: Models<'db, 'd, 'v, 'w, 'k, 't>): Repo<'db, 'd, 'v, 'w, 'k, 't> =
         { create =
               fun createRow ctx ->
-                validator {
                   let row = models.table ctx |> models.create
-                  let! newEvent = models.key row |> createRow
-                  models.updateDbWithDomain row newEvent |> ignore
-                  save ctx
-                  return! models.key row |> createRow
-                }
+                  models.key row |> createRow
+                  |> Result.bind
+                      (fun newEvent -> 
+                        models.updateDbWithDomain row newEvent |> ignore
+                        save ctx
+                        models.key row |> createRow)
 
           read = models.table
           update =

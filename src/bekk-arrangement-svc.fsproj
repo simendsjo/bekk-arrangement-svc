@@ -51,9 +51,10 @@
 
   <ItemGroup>
     <Compile Include="Utils.fs" />
-    <Compile Include="Common\DateTime.fs" />
-    <Compile Include="Database\DbContext.fs" />
     <Compile Include="Utils\Validation.fs" />
+    <Compile Include="Common\DateTime.fs" />
+    <Compile Include="Common\Validation.fs" />
+    <Compile Include="Database\DbContext.fs" />
     <Compile Include="Database\Repo.fs" />
     <Compile Include="Utils\Http.fs" /> 
     <Compile Include="Utils\Operators.fs" /> 

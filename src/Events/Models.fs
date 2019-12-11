@@ -7,10 +7,12 @@ open ArrangementService
 
 open Database
 open Repo
+open Utils.Validation
 open Validation
 open DateTime
 
 module Models =
+
     type Id = Id of Guid
     type Title = Title of string
     type Description = Description of string
@@ -18,12 +20,13 @@ module Models =
     type StartDate = DateTimeOffset
     type EndDate = DateTimeOffset
     type ResponsibleEmployee = ResponsibleEmployee of int
+    type Email = Email of string
+
     type TableModel = ArrangementDbContext.dboSchema.``dbo.Events``
     type DbModel = ArrangementDbContext.``dbo.EventsEntity``
-    type Email = Email of string
     
     type DomainModel =
-        { Id: Guid
+        { Id: Id
           Title: Title
           Description: Description
           Location: Location
@@ -57,33 +60,52 @@ module Models =
     let unwrapLocation = function | Location l -> l
     let unwrapEmail = function | Email e -> e
 
-    let titleValidator title : Result<Title, CustomErrorMessage list> =
+    let createDomainModel id title description location organizerEmail (openForRegistrationDate, startDate, endDate): DomainModel =
+        { Id = id
+          Title = title
+          Description = description 
+          Location = location
+          OrganizerEmail = organizerEmail
+          StartDate = startDate
+          EndDate = endDate
+          OpenForRegistrationDate = openForRegistrationDate }
+
+    let validateTitle title : Result<Title, CustomErrorMessage list> =
         [ validateMinLength 3 "Tittel må ha minst 3 tegn"
           validateMaxLength 60 "Tittel må være mindre enn 60 tegn" ]
         |> validateAll Title title
 
-    let descriptionValidator description =
+    let validateDescription description =
         [ validateMinLength 3 "Beskrivelse må ha minst 3 tegn"
           validateMaxLength 255 "Beskrivelse må være mindre enn 255 tegn" ]
         |> validateAll Description description
 
-    let locationValidator location =
+    let validateLocation location =
         [ validateMinLength 3 "Sted må ha minst 3 tegn"
           validateMaxLength 30 "Sted må være mindre enn 30 tegn" ]
         |> validateAll Location location
 
-    let organizerEmailValidator email =
+    let validateEmail email =
         [ validateEmail "Ansvarlig må ha en gyldig epost-addresse" ]
         |> validateAll Email email
     
-    let dateRangeValidator openDate startDate endDate =
+    let validateDateRange openDate startDate endDate =
       [ fun (openDate, startDate, _) -> validateBefore "Registreringsdato må være før åpningsdato" (openDate, startDate)
         fun (openDate, _, endDate) -> validateBefore "Registreringsdato må være før sluttdato" (openDate, endDate)
         fun (openDate, _, _) -> validateBefore "Åpningsdato må være i fremtiden" (now (), openDate) ]
       |> validateAll id (openDate, startDate, endDate)
+
+    let writeToDomain (id: Id) (writeModel: WriteModel): Result<DomainModel, CustomErrorMessage list> =
+        Ok createDomainModel
+          <*> Ok id
+          <*> validateTitle writeModel.Title 
+          <*> validateDescription writeModel.Description 
+          <*> validateLocation writeModel.Location
+          <*> validateEmail writeModel.OrganizerEmail
+          <*> validateDateRange writeModel.OpenForRegistrationDate writeModel.StartDate writeModel.EndDate
    
     let dbToDomain (dbRecord: DbModel): DomainModel =
-        { Id = dbRecord.Id
+        { Id = Id dbRecord.Id
           Title = Title dbRecord.Title
           Description = Description dbRecord.Description
           Location = Location dbRecord.Location
@@ -102,12 +124,12 @@ module Models =
         db.StartTime <- customToTimeSpan event.StartDate.Time
         db.EndDate <- customToDateTime event.EndDate
         db.EndTime <- customToTimeSpan event.EndDate.Time
-        db.OpenForRegistrationDate <-customToDateTime event.OpenForRegistrationDate
+        db.OpenForRegistrationDate <- customToDateTime event.OpenForRegistrationDate
         db.OpenForRegistrationTime <- customToTimeSpan event.OpenForRegistrationDate.Time
         db
 
     let domainToView (domainModel: DomainModel): ViewModel =
-        { Id = domainModel.Id
+        { Id = unwrapId domainModel.Id
           Title = unwrapTitle domainModel.Title
           Description = unwrapDescription domainModel.Description
           Location = unwrapLocation domainModel.Location
@@ -115,26 +137,6 @@ module Models =
           StartDate = domainModel.StartDate
           EndDate = domainModel.EndDate
           OpenForRegistrationDate = domainModel.OpenForRegistrationDate }
-
-    let writeToDomain (id: Id) (writeModel: WriteModel): Result<DomainModel, CustomErrorMessage list> =
-      validator {
-          yield! titleValidator writeModel.Title 
-          yield! descriptionValidator writeModel.Description 
-          yield! locationValidator writeModel.Location
-          yield! organizerEmailValidator writeModel.OrganizerEmail
-          yield! dateRangeValidator writeModel.OpenForRegistrationDate writeModel.StartDate writeModel.EndDate
-
-          return fun (openForRegistrationDate, startDate, endDate) organizerEmail location description title -> { 
-            Id = unwrapId id
-            Title = title
-            Description = description 
-            Location = location
-            OrganizerEmail = organizerEmail
-            StartDate = startDate
-            EndDate = endDate
-            OpenForRegistrationDate = openForRegistrationDate
-          }
-        }
 
     let models: Models<DbModel, DomainModel, ViewModel, WriteModel, Id, TableModel> =
         { key = fun record -> Id record.Id 
