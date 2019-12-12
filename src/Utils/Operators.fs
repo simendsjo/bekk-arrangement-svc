@@ -20,10 +20,9 @@ module Operators =
                 | Error e, _ -> Error e
 
         member this.Bind(rx, f) =
-            fun ctx ->
-                match rx with
-                | Ok x -> f x ctx
-                | Error e -> Error e
+            match rx with
+            | Ok x -> f x 
+            | Error e -> fun _ -> Error e
         
         member this.For(rx, f) =
             fun ctx ->
