@@ -11,53 +11,57 @@ module Service =
 
     let repo = Repo.from models
 
-    let getEvents ctx =
+    let getEvents =
         result {
-            let events = repo.read ctx
-            return Seq.map models.dbToDomain events
+            let! events = repo.read
+            return Seq.map models.dbToDomain events |> ignoreContext
         }
 
-    let getEventsOrganizedBy organizerEmail ctx =
+    let getEventsOrganizedBy organizerEmail =
         result {
-            let eventsByOrganizer =
-                repo.read ctx
-                |> queryEventsOrganizedBy organizerEmail 
-
-            return Seq.map models.dbToDomain eventsByOrganizer
+            let! events = repo.read 
+            let eventsByOrganizer = queryEventsOrganizedBy organizerEmail events
+            return Seq.map models.dbToDomain eventsByOrganizer |> ignoreContext
         }
 
-    let getEvent id ctx =
+    let getEvent id =
         result {
+            let! events = repo.read
             let! event =
-                repo.read ctx
+                events
                 |> queryEventBy id
                 |> withError (eventNotFound id)
+                |> ignoreContext
 
-            return models.dbToDomain event
+            return models.dbToDomain event |> ignoreContext
         }
 
-    let createEvent writemodel ctx =
+    let createEvent writemodel =
         result {
-            return! repo.create (fun id -> models.writeToDomain id writemodel) ctx
+            return! repo.create (fun id -> models.writeToDomain id writemodel)
         }
 
-    let updateEvent id event ctx =
+    let updateEvent id event =
         result {
-            let! oldEvent =
-                repo.read ctx
+            let! events = repo.read 
+            let! oldEvent = 
+                events
                 |> queryEventBy id
                 |> withError (eventNotFound id)
+                |> ignoreContext
 
-            return repo.update event oldEvent
+            return repo.update event oldEvent |> ignoreContext
         }
 
-    let deleteEvent id ctx =
+    let deleteEvent id =
         result {
+            let! events = repo.read
             let! event =
-                repo.read ctx
+                events
                 |> queryEventBy id 
                 |> withError (eventNotFound id)
+                |> ignoreContext
 
             repo.del event
-            return eventSuccessfullyDeleted id
+            return eventSuccessfullyDeleted id |> ignoreContext
         }

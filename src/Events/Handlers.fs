@@ -10,44 +10,45 @@ open Models
 
 module Handlers =
 
-    let getEvents ctx =
+    let getEvents =
         result {
-            let! events = Service.getEvents ctx
-            return Seq.map models.domainToView events
+            let! events = Service.getEvents 
+            return Seq.map models.domainToView events |> ignoreContext
         }
 
-    let getEventsOrganizedBy organizerEmail ctx =
+    let getEventsOrganizedBy organizerEmail =
         result {
-            let! events = Service.getEventsOrganizedBy organizerEmail ctx
-            return Seq.map models.domainToView events
+            let! events = Service.getEventsOrganizedBy organizerEmail
+            return Seq.map models.domainToView events |> ignoreContext
         }
 
-    let getEvent ctx =
+    let getEvent id =
         result {
-            return! Service.getEvent ctx
+            let! event = Service.getEvent id
+            return models.domainToView event |> ignoreContext
         }
 
-    let deleteEvent id ctx =
+    let deleteEvent id =
         result {
-            let! result = Service.deleteEvent id ctx
-            commitTransaction ctx
-            return result
+            let! result = Service.deleteEvent id
+            do! commitTransaction >> Ok
+            return result |> ignoreContext
         }
 
-    let updateEvent id ctx =
+    let updateEvent id =
         result {
-            let! writeModel = getBody<WriteModel> ctx
-            let! domainModel = writeToDomain (Id id) writeModel
-            let! updatedEvent = Service.updateEvent id domainModel ctx
-            commitTransaction ctx
-            return models.domainToView updatedEvent
+            let! writeModel = getBody<WriteModel>
+            let! domainModel = writeToDomain (Id id) writeModel |> ignoreContext
+            let! updatedEvent = Service.updateEvent id domainModel
+            do! commitTransaction >> Ok
+            return models.domainToView updatedEvent |> ignoreContext
         }
 
-    let createEvent ctx =
+    let createEvent =
         result {
-            let! writeModel = getBody<Models.WriteModel> ctx
-            let! newEvent = Service.createEvent writeModel ctx
-            return models.domainToView newEvent
+            let! writeModel = getBody<Models.WriteModel>
+            let! newEvent = Service.createEvent writeModel
+            return models.domainToView newEvent |> ignoreContext
         }
 
     let routes: HttpHandler =

@@ -20,7 +20,7 @@ module Repo =
         { create: ('k -> Result<'d, CustomErrorMessage list>) -> HttpContext -> Result<'d, CustomErrorMessage list>
           update: 'd -> 'db -> 'd
           del: 'db -> Unit
-          read: HttpContext -> 't }
+          read: HttpContext -> Result<'t, CustomErrorMessage list> }
 
     let save (ctx: HttpContext) = ctx.GetService<ArrangementDbContext>().SubmitUpdates()
     
@@ -38,7 +38,7 @@ module Repo =
                         save ctx
                         models.key row |> createRow)
 
-          read = models.table
+          read = models.table >> Ok
           update =
               fun newEvent event ->
                   models.updateDbWithDomain event newEvent |> ignore
