@@ -3,14 +3,44 @@ namespace ArrangementService
 module DateTime =
 
     open System
+
+    [<CustomComparison; StructuralEquality>]
     type Date =
         { Day: int
           Month: int
           Year: int }
 
+        interface IComparable with
+          member this.CompareTo obj =
+            match obj with
+            | :? Date as other -> 
+              let thisDate = (this.Year, this.Month, this.Day)
+              let otherDate = (other.Year, other.Month, other.Day)
+              if thisDate > otherDate
+              then 1
+              else if thisDate < otherDate
+              then -1
+              else 0
+            | _ -> 0
+
+    [<CustomComparison; StructuralEquality>]
     type Time =
         { Hour: int
           Minute: int }
+
+        interface IComparable with
+          member this.CompareTo obj =
+            match obj with
+            | :? Time as other -> 
+              let thisTime = (this.Hour, this.Minute)
+              let otherTime = (other.Hour, other.Minute)
+              if thisTime > otherTime
+              then 1
+              else if thisTime < otherTime
+                then -1
+                else 0
+            | _ -> 0
+
 
     [<CustomComparison; StructuralEquality>]
     type DateTimeCustom =
@@ -21,13 +51,15 @@ module DateTime =
           member this.CompareTo obj =
             match obj with
             | :? DateTimeCustom as other -> 
-              let thisDateTime = (this.Date.Year, this.Date.Month, this.Date.Day, this.Time.Hour, this.Time.Minute)
-              let otherDateTime = (other.Date.Year, other.Date.Month, other.Date.Day, other.Time.Hour, other.Time.Minute)
-              if thisDateTime > otherDateTime
+              if this.Date > other.Date
               then 1
-              else if thisDateTime < otherDateTime
-                then -1
-                else 0
+              else if this.Date < other.Date
+              then -1
+              else if this.Time > other.Time
+              then 1
+              else if this.Time < other.Time
+              then -1
+              else 0
             | _ -> 0
 
     let customToDateTime (dateTime : DateTimeCustom) : DateTime =

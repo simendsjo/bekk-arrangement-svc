@@ -16,6 +16,3 @@ module Validation =
  
   let validateBefore errorMessage (before, after) = 
     validate (fun (x, y) -> x < y) (before, after) errorMessage
-
-  let validateAfter errorMessage (before, after) =
-    validate (fun (x, y) -> x > y) (before, after) errorMessage
