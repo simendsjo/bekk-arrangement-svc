@@ -17,8 +17,9 @@ module Models =
           EventId: Guid
           RegistrationTime: int64 }
 
+    // Empty for now
     type WriteModel = 
-        { ParticipantEmail: string }
+        { NothingToSeeHere: string }
     
     type Key = Guid * string 
 
@@ -32,8 +33,8 @@ module Models =
           EventId = dbRecord.EventId 
           RegistrationTime = dbRecord.RegistrationTime }
 
-    let writeToDomain ((id, _): Key) (writeModel: WriteModel): DomainModel =
-        { ParticipantEmail = writeModel.ParticipantEmail 
+    let writeToDomain ((id, email): Key) (_: WriteModel): DomainModel =
+        { ParticipantEmail = email 
           EventId = id
           RegistrationTime = DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds() }
 

@@ -60,12 +60,16 @@
     <Compile Include="Email\SendgridApiModels.fs" />
     <Compile Include="Email\Models.fs" />
     <Compile Include="Email\Service.fs" />
-    <Compile Include="Participants\Models.fs"/>
     <Compile Include="Events\ErrorMessages.fs" />
     <Compile Include="Events\Models.fs" />
     <Compile Include="Events\Queries.fs" />
     <Compile Include="Events\Service.fs" />
     <Compile Include="Events\Handlers.fs" />
+    <Compile Include="Participants\ErrorMessages.fs" />
+    <Compile Include="Participants\Models.fs"/>
+    <Compile Include="Participants\Queries.fs"/>
+    <Compile Include="Participants\Service.fs"/>
+    <Compile Include="Participants\Handlers.fs"/>
     <Compile Include="Health\Health.fs" />
     <Compile Include="Logging.fs" /> 
     <Compile Include="Program.fs" />
