@@ -3,9 +3,6 @@ WORKDIR /app
 
 COPY . ./
 RUN dotnet publish -c Release -o out ./src/bekk-arrangement-svc.fsproj
-RUN echo "here"
-RUN cd ..
-RUN ls
 
 FROM mcr.microsoft.com/dotnet/core/aspnet:3.1
 COPY --from=build-env /app/out .
