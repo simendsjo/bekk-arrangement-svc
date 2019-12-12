@@ -13,10 +13,10 @@ module Service =
 
     let getEvents = repo.read >> Seq.map models.dbToDomain
 
-//    let getEventsForEmployee employeeId =
-//        repo.read
-//        >> queryEventsForEmployee employeeId
-//        >> Seq.map models.dbToDomain
+    let getEventsOrganizedBy organizerEmail =
+        repo.read
+        >> queryEventsOrganizedBy organizerEmail
+        >> Seq.map models.dbToDomain
 
     let getEvent id =
         repo.read
@@ -25,7 +25,7 @@ module Service =
         >> Result.map models.dbToDomain
 
     let createEvent writemodel =
-      repo.create (fun id -> models.writeToDomain id writemodel)
+        repo.create (fun id -> models.writeToDomain id writemodel)
 
     let updateEvent id event =
         repo.read
