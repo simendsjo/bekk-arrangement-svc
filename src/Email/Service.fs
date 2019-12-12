@@ -17,10 +17,14 @@ module Service =
         let byteBody = UTF8Encoding().GetBytes(jsonBody)
         async {
             let! _ = Http.AsyncRequestString
-                         (options.SendgridUrl, httpMethod = "POST",
-                          headers =
-                              [ "Authorization", (sprintf "Bearer %s" options.ApiKey)
-                                "Content-Type", "application/json" ], body = BinaryUpload byteBody)
+                         (  options.SendgridUrl, 
+                            httpMethod = "POST",
+                            headers =
+                              [ "Authorization", 
+                                (sprintf "Bearer %s" options.ApiKey)
+                                "Content-Type", 
+                                "application/json" ], 
+                                body = BinaryUpload byteBody )
             ()
         }
         |> Async.Start
