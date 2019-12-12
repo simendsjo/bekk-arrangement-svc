@@ -12,28 +12,28 @@ module Repo =
           create: 'table -> 'dbModel
           delete: 'dbModel -> Unit
           key: 'dbModel -> 'key
+
           dbToDomain: 'dbModel -> 'DomainModel
           updateDbWithDomain: 'dbModel -> 'DomainModel -> 'dbModel
           domainToView: 'DomainModel -> 'ViewModel
           writeToDomain: 'key -> 'WriteModel -> 'DomainModel }
 
-    type Repo<'db, 'd, 'v, 'w, 'k, 't> =
-        { create: ('k -> 'd) -> HttpContext -> 'd
-          update: 'd -> 'db -> 'd
-          del: 'db -> Unit
-          read: HttpContext -> 't }
+    type Repo<'dbModel, 'DomainModel, 'ViewModel, 'WriteModel, 'key, 'table> =
+        { create: ('key -> 'DomainModel) -> HttpContext -> 'DomainModel
+          update: 'DomainModel -> 'dbModel -> 'DomainModel
+          del: 'dbModel -> Unit
+          read: HttpContext -> 'table }
 
     let save (ctx: HttpContext) = ctx.GetService<ArrangementDbContext>().SubmitUpdates()
 
-    let commitTransaction x ctx =
-        save ctx
+    let commitTransaction x ctx = save ctx
 
-    let from (models: Models<'db, 'd, 'v, 'w, 'k, 't>): Repo<'db, 'd, 'v, 'w, 'k, 't> =
+    let from (models: Models<'dbModel, 'domainModel, 'viewModel, 'writeModel, 'key, 'table>): Repo<'dbModel, 'domainModel, 'viewModel, 'writeModel, 'key, 'table> =
         { create =
               fun createRow ctx ->
                   let row = models.table ctx |> models.create
-                  let newEvent = models.key row |> createRow
-                  models.updateDbWithDomain row newEvent |> ignore
+                  let newThing = models.key row |> createRow
+                  models.updateDbWithDomain row newThing |> ignore
                   save ctx
                   models.key row |> createRow
 

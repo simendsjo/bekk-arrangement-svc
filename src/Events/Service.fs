@@ -1,40 +1,67 @@
 namespace ArrangementService.Events
 
 open ArrangementService.Operators
+open ArrangementService.Email.Models
+open ArrangementService.Email.Service
 open ArrangementService
 
-open Models
 open Queries
 open ErrorMessages
 
 module Service =
 
-    let repo = Repo.from models
+    let eventModels = Events.Models.models
 
-    let getEvents = repo.read >> Seq.map models.dbToDomain
+    let eventRepo = Repo.from eventModels
+    let participantsRepo = Repo.from Participants.Models.models
 
-//    let getEventsForEmployee employeeId =
-//        repo.read
-//        >> queryEventsForEmployee employeeId
-//        >> Seq.map models.dbToDomain
+    let getEvents = eventRepo.read >> Seq.map eventModels.dbToDomain
+
+    //    let getEventsForEmployee employeeId =
+    //        eventRepo.read
+    //        >> queryEventsForEmployee employeeId
+    //        >> Seq.map models.dbToDomain
 
     let getEvent id =
-        repo.read
+        eventRepo.read
         >> queryEventBy id
         >> withError (eventNotFound id)
-        >> Result.map models.dbToDomain
+        >> Result.map eventModels.dbToDomain
 
-    let createEvent writemodel = repo.create (fun id -> models.writeToDomain id writemodel)
+    let createEmail participants (event: Events.Models.DomainModel) =
+        { Subject = event.Title
+          Message = event.Description
+          From = EmailAddress event.OrganizerEmail
+          To = EmailAddress participants
+          Cc = EmailAddress event.OrganizerEmail }
+
+    let sendEventEmail participants event context =
+        let mail = createEmail participants event
+        sendMail mail context |> ignore
+
+    let createEvent writemodel =
+        eventRepo.create (fun id -> eventModels.writeToDomain id writemodel)
+        >> Ok
+        //>>= Http.sideEffect (sendEventEmail writemodel.Participants)
 
     let updateEvent id event =
-        repo.read
+        eventRepo.read
         >> queryEventBy id
         >> withError (eventNotFound id)
-        >> Result.map (repo.update event)
+        >> Result.map (eventRepo.update event)
 
     let deleteEvent id =
-        repo.read
+        eventRepo.read
         >> queryEventBy id
         >> withError (eventNotFound id)
-        >> Result.map repo.del
+        >> Result.map eventRepo.del
         >> Result.bind (fun _ -> eventSuccessfullyDeleted id)
+    
+    let registerParticipant (registration: Participants.Models.DomainModel) =
+        participantsRepo.create (fun _ -> registration)
+        >> Ok
+        >>= Http.sideEffect
+            (fun registration context -> 
+                getEvent registration.EventId context
+                |> Result.map 
+                    (fun event -> sendEventEmail registration.ParticipantEmail event context))
