@@ -64,9 +64,15 @@ let main _ =
     let contentRoot = Directory.GetCurrentDirectory()
     let webRoot = Path.Combine(contentRoot, "WebRoot")
     Migrate.Run(configuration.["ConnectionStrings:EventDb"])
-    
-    WebHostBuilder().UseKestrel().UseContentRoot(contentRoot).UseIISIntegration().UseWebRoot(webRoot)
+
+    WebHostBuilder()
+        .UseKestrel()
+        .UseContentRoot(contentRoot)
+        .UseIISIntegration()
+        .UseWebRoot(webRoot)
         .Configure(Action<IApplicationBuilder> configureApp)
         .ConfigureKestrel(fun context options -> options.AllowSynchronousIO <- true)
-        .ConfigureServices(configureServices).Build().Run()
+        .ConfigureServices(configureServices)
+        .Build()
+        .Run()
     0
