@@ -27,7 +27,6 @@ module Http =
 
     let log x = x.ToString() |> Console.WriteLine
 
-    let tap f x =
-        f x |> ignore
-        x
-
+    let sideEffect f x ctx =
+        f x ctx |> ignore
+        Ok x

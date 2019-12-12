@@ -23,13 +23,13 @@ module Handlers =
 
     let getEvent = Service.getEvent
 
-    let deleteEvent id = Service.deleteEvent id >>= commitTransaction
+    let deleteEvent id = Service.deleteEvent id >>= sideEffect commitTransaction
 
     let updateEvent id =
         getBody<WriteModel>
         >> Result.bind (writeToDomain (Id id))
         >>= Service.updateEvent id
-        >>= commitTransaction
+        >>= sideEffect commitTransaction
         >> Result.map models.domainToView
 
     let createEvent =

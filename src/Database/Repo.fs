@@ -26,7 +26,6 @@ module Repo =
     
     let commitTransaction x ctx =
         save ctx
-        Ok x
 
     let from (models: Models<'db, 'd, 'v, 'w, 'k, 't>): Repo<'db, 'd, 'v, 'w, 'k, 't> =
         { create =
