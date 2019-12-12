@@ -1,11 +1,14 @@
-FROM fsharp:10.2.3-netcore AS build-env
+FROM fsharp:netcore AS build-env
 WORKDIR /app
 
 COPY . ./
 RUN dotnet publish -c Release -o out ./src/bekk-arrangement-svc.fsproj
+RUN echo "here"
+RUN cd ..
+RUN ls
 
-FROM microsoft/dotnet:2.2-aspnetcore-runtime
-COPY --from=build-env /app/src/out .
+FROM mcr.microsoft.com/dotnet/core/aspnet:3.1
+COPY --from=build-env /app/out .
 
 ENV VIRTUAL_PATH="/arrangment-svc"
 ENV PORT=80
