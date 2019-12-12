@@ -24,7 +24,7 @@ module Repo =
 
     let save (ctx: HttpContext) = ctx.GetService<ArrangementDbContext>().SubmitUpdates()
     
-    let commitTransaction x ctx =
+    let commitTransaction ctx =
         save ctx
 
     let from (models: Models<'db, 'd, 'v, 'w, 'k, 't>): Repo<'db, 'd, 'v, 'w, 'k, 't> =

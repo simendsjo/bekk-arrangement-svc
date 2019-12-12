@@ -1,7 +1,6 @@
 namespace ArrangementService.Events
 
 open Giraffe
-open System
 
 open ArrangementService.Http
 open ArrangementService.Operators
@@ -11,31 +10,45 @@ open Models
 
 module Handlers =
 
-    let getEvents =
-        Service.getEvents
-        >> Seq.map models.domainToView
-        >> Ok
+    let getEvents ctx =
+        result {
+            let! events = Service.getEvents ctx
+            return Seq.map models.domainToView events
+        }
 
-    let getEventsOrganizedBy organizerEmail =
-        Service.getEventsOrganizedBy organizerEmail
-        >> Seq.map models.domainToView
-        >> Ok
+    let getEventsOrganizedBy organizerEmail ctx =
+        result {
+            let! events = Service.getEventsOrganizedBy organizerEmail ctx
+            return Seq.map models.domainToView events
+        }
 
-    let getEvent = Service.getEvent
+    let getEvent ctx =
+        result {
+            return! Service.getEvent ctx
+        }
 
-    let deleteEvent id = Service.deleteEvent id >>= sideEffect commitTransaction
+    let deleteEvent id ctx =
+        result {
+            let! result = Service.deleteEvent id ctx
+            commitTransaction ctx
+            return result
+        }
 
-    let updateEvent id =
-        getBody<WriteModel>
-        >> Result.bind (writeToDomain (Id id))
-        >>= Service.updateEvent id
-        >>= sideEffect commitTransaction
-        >> Result.map models.domainToView
+    let updateEvent id ctx =
+        result {
+            let! writeModel = getBody<WriteModel> ctx
+            let! domainModel = writeToDomain (Id id) writeModel
+            let! updatedEvent = Service.updateEvent id domainModel ctx
+            commitTransaction ctx
+            return models.domainToView updatedEvent
+        }
 
-    let createEvent =
-        getBody<Models.WriteModel>
-        >>= Service.createEvent
-        >> Result.map models.domainToView
+    let createEvent ctx =
+        result {
+            let! writeModel = getBody<Models.WriteModel> ctx
+            let! newEvent = Service.createEvent writeModel ctx
+            return models.domainToView newEvent
+        }
 
     let routes: HttpHandler =
         choose
