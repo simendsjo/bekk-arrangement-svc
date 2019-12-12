@@ -13,55 +13,58 @@ module Service =
 
     let getEvents =
         result {
-            let! events = repo.read
-            return Seq.map models.dbToDomain events |> ignoreContext
+            for events in repo.read do
+            return Seq.map models.dbToDomain events
         }
 
     let getEventsOrganizedBy organizerEmail =
         result {
-            let! events = repo.read 
+            for events in repo.read do
             let eventsByOrganizer = queryEventsOrganizedBy organizerEmail events
-            return Seq.map models.dbToDomain eventsByOrganizer |> ignoreContext
+            return Seq.map models.dbToDomain eventsByOrganizer
         }
 
     let getEvent id =
         result {
-            let! events = repo.read
+            for events in repo.read do
+
             let! event =
                 events
                 |> queryEventBy id
                 |> withError (eventNotFound id)
-                |> ignoreContext
 
-            return models.dbToDomain event |> ignoreContext
+            return models.dbToDomain event
         }
 
     let createEvent writemodel =
         result {
-            return! repo.create (fun id -> models.writeToDomain id writemodel)
+            for newEvent in
+                repo.create (fun id -> models.writeToDomain id writemodel) do
+
+            return newEvent
         }
 
     let updateEvent id event =
         result {
-            let! events = repo.read 
+            for events in repo.read do
+
             let! oldEvent = 
                 events
                 |> queryEventBy id
                 |> withError (eventNotFound id)
-                |> ignoreContext
 
-            return repo.update event oldEvent |> ignoreContext
+            return repo.update event oldEvent
         }
 
     let deleteEvent id =
         result {
-            let! events = repo.read
+            for events in repo.read do
+
             let! event =
                 events
                 |> queryEventBy id 
                 |> withError (eventNotFound id)
-                |> ignoreContext
 
             repo.del event
-            return eventSuccessfullyDeleted id |> ignoreContext
+            return eventSuccessfullyDeleted id 
         }
