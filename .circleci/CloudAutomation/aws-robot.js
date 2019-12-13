@@ -41,7 +41,7 @@ async function run() {
     process.argv[2] === "dryrun" || process.env.CIRCLE_SHA1 === null;
   const hasTag = !!process.env.CIRCLE_TAG;
   const isMaster = branchName === "master";
-  const hasBranchNameDEVELOPMENT = branchName.includes("DEVELOPMENT");
+  const hasBranchNameDEVELOPMENT = branchName.includes("dotnet3.1");
 
   console.log(`Branch: ${branchName}. Tag; ${process.env.CIRCLE_TAG}`);
 
