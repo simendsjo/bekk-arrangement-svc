@@ -1,6 +1,7 @@
 namespace ArrangementService.Email
 
 open System.Text
+open System.IO
 open Giraffe
 open FSharp.Data
 open Microsoft.AspNetCore.Http
@@ -50,6 +51,9 @@ module Service =
             "ida.bosch@bekk.no"
          //startTime stamp endTime location guid description description subject fromAddress toName toAddress
 
+    let createFile content = 
+        File.WriteAllText (@".\test.ics", content) |> ignore
+
     let private sendMailProd (options: SendgridOptions) (jsonBody: string) =
         let byteBody = UTF8Encoding().GetBytes(jsonBody)
         async {
@@ -69,7 +73,7 @@ module Service =
         |> Async.Start
 
     let sendMail (email: Email) (context: HttpContext) =
-        email.Message = icsString |> ignore
+        createFile icsString
         let sendgridConfig = context.GetService<SendgridOptions>()
 
         let mailFunction =

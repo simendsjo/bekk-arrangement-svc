@@ -12,10 +12,49 @@ module Service =
 
     let models = Models.models
     let repo = Repo.from Models.models
-    
+
+    let createICSMessage (event: Events.Models.DomainModel) =
+        let icsString = 
+           sprintf
+            "BEGIN:VCALENDAR
+             PRODID:-//Schedule a Meeting
+             VERSION:2.0
+             METHOD:REQUEST
+             BEGIN:VEVENT
+             DTSTART:%s
+             DTSTAMP:%s
+             DTEND:%s
+             LOCATION:%s
+             UID:%O
+             DESCRIPTION:%s
+             X-ALT-DESC;FMTTYPE=text/html:%s
+             SUMMARY:%s
+             ORGANIZER:MAILTO:%s
+             ATTENDEE;CN=\"%s\";RSVP=TRUE:mailto:%s
+             BEGIN:VALARM
+             TRIGGER:-PT15M
+             ACTION:DISPLAY
+             DESCRIPTION:Reminder
+             END:VALARM
+             END:VEVENT
+             END:VCALENDAR" 
+                "2020-01-01T19:22:09.1440844Z"
+                "2019-12-13T19:22:09.1440844Z" 
+                "2020-01-01T20:22:09.1440844Z" 
+                event.Location 
+                event.Id 
+                event.Description 
+                event.Description 
+                event.Title 
+                "idabosch@gmail.com" 
+                "Ida Marie" 
+                "ida.bosch@bekk.no"
+             //startTime stamp endTime location guid description description subject fromAddress toName toAddress
+        icsString
+
     let createEmail participants (event: Events.Models.DomainModel) =
         { Subject = event.Title
-          Message = event.Description
+          Message = createICSMessage event
           From = EmailAddress event.OrganizerEmail
           To = EmailAddress participants
           Cc = EmailAddress event.OrganizerEmail }
