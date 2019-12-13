@@ -19,47 +19,47 @@
  * 5. Add all secret app settings to aws secrets manager
  * ( You will need to create a service manually.)
  */
-const aws = require("./aws-functions.js");
-var taskdefinitionDevelopment = require("./taskdefinition.development.json");
-var taskdefinitionProduction = require("./taskdefinition.production.json");
-var staticDevelopmentVariables = require("./environment.development.json");
-var staticProductionVariables = require("./environment.production.json");
+const aws = require('./aws-functions.js');
+var taskdefinitionDevelopment = require('./taskdefinition.development.json');
+var taskdefinitionProduction = require('./taskdefinition.production.json');
+var staticDevelopmentVariables = require('./environment.development.json');
+var staticProductionVariables = require('./environment.production.json');
 
-const REPOSITORY_NAME = "arrangement-svc"; //The name of the aws repository name. Not GITHUB
-const SERVICE_NAME_DEV = "arrangement-svc-dev";
-const SERVICE_NAME_PROD = "arrangement-svc-prod";
+const REPOSITORY_NAME = 'arrangement-svc'; //The name of the aws repository name. Not GITHUB
+const SERVICE_NAME_DEV = 'arrangement-svc-dev';
+const SERVICE_NAME_PROD = 'arrangement-svc-prod';
 
 //DON'T TOUCH. SHOULD NEVER BE CHANGED
-const CLUSTER_NAME_DEV = "ecs-cluster-dev";
-const DEVELOPMENT_SECRETS = "development_secrets";
-const CLUSTER_NAME_PROD = "ecs-cluster-prod";
-const PRODUCTION_SECRETS = "production_secrets";
+const CLUSTER_NAME_DEV = 'ecs-cluster-dev';
+const DEVELOPMENT_SECRETS = 'development_secrets';
+const CLUSTER_NAME_PROD = 'ecs-cluster-prod';
+const PRODUCTION_SECRETS = 'production_secrets';
 
 async function run() {
   const branchName = process.env.CIRCLE_BRANCH;
   const isDryRun =
-    process.argv[2] === "dryrun" || process.env.CIRCLE_SHA1 === null;
+    process.argv[2] === 'dryrun' || process.env.CIRCLE_SHA1 === null;
   const hasTag = !!process.env.CIRCLE_TAG;
-  const isMaster = branchName === "master";
-  const hasBranchNameDEVELOPMENT = branchName.includes("dotnet3.1");
+  const isMaster = branchName === 'master';
+  const hasBranchNameDEVELOPMENT = branchName.includes('DEVELOPMENT');
 
   console.log(`Branch: ${branchName}. Tag; ${process.env.CIRCLE_TAG}`);
 
   try {
     if (isDryRun) {
       console.log(
-        "DRY RUN. Will retrieve secrets, but will not register task definition or update service"
+        'DRY RUN. Will retrieve secrets, but will not register task definition or update service'
       );
       const secrets = await aws.getSecret(DEVELOPMENT_SECRETS);
       const taskDefinition = aws.createTaskDefinition(
         secrets,
         staticDevelopmentVariables,
-        "DRYRUN-TEST",
+        'DRYRUN-TEST',
         taskdefinitionDevelopment,
         REPOSITORY_NAME
       );
       console.log(
-        "Would have created a task definition like this:",
+        'Would have created a task definition like this:',
         taskDefinition
       );
     } else if (hasTag) {
@@ -107,13 +107,13 @@ async function run() {
       );
     } else {
       console.log(
-        "Will not deploy app since you are not on master or a tagged build"
+        'Will not deploy app since you are not on master or a tagged build'
       );
     }
   } catch (err) {
     console.log(`FAILED: ${err}`);
     process.exit(1);
   }
-  console.log("Done");
+  console.log('Done');
 }
 run();
