@@ -5,16 +5,15 @@ open Giraffe
 open ArrangementService.Http
 open ArrangementService.Operators
 open ArrangementService.Repo
-open ArrangementService
+open Models
 
 module Handlers =
 
-    let eventModels = Events.Models.models
-    let participantModels = Participants.Models.models
+    //let models = Models.models
 
     let getEvents =
         Service.getEvents
-        >> Seq.map eventModels.domainToView
+        >> Seq.map models.domainToView
         >> Ok
 
     //    let getEventsForEmployee employeeId =
@@ -27,22 +26,16 @@ module Handlers =
     let deleteEvent id = Service.deleteEvent id >>= sideEffect commitTransaction
 
     let updateEvent id =
-        getBody<Events.Models.WriteModel>
-        >> Result.map (eventModels.writeToDomain id)
+        getBody<WriteModel>
+        >> Result.map (models.writeToDomain id)
         >>= Service.updateEvent id
         >>= sideEffect commitTransaction
-        >> Result.map eventModels.domainToView
+        >> Result.map models.domainToView
 
     let createEvent =
-        getBody<Events.Models.WriteModel>
+        getBody<WriteModel>
         >>= Service.createEvent
-        >> Result.map eventModels.domainToView
-
-    let registerForEvent id = 
-        getBody<Participants.Models.WriteModel> 
-        >> Result.map (participantModels.writeToDomain (id, ""))
-        >>= Service.registerParticipant
-        >> Result.map participantModels.domainToView
+        >> Result.map models.domainToView
 
     let routes: HttpHandler =
         choose
@@ -53,5 +46,4 @@ module Handlers =
               DELETE >=> choose [ routef "/events/%O" (handle << deleteEvent) ]
               PUT >=> choose [ routef "/events/%O" (handle << updateEvent) ]
               POST >=> choose
-                           [ route "/events" >=> handle createEvent 
-                             routef "/events/register/%O" (handle << registerForEvent) ] ]
+                           [ route "/events" >=> handle createEvent ] ]
