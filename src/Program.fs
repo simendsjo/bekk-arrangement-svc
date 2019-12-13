@@ -3,17 +3,16 @@
 open System
 open Giraffe
 open Microsoft.AspNetCore.Builder
-open Microsoft.AspNetCore.Cors.Infrastructure
 open Microsoft.Extensions.DependencyInjection
-open Microsoft.AspNetCore.Authentication.JwtBearer
-open Microsoft.AspNetCore.Hosting
 open System.IO
-open Microsoft.IdentityModel.Tokens
 open Microsoft.Extensions.Configuration
 open Microsoft.AspNetCore.Http
+open Microsoft.AspNetCore.Cors.Infrastructure
+open Microsoft.AspNetCore.Authentication.JwtBearer
+open Microsoft.IdentityModel.Tokens
+open Microsoft.AspNetCore.Hosting
 
 open ArrangementService
-
 open ArrangementService.Email.SendgridApiModels
 open migrator
 open Database

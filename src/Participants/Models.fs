@@ -8,17 +8,18 @@ open ArrangementService.Repo
 
 module Models =
     type DomainModel =
-        { ParticipantEmail: string 
+        { Email: string 
           EventId: Guid
           RegistrationTime: int64 }
 
     type ViewModel =
-        { ParticipantEmail: string 
+        { Email: string 
           EventId: Guid
           RegistrationTime: int64 }
 
+    // Empty for now
     type WriteModel = 
-        { ParticipantEmail: string }
+        { NothingToSeeHere: string }
     
     type Key = Guid * string 
 
@@ -28,23 +29,23 @@ module Models =
 
    
     let dbToDomain (dbRecord: DbModel): DomainModel =
-        { ParticipantEmail = dbRecord.Email
+        { Email = dbRecord.Email
           EventId = dbRecord.EventId 
           RegistrationTime = dbRecord.RegistrationTime }
 
-    let writeToDomain ((id, _): Key) (writeModel: WriteModel): DomainModel =
-        { ParticipantEmail = writeModel.ParticipantEmail 
+    let writeToDomain ((id, email): Key) (_: WriteModel): DomainModel =
+        { Email = email 
           EventId = id
           RegistrationTime = DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds() }
 
     let updateDbWithDomain (db: DbModel) (domainModel: DomainModel) =
-        db.Email <- domainModel.ParticipantEmail
+        db.Email <- domainModel.Email
         db.EventId <- domainModel.EventId
         db.RegistrationTime <- domainModel.RegistrationTime
         db
 
     let domainToView (domainModel: DomainModel): ViewModel =
-      { ParticipantEmail = domainModel.ParticipantEmail
+      { Email = domainModel.Email
         EventId = domainModel.EventId
         RegistrationTime = domainModel.RegistrationTime }
 
