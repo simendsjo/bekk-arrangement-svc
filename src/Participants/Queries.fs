@@ -18,4 +18,4 @@ module Queries =
             for participant in participants do
                 where (participant.Email = email)
                 select participant
-        } |> Seq.toList 
+        } // |> Seq.toList 

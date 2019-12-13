@@ -39,9 +39,9 @@ module Service =
     let getParticipantEvents email = 
         repo.read
         >> queryParticipantBy email
-        >> List.map models.dbToDomain
-        >> List.map models.domainToView
+        >> Seq.map models.dbToDomain
         >> Ok
+
 
     let deleteParticipant email id = 
         repo.read

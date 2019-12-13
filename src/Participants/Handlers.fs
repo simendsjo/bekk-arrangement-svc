@@ -20,7 +20,10 @@ module Handlers =
         >> Seq.map models.domainToView
         >> Ok
 
-    let getParticipantEvents = Service.getParticipantEvents
+    let getParticipantEvents email = 
+        Service.getParticipantEvents email
+        >> Result.map (Seq.map models.domainToView)
+        >> Ok 
 
     let deleteParticipant (email, id) = Service.deleteParticipant email id >>= sideEffect commitTransaction
 
