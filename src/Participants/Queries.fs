@@ -5,7 +5,7 @@ open System.Linq
 
 module Queries =
     
-    let queryParticipantByKey email id (participants: DbModel IQueryable) =
+    let queryParticipantByKey (email, id) (participants: DbModel IQueryable) =
         query {
             for participant in participants do
                 where (participant.Email = email && participant.EventId = id) 

@@ -45,7 +45,7 @@ module Service =
 
     let deleteParticipant email id = 
         repo.read
-        >> queryParticipantByKey email id
+        >> queryParticipantByKey (email, id)
         >> withError (participationNotFound email id)
         >> Result.map repo.del
         >> Result.bind (fun _ -> participationSuccessfullyDeleted email id)
