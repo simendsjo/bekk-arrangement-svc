@@ -31,7 +31,7 @@ module Service =
             (fun registration context -> 
                 Events.Service.getEvent registration.EventId context
                 |> Result.map 
-                    (fun event -> sendEventEmail registration.ParticipantEmail event context))
+                    (fun event -> sendEventEmail registration.Email event context))
 
     let getParticipants = 
         repo.read >> Seq.map models.dbToDomain
