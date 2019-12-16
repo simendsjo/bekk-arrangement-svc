@@ -16,8 +16,7 @@ module Service =
 
     let icsString = 
        sprintf
-        "
-BEGIN:VCALENDAR
+        "BEGIN:VCALENDAR
 PRODID:-//Schedule a Meeting
 VERSION:2.0
 METHOD:REQUEST
@@ -74,7 +73,7 @@ END:VCALENDAR"
         |> Async.Start
 
     let sendMail (email: Email) (context: HttpContext) =
-        createFile icsString
+        //createFile icsString
         let sendgridConfig = context.GetService<SendgridOptions>()
 
         let mailFunction =
@@ -86,6 +85,9 @@ END:VCALENDAR"
             settings.ContractResolver <- CamelCasePropertyNamesContractResolver()
             settings
 
-        (emailToSendgridFormat email icsString, serializerSettings)
+        //let encodedICS =
+        //    System.Convert.ToBase64String (System.Text.Encoding.UTF8.GetBytes icsString)
+
+        (emailToSendgridFormat email, serializerSettings)
         |> JsonConvert.SerializeObject
         |> mailFunction

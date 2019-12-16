@@ -14,9 +14,10 @@ module Models =
           Message: string
           From: EmailAddress
           To: EmailAddress
-          Cc: EmailAddress }
+          Cc: EmailAddress
+          CalendarInvite: string }
 
-    let emailToSendgridFormat (email: Email) attachments: SendGridFormat =
+    let emailToSendgridFormat (email: Email) : SendGridFormat =
         { Personalizations =
               [ { To = [ { Email = emailAddressToString email.To } ]
                   Cc = [ { Email = emailAddressToString email.Cc } ] } ]
@@ -24,7 +25,8 @@ module Models =
           Subject = email.Subject
           Content =
               [ { Value = email.Message
-                  Type = "text/html" }
-                { Value = attachments
-                  Type = "text/calendar"} ] }
-          //Attachments = attachments }
+                  Type = "text/html" } ] 
+          Attachments = 
+              [ { Content = email.CalendarInvite |> System.Text.Encoding.UTF8.GetBytes |> System.Convert.ToBase64String 
+                  Filename = "calendarinvite.ics"
+                  ContentId = "calInv" } ] }

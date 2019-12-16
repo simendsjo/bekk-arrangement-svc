@@ -17,27 +17,27 @@ module Service =
         let icsString = 
            sprintf
             "BEGIN:VCALENDAR
-             PRODID:-//Schedule a Meeting
-             VERSION:2.0
-             METHOD:REQUEST
-             BEGIN:VEVENT
-             DTSTART:%s
-             DTSTAMP:%s
-             DTEND:%s
-             LOCATION:%s
-             UID:%O
-             DESCRIPTION:%s
-             X-ALT-DESC;FMTTYPE=text/html:%s
-             SUMMARY:%s
-             ORGANIZER:MAILTO:%s
-             ATTENDEE;CN=\"%s\";RSVP=TRUE:mailto:%s
-             BEGIN:VALARM
-             TRIGGER:-PT15M
-             ACTION:DISPLAY
-             DESCRIPTION:Reminder
-             END:VALARM
-             END:VEVENT
-             END:VCALENDAR" 
+PRODID:-//Schedule a Meeting
+VERSION:2.0
+METHOD:REQUEST
+BEGIN:VEVENT
+DTSTART:%s
+DTSTAMP:%s
+DTEND:%s
+LOCATION:%s
+UID:%O
+DESCRIPTION:%s
+X-ALT-DESC;FMTTYPE=text/html:%s
+SUMMARY:%s
+ORGANIZER:MAILTO:%s
+ATTENDEE;CN=\"%s\";RSVP=TRUE:mailto:%s
+BEGIN:VALARM
+TRIGGER:-PT15M
+ACTION:DISPLAY
+DESCRIPTION:Reminder
+END:VALARM
+END:VEVENT
+END:VCALENDAR" 
                 "20200101T192209Z"
                 "20191213T192209Z" 
                 "20200101T202209Z" 
@@ -57,7 +57,8 @@ module Service =
           Message = createICSMessage event
           From = EmailAddress event.OrganizerEmail
           To = EmailAddress participants
-          Cc = EmailAddress event.OrganizerEmail }
+          Cc = EmailAddress event.OrganizerEmail
+          CalendarInvite = createICSMessage event }
 
     let sendEventEmail participants event context =
         let mail = createEmail participants event
