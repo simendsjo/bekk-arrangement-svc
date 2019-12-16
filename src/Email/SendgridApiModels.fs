@@ -18,6 +18,7 @@ module SendgridApiModels =
           From: SendGridEmailAddress
           Subject: string
           Content: Content list }
+          //Attachments: obj list }
 
     type SendgridOptions =
         { ApiKey: string

@@ -38,9 +38,9 @@ module Service =
              END:VALARM
              END:VEVENT
              END:VCALENDAR" 
-                "2020-01-01T19:22:09.1440844Z"
-                "2019-12-13T19:22:09.1440844Z" 
-                "2020-01-01T20:22:09.1440844Z" 
+                "20200101T192209Z"
+                "20191213T192209Z" 
+                "20200101T202209Z" 
                 event.Location 
                 event.Id 
                 event.Description 
@@ -50,7 +50,7 @@ module Service =
                 "Ida Marie" 
                 "ida.bosch@bekk.no"
              //startTime stamp endTime location guid description description subject fromAddress toName toAddress
-        icsString
+        icsString 
 
     let createEmail participants (event: Events.Models.DomainModel) =
         { Subject = event.Title

@@ -16,28 +16,29 @@ module Service =
 
     let icsString = 
        sprintf
-        "BEGIN:VCALENDAR
-         PRODID:-//Schedule a Meeting
-         VERSION:2.0
-         METHOD:REQUEST
-         BEGIN:VEVENT
-         DTSTART:%s
-         DTSTAMP:%s
-         DTEND:%s
-         LOCATION:%s
-         UID:%O
-         DESCRIPTION:%s
-         X-ALT-DESC;FMTTYPE=text/html:%s
-         SUMMARY:%s
-         ORGANIZER:MAILTO:%s
-         ATTENDEE;CN=\"%s\";RSVP=TRUE:mailto:%s
-         BEGIN:VALARM
-         TRIGGER:-PT15M
-         ACTION:DISPLAY
-         DESCRIPTION:Reminder
-         END:VALARM
-         END:VEVENT
-         END:VCALENDAR" 
+        "
+BEGIN:VCALENDAR
+PRODID:-//Schedule a Meeting
+VERSION:2.0
+METHOD:REQUEST
+BEGIN:VEVENT
+DTSTART:%s
+DTSTAMP:%s
+DTEND:%s
+LOCATION:%s
+UID:%O
+DESCRIPTION:%s
+X-ALT-DESC;FMTTYPE=text/html:%s
+SUMMARY:%s
+ORGANIZER:MAILTO:%s
+ATTENDEE;CN=\"%s\";RSVP=TRUE:mailto:%s
+BEGIN:VALARM
+TRIGGER:-PT15M
+ACTION:DISPLAY
+DESCRIPTION:Reminder
+END:VALARM
+END:VEVENT
+END:VCALENDAR" 
             "2020-01-01T19:22:09.1440844Z" 
             "2019-12-13T19:22:09.1440844Z" 
             "2020-01-01T20:22:09.1440844Z" 
@@ -52,7 +53,7 @@ module Service =
          //startTime stamp endTime location guid description description subject fromAddress toName toAddress
 
     let createFile content = 
-        File.WriteAllText (@".\test.ics", content) |> ignore
+        File.WriteAllText (@".\test.ics", content)
 
     let private sendMailProd (options: SendgridOptions) (jsonBody: string) =
         let byteBody = UTF8Encoding().GetBytes(jsonBody)
@@ -85,6 +86,6 @@ module Service =
             settings.ContractResolver <- CamelCasePropertyNamesContractResolver()
             settings
 
-        (emailToSendgridFormat email, serializerSettings)
+        (emailToSendgridFormat email icsString, serializerSettings)
         |> JsonConvert.SerializeObject
         |> mailFunction
