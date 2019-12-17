@@ -5,10 +5,11 @@ open Giraffe
 open ArrangementService.Http
 open ArrangementService.Operators
 open ArrangementService.Repo
-
-open Models
+open ArrangementService.Events.Models
 
 module Handlers =
+
+    //let models = Models.models
 
     let getEvents =
         result {
@@ -38,7 +39,7 @@ module Handlers =
     let updateEvent id =
         result {
             for writeModel in getBody<WriteModel> do
-            let! domainModel = writeToDomain (Id id) writeModel
+            let! domainModel = writeToDomain id writeModel
 
             for updatedEvent in Service.updateEvent id domainModel do
             yield commitTransaction
@@ -61,4 +62,5 @@ module Handlers =
                             routef "/events/organizer/%s" (handle << getEventsOrganizedBy) ]
               DELETE >=> choose [ routef "/events/%O" (handle << deleteEvent) ]
               PUT >=> choose [ routef "/events/%O" (handle << updateEvent) ]
-              POST >=> choose [ route "/events" >=> handle createEvent ] ]
+              POST >=> choose
+                           [ route "/events" >=> handle createEvent ] ]

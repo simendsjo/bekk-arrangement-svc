@@ -5,22 +5,25 @@ open Giraffe
 
 open ArrangementService
 
+open Http
 open Database
 open Repo
 open Utils.Validation
 open Validation
 open DateTime
+open Email.Models
+
 
 module Models =
-
-    type Id = Id of Guid
+   
+    type Key = Guid
+    type Id = Id of Key
     type Title = Title of string
     type Description = Description of string
     type Location = Location of string
     type StartDate = DateTimeOffset
     type EndDate = DateTimeOffset
     type ResponsibleEmployee = ResponsibleEmployee of int
-    type Email = Email of string
 
     type TableModel = ArrangementDbContext.dboSchema.``dbo.Events``
     type DbModel = ArrangementDbContext.``dbo.EventsEntity``
@@ -32,7 +35,7 @@ module Models =
           Location: Location
           StartDate: DateTimeCustom
           EndDate: DateTimeCustom
-          OrganizerEmail: Email
+          OrganizerEmail: EmailAddress
           OpenForRegistrationDate: DateTimeCustom }
 
     type ViewModel =
@@ -58,7 +61,6 @@ module Models =
     let unwrapTitle = function | Title t -> t
     let unwrapDescription = function | Description d -> d
     let unwrapLocation = function | Location l -> l
-    let unwrapEmail = function | Email e -> e
 
     let createDomainModel id title description location organizerEmail (openForRegistrationDate, startDate, endDate): DomainModel =
         { Id = id
@@ -87,7 +89,7 @@ module Models =
 
     let validateEmail email =
         [ validateEmail "Ansvarlig må ha en gyldig epost-addresse" ]
-        |> validateAll Email email
+        |> validateAll EmailAddress email
     
     let validateDateRange openDate startDate endDate =
       [ fun (openDate, startDate, _) -> validateBefore "Registreringsdato må være før åpningsdato" (openDate, startDate)
@@ -95,36 +97,44 @@ module Models =
         fun (openDate, _, _) -> validateBefore "Åpningsdato må være i fremtiden" (now (), openDate) ]
       |> validateAll id (openDate, startDate, endDate)
 
-    let writeToDomain (id: Id) (writeModel: WriteModel): Result<DomainModel, CustomErrorMessage list> =
+    let writeToDomain (id: Key) (writeModel: WriteModel): Result<DomainModel, CustomErrorMessage list> =
         Ok createDomainModel
-          <*> Ok id
+          <*> (Id id |> Ok)
           <*> validateTitle writeModel.Title 
           <*> validateDescription writeModel.Description 
           <*> validateLocation writeModel.Location
           <*> validateEmail writeModel.OrganizerEmail
           <*> validateDateRange writeModel.OpenForRegistrationDate writeModel.StartDate writeModel.EndDate
-   
+
+    let toCustomDateTime (date: DateTime) (time: TimeSpan): DateTimeCustom =
+        { Date =
+              { Day = date.Day
+                Month = date.Month
+                Year = date.Year }
+          Time =
+              { Hour = time.Hours
+                Minute = time.Minutes } }
+
     let dbToDomain (dbRecord: DbModel): DomainModel =
         { Id = Id dbRecord.Id
           Title = Title dbRecord.Title
           Description = Description dbRecord.Description
           Location = Location dbRecord.Location
-          OrganizerEmail = Email dbRecord.OrganizerEmail
+          OrganizerEmail = EmailAddress dbRecord.OrganizerEmail
           StartDate = toCustomDateTime dbRecord.StartDate dbRecord.StartTime
           EndDate = toCustomDateTime dbRecord.EndDate dbRecord.EndTime
-          OpenForRegistrationDate = toCustomDateTime dbRecord.OpenForRegistrationDate dbRecord.OpenForRegistrationTime
-          }
+          OpenForRegistrationDate = toCustomDateTime dbRecord.OpenForRegistrationDate dbRecord.OpenForRegistrationTime }
 
     let updateDbWithDomain (db: DbModel) (event: DomainModel) =
         db.Title <- unwrapTitle event.Title
         db.Description <- unwrapDescription event.Description
         db.Location <- unwrapLocation event.Location
-        db.OrganizerEmail <- unwrapEmail event.OrganizerEmail
-        db.StartDate <- customToDateTime event.StartDate
+        db.OrganizerEmail <- emailAddressToString event.OrganizerEmail
+        db.StartDate <- customToDateTime event.StartDate.Date
         db.StartTime <- customToTimeSpan event.StartDate.Time
-        db.EndDate <- customToDateTime event.EndDate
+        db.EndDate <- customToDateTime event.EndDate.Date
         db.EndTime <- customToTimeSpan event.EndDate.Time
-        db.OpenForRegistrationDate <- customToDateTime event.OpenForRegistrationDate
+        db.OpenForRegistrationDate <- customToDateTime event.OpenForRegistrationDate.Date
         db.OpenForRegistrationTime <- customToTimeSpan event.OpenForRegistrationDate.Time
         db
 
@@ -133,13 +143,13 @@ module Models =
           Title = unwrapTitle domainModel.Title
           Description = unwrapDescription domainModel.Description
           Location = unwrapLocation domainModel.Location
-          OrganizerEmail = unwrapEmail domainModel.OrganizerEmail
+          OrganizerEmail = emailAddressToString domainModel.OrganizerEmail
           StartDate = domainModel.StartDate
           EndDate = domainModel.EndDate
           OpenForRegistrationDate = domainModel.OpenForRegistrationDate }
 
-    let models: Models<DbModel, DomainModel, ViewModel, WriteModel, Id, TableModel> =
-        { key = fun record -> Id record.Id 
+    let models: Models<DbModel, DomainModel, ViewModel, WriteModel, Key, TableModel> =
+        { key = fun record -> record.Id 
           table = fun ctx -> ctx.GetService<ArrangementDbContext>().Dbo.Events
           create = fun table -> table.Create()
           delete = fun record -> record.Delete()
@@ -147,3 +157,6 @@ module Models =
           updateDbWithDomain = updateDbWithDomain
           domainToView = domainToView
           writeToDomain = writeToDomain }
+
+   
+        

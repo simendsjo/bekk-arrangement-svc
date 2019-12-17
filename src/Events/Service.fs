@@ -3,12 +3,12 @@ namespace ArrangementService.Events
 open ArrangementService.Operators
 open ArrangementService
 
-open Models
 open Queries
 open ErrorMessages
 
 module Service =
 
+    let models = Models.models
     let repo = Repo.from models
 
     let getEvents =

@@ -62,10 +62,8 @@ module DateTime =
               else 0
             | _ -> 0
 
-    let customToDateTime (dateTime : DateTimeCustom) : DateTime =
-      let date = dateTime.Date
-      let time = dateTime.Time
-      DateTime(date.Year, date.Month, date.Day, time.Hour, time.Minute, 0)
+    let customToDateTime (date : Date) : DateTime =
+      DateTime(date.Year, date.Month, date.Day, 0, 0, 0)
     
     let customToTimeSpan (time: Time) : TimeSpan =
         TimeSpan(time.Hour, time.Minute, 0)

@@ -3,22 +3,22 @@
 open System
 open Giraffe
 open Microsoft.AspNetCore.Builder
-open Microsoft.AspNetCore.Cors.Infrastructure
 open Microsoft.Extensions.DependencyInjection
-open Microsoft.AspNetCore.Authentication.JwtBearer
-open Microsoft.AspNetCore.Hosting
 open System.IO
-open Microsoft.IdentityModel.Tokens
 open Microsoft.Extensions.Configuration
 open Microsoft.AspNetCore.Http
+open Microsoft.AspNetCore.Cors.Infrastructure
+open Microsoft.AspNetCore.Authentication.JwtBearer
+open Microsoft.IdentityModel.Tokens
+open Microsoft.AspNetCore.Hosting
 
 open ArrangementService
-
+open ArrangementService.Email.SendgridApiModels
 open migrator
 open Database
 open Logging
 
-let webApp = choose [ Events.Handlers.routes; Health.healthCheck ]
+let webApp = choose [ Events.Handlers.routes; Health.healthCheck; Participants.Handlers.routes ]
 
 let private configuration =
     let builder = ConfigurationBuilder()
@@ -40,6 +40,12 @@ let configureServices (services: IServiceCollection) =
     services.AddGiraffe() |> ignore
     let dbContext = createDbContext configuration.["ConnectionStrings:EventDb"]
     services.AddSingleton<ArrangementDbContext>(dbContext) |> ignore
+    services.AddSingleton<SendgridOptions>
+        ({ ApiKey = configuration.["Sendgrid:Apikey"]
+           SendgridUrl = configuration.["Sendgrid:SendgridUrl"] })
+    |> ignore
+    services.AddSingleton<AppConfig>
+        ({ isProd = configuration.["Auth0:Scheduled_Tasks_Audience"] = "https://api.bekk.no" }) |> ignore
     dbContext.SaveContextSchema() |> ignore
     services.AddAuthentication(fun options ->
             options.DefaultAuthenticateScheme <- JwtBearerDefaults.AuthenticationScheme
@@ -58,7 +64,7 @@ let main _ =
     let contentRoot = Directory.GetCurrentDirectory()
     let webRoot = Path.Combine(contentRoot, "WebRoot")
     Migrate.Run(configuration.["ConnectionStrings:EventDb"])
-    
+
     WebHostBuilder()
         .UseKestrel()
         .UseContentRoot(contentRoot)
