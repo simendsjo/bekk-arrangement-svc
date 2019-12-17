@@ -28,5 +28,5 @@ module Models =
                   Type = "text/html" } ] 
           Attachments = 
               [ { Content = email.CalendarInvite |> System.Text.Encoding.UTF8.GetBytes |> System.Convert.ToBase64String 
-                  Filename = "calendarinvite.ics"
-                  ContentId = "calInv" } ] }
+                  Type = "text/calendar; method=REQUEST"
+                  Filename = sprintf "%s.ics" email.Subject } ] }

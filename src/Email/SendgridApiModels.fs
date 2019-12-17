@@ -16,8 +16,8 @@ module SendgridApiModels =
     type Attachment = 
         {
           Content: string
+          Type: string
           Filename: string
-          ContentId: string
         }
 
     type SendGridFormat =

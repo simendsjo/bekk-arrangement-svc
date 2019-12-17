@@ -72,6 +72,7 @@
     <Compile Include="Participants\ErrorMessages.fs" />
     <Compile Include="Participants\Models.fs"/>
     <Compile Include="Participants\Queries.fs"/>
+    <Compile Include="Participants\CalendarInvite.fs"/>
     <Compile Include="Participants\Service.fs"/>
     <Compile Include="Participants\Handlers.fs"/>
     <Compile Include="Health\Health.fs" />
