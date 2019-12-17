@@ -1,7 +1,6 @@
 namespace ArrangementService.Email
 
 open System.Text
-open System.IO
 open Giraffe
 open FSharp.Data
 open Microsoft.AspNetCore.Http
@@ -24,9 +23,7 @@ module Service =
                               [ "Authorization", 
                                 (sprintf "Bearer %s" options.ApiKey)
                                 "Content-Type", 
-                                "application/json"
-                                "Content-Class",
-                                "urn:content-classes:calendarmessage" ], 
+                                "application/json" ], 
                                 body = BinaryUpload byteBody )
             ()
         }

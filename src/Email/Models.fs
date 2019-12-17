@@ -27,6 +27,8 @@ module Models =
               [ { Value = email.Message
                   Type = "text/html" } ] 
           Attachments = 
-              [ { Content = email.CalendarInvite |> System.Text.Encoding.UTF8.GetBytes |> System.Convert.ToBase64String 
+              [ { Content = email.CalendarInvite 
+                    |> System.Text.Encoding.UTF8.GetBytes 
+                    |> System.Convert.ToBase64String 
                   Type = "text/calendar; method=REQUEST"
                   Filename = sprintf "%s.ics" email.Subject } ] }
