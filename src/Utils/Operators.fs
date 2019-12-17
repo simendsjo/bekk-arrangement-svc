@@ -13,19 +13,17 @@ module Operators =
         member this.Yield(f) = f >> Ok
         member this.Delay(f) = f()
 
+        member this.Bind(rx, f) =
+            match rx with
+            | Ok x -> f x
+            | Error e -> fun _ -> Error e
+
         member this.Combine(lhs, rhs) =
             fun ctx ->
                 match lhs ctx, rhs ctx with
                 | Ok _, rhs -> rhs
                 | Error e, _ -> Error e
 
-        member this.Bind(rx, f) =
-            match rx with
-            | Ok x -> f x 
-            | Error e -> fun _ -> Error e
-        
-        member this.For(rx, f) =
-            fun ctx ->
-                this.Bind(rx ctx, f) ctx
+        member this.For(rx, f) = fun ctx -> this.Bind (rx ctx, f) ctx
 
     let result = ResultBuilder()

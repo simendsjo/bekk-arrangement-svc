@@ -13,18 +13,16 @@ module SendgridApiModels =
         { Type: string
           Value: string }
 
-    type Attachment = 
-        {
-          Content: string
+    type Attachment =
+        { Content: string
           Type: string
-          Filename: string
-        }
+          Filename: string }
 
     type SendGridFormat =
         { Personalizations: Personalization list
           From: SendGridEmailAddress
           Subject: string
-          Content: Content list 
+          Content: Content list
           Attachments: Attachment list }
 
     type SendgridOptions =
