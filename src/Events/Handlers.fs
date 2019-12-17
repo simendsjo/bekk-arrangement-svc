@@ -5,44 +5,61 @@ open Giraffe
 open ArrangementService.Http
 open ArrangementService.Operators
 open ArrangementService.Repo
-open Models
+open ArrangementService.Events.Models
 
 module Handlers =
 
     //let models = Models.models
 
     let getEvents =
-        Service.getEvents
-        >> Seq.map models.domainToView
-        >> Ok
+        result {
+            for events in Service.getEvents do
+            return Seq.map models.domainToView events 
+        }
 
-    //    let getEventsForEmployee employeeId =
-    //        Service.getEventsForEmployee employeeId
-    //        >> Seq.map models.domainToView
-    //        >> Ok
+    let getEventsOrganizedBy organizerEmail =
+        result {
+            for events in Service.getEventsOrganizedBy organizerEmail do
+            return Seq.map models.domainToView events
+        }
 
-    let getEvent = Service.getEvent
+    let getEvent id =
+        result {
+            for event in Service.getEvent id do
+            return models.domainToView event 
+        }
 
-    let deleteEvent id = Service.deleteEvent id >>= sideEffect commitTransaction
+    let deleteEvent id =
+        result {
+            for result in Service.deleteEvent id do
+            yield commitTransaction
+            return result 
+        }
 
     let updateEvent id =
-        getBody<WriteModel>
-        >> Result.map (models.writeToDomain id)
-        >>= Service.updateEvent id
-        >>= sideEffect commitTransaction
-        >> Result.map models.domainToView
+        result {
+            for writeModel in getBody<WriteModel> do
+            let! domainModel = writeToDomain id writeModel
+
+            for updatedEvent in Service.updateEvent id domainModel do
+            yield commitTransaction
+
+            return models.domainToView updatedEvent
+        }
 
     let createEvent =
-        getBody<WriteModel>
-        >>= Service.createEvent
-        >> Result.map models.domainToView
+        result {
+            for writeModel in getBody<Models.WriteModel> do
+            for newEvent in Service.createEvent writeModel do
+            return models.domainToView newEvent
+        }
 
     let routes: HttpHandler =
         choose
             [ GET >=> choose
                           [ route "/events" >=> handle getEvents
-                            routef "/events/%O" (handle << getEvent) ]
-              //                            routef "/events/employee/%i" (handle << getEventsForEmployee) ]
+                            routef "/events/%O" (handle << getEvent)
+                            routef "/events/organizer/%s" (handle << getEventsOrganizedBy) ]
               DELETE >=> choose [ routef "/events/%O" (handle << deleteEvent) ]
               PUT >=> choose [ routef "/events/%O" (handle << updateEvent) ]
               POST >=> choose

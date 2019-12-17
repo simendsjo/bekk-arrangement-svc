@@ -3,10 +3,11 @@ namespace ArrangementService
 open Giraffe
 open Microsoft.AspNetCore.Http
 
+open Http
 open Database
+open Operators
 
 module Repo =
-
     type Models<'dbModel, 'DomainModel, 'ViewModel, 'WriteModel, 'key, 'table> =
         { table: HttpContext -> 'table
           create: 'table -> 'dbModel
@@ -16,28 +17,37 @@ module Repo =
           dbToDomain: 'dbModel -> 'DomainModel
           updateDbWithDomain: 'dbModel -> 'DomainModel -> 'dbModel
           domainToView: 'DomainModel -> 'ViewModel
-          writeToDomain: 'key -> 'WriteModel -> 'DomainModel }
+          writeToDomain: 'key -> 'WriteModel -> Result<'DomainModel, CustomErrorMessage list> }
 
-    type Repo<'dbModel, 'DomainModel, 'ViewModel, 'WriteModel, 'key, 'table> =
-        { create: ('key -> 'DomainModel) -> HttpContext -> 'DomainModel
-          update: 'DomainModel -> 'dbModel -> 'DomainModel
+    type Repo<'dbModel, 'domainModel, 'viewModel, 'writeModel, 'key, 'table> =
+        { create: ('key -> Result<'domainModel, CustomErrorMessage list>) -> HttpContext -> Result<'domainModel, CustomErrorMessage list>
+          update: 'domainModel -> 'dbModel -> 'domainModel
           del: 'dbModel -> Unit
-          read: HttpContext -> 'table }
+          read: HttpContext -> Result<'table, CustomErrorMessage list> }
 
     let save (ctx: HttpContext) = ctx.GetService<ArrangementDbContext>().SubmitUpdates()
-
-    let commitTransaction x ctx = save ctx
+    
+    let commitTransaction ctx =
+        save ctx
 
     let from (models: Models<'dbModel, 'domainModel, 'viewModel, 'writeModel, 'key, 'table>): Repo<'dbModel, 'domainModel, 'viewModel, 'writeModel, 'key, 'table> =
         { create =
-              fun createRow ctx ->
-                  let row = models.table ctx |> models.create
-                  let newThing = models.key row |> createRow
-                  models.updateDbWithDomain row newThing |> ignore
-                  save ctx
-                  models.key row |> createRow
+              fun createDomainModel ->
+                  result {
+                      for row in models.table >> models.create >> Ok do
+                      let! newThing =
+                            row 
+                            |> models.key 
+                            |> createDomainModel
+                      models.updateDbWithDomain row newThing |> ignore
+                      yield commitTransaction
+                      let! newlyCreatedThing =
+                            models.key row
+                            |> createDomainModel
+                      return newlyCreatedThing
+                  }
 
-          read = models.table
+          read = models.table >> Ok
           update =
               fun newEvent event ->
                   models.updateDbWithDomain event newEvent |> ignore

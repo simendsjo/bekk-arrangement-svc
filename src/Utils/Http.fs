@@ -6,29 +6,28 @@ open System
 
 module Http =
 
-    type HttpErr = HttpFunc -> HttpContext -> HttpFuncResult
+    type HttpError = HttpFunc -> HttpContext -> HttpFuncResult
 
-    type Handler<'t> = HttpContext -> Result<'t, HttpErr>
+    type CustomErrorMessage = string 
 
-    let handle (f: Handler<'t>) (next: HttpFunc) (ctx: HttpContext) =
-        match f ctx with
-        | Ok result -> json result next ctx
-        | Error errorMessage -> errorMessage next ctx
+    type Handler<'t> = HttpContext -> Result<'t, CustomErrorMessage list>
+  
+    let convertCustomErrorToHttpErr (errors: CustomErrorMessage list): HttpError =
+      RequestErrors.BAD_REQUEST errors
 
-    let getBody<'WriteModel> (ctx: HttpContext) =
+    let handle (f: Handler<'t>) (next: HttpFunc) (context: HttpContext) =
+        match f context with
+        | Ok result -> json result next context
+        | Error errorMessage -> (convertCustomErrorToHttpErr errorMessage) next context
+
+
+    let getBody<'WriteModel> (context: HttpContext) : Result<'WriteModel, CustomErrorMessage list> =
         try
-            Ok(ctx.BindJsonAsync<'WriteModel>().Result)
-        with ex ->
-            Console.WriteLine(ex)
-            "Feilformatert writemodel"
-            |> RequestErrors.BAD_REQUEST
-            |> Error
+          Ok(context.BindJsonAsync<'WriteModel>().Result)
+        with _ ->
+          Error ["Feilformatert writemodel"]
 
     let log x = x.ToString() |> Console.WriteLine
-
-    let tap f x ctx =
-        f x ctx |> ignore
-        x
 
     let sideEffect f x ctx =
         f x ctx |> ignore

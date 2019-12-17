@@ -3,12 +3,15 @@ namespace ArrangementService.Participants
 open System
 open Giraffe
 
-open ArrangementService.Database
-open ArrangementService.Repo
+open ArrangementService
+open Http
+open Database
+open Repo
+open ArrangementService.Email.Models
 
 module Models =
     type DomainModel =
-        { Email: string 
+        { Email: EmailAddress
           EventId: Guid
           RegistrationTime: int64 }
 
@@ -18,8 +21,7 @@ module Models =
           RegistrationTime: int64 }
 
     // Empty for now
-    type WriteModel = 
-        { NothingToSeeHere: string }
+    type WriteModel = Unit
     
     type Key = Guid * string 
 
@@ -29,23 +31,23 @@ module Models =
 
    
     let dbToDomain (dbRecord: DbModel): DomainModel =
-        { Email = dbRecord.Email
+        { Email = EmailAddress dbRecord.Email
           EventId = dbRecord.EventId 
           RegistrationTime = dbRecord.RegistrationTime }
 
-    let writeToDomain ((id, email): Key) (_: WriteModel): DomainModel =
-        { Email = email 
-          EventId = id
-          RegistrationTime = DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds() }
+    let writeToDomain ((id, email): Key) (_: WriteModel): Result<DomainModel, CustomErrorMessage list> =
+        Ok { Email = EmailAddress email 
+             EventId = id
+             RegistrationTime = DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds() }
 
     let updateDbWithDomain (db: DbModel) (domainModel: DomainModel) =
-        db.Email <- domainModel.Email
+        db.Email <- emailAddressToString domainModel.Email
         db.EventId <- domainModel.EventId
         db.RegistrationTime <- domainModel.RegistrationTime
         db
 
     let domainToView (domainModel: DomainModel): ViewModel =
-      { Email = domainModel.Email
+      { Email = emailAddressToString domainModel.Email
         EventId = domainModel.EventId
         RegistrationTime = domainModel.RegistrationTime }
 

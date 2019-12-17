@@ -1,10 +1,10 @@
 namespace ArrangementService.Participants
 
-open ArrangementService
+open ArrangementService.DateTime
 
 module CalendarInvite = 
 
-    let toUtcString (dt: Events.Models.DateTimeCustom) = 
+    let toUtcString (dt: DateTimeCustom) = 
         sprintf "%s%s%sT%s%s%sZ" // Format: "20200101T192209Z"
             (dt.Date.Year.ToString()) 
             (dt.Date.Month.ToString().PadLeft(2, '0')) 
@@ -48,11 +48,11 @@ END:VCALENDAR"
                 (toUtcString startTime) 
                 (System.DateTimeOffset.UtcNow.ToString()) 
                 (toUtcString endTime)
-                location 
+                (location.ToString())
                 guid 
-                description 
-                description 
-                subject 
-                fromAddress 
-                toName 
-                toAddress
+                (description.ToString())
+                (description.ToString()) 
+                (subject.ToString()) 
+                (fromAddress.ToString()) 
+                (toName.ToString()) 
+                (toAddress.ToString())

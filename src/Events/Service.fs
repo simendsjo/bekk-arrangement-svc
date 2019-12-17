@@ -11,32 +11,60 @@ module Service =
     let models = Models.models
     let repo = Repo.from models
 
-    let getEvents = repo.read >> Seq.map models.dbToDomain
+    let getEvents =
+        result {
+            for events in repo.read do
+            return Seq.map models.dbToDomain events
+        }
 
-    //    let getEventsForEmployee employeeId =
-    //        repo.read
-    //        >> queryEventsForEmployee employeeId
-    //        >> Seq.map models.dbToDomain
+    let getEventsOrganizedBy organizerEmail =
+        result {
+            for events in repo.read do
+            let eventsByOrganizer = queryEventsOrganizedBy organizerEmail events
+            return Seq.map models.dbToDomain eventsByOrganizer
+        }
 
     let getEvent id =
-        repo.read
-        >> queryEventBy id
-        >> withError (eventNotFound id)
-        >> Result.map models.dbToDomain
+        result {
+            for events in repo.read do
+
+            let! event =
+                events
+                |> queryEventBy id
+                |> withError (eventNotFound id)
+
+            return models.dbToDomain event
+        }
 
     let createEvent writemodel =
-        repo.create (fun id -> models.writeToDomain id writemodel)
-        >> Ok
+        result {
+            for newEvent in
+                repo.create (fun id -> models.writeToDomain id writemodel) do
+
+            return newEvent
+        }
 
     let updateEvent id event =
-        repo.read
-        >> queryEventBy id
-        >> withError (eventNotFound id)
-        >> Result.map (repo.update event)
+        result {
+            for events in repo.read do
+
+            let! oldEvent = 
+                events
+                |> queryEventBy id
+                |> withError (eventNotFound id)
+
+            return repo.update event oldEvent
+        }
 
     let deleteEvent id =
-        repo.read
-        >> queryEventBy id
-        >> withError (eventNotFound id)
-        >> Result.map repo.del
-        >> Result.bind (fun _ -> eventSuccessfullyDeleted id)
+        result {
+            for events in repo.read do
+
+            let! event =
+                events
+                |> queryEventBy id 
+                |> withError (eventNotFound id)
+
+            repo.del event
+            return eventSuccessfullyDeleted id 
+        }

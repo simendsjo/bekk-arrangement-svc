@@ -11,15 +11,14 @@ open ErrorMessages
 
 module Service = 
 
-    let models = Models.models
     let repo = Repo.from Models.models
 
-    let createEmail participant (event: Events.Models.DomainModel) =
-        { Subject = event.Title
-          Message = event.Description
-          From = EmailAddress event.OrganizerEmail
-          To = EmailAddress participant
-          Cc = EmailAddress "ida.bosch@bekk.no" // Burde gjøre denne optional
+    let createEmail participantEmail (event: Events.Models.DomainModel) =
+        { Subject = event.Title |> Events.Models.unwrapTitle
+          Message = event.Description |> Events.Models.unwrapDescription
+          From = event.OrganizerEmail
+          To = participantEmail
+          Cc = EmailAddress "ida.bosch@bekk.no" // Burde gjøre denne optional 
           CalendarInvite = createCalendarAttachment 
                             event.StartDate 
                             event.EndDate
@@ -28,35 +27,52 @@ module Service =
                             event.Description 
                             event.Title 
                             event.OrganizerEmail 
-                            participant 
-                            participant }
+                            participantEmail 
+                            participantEmail }
 
-    let sendEventEmail participants event context =
-        let mail = createEmail participants event
-        sendMail mail context |> ignore
+    let sendEventEmail (participant: Models.DomainModel) =
+        result {
+            for event in Events.Service.getEvent participant.EventId do
+            let mail = createEmail participant.Email event
+            yield sendMail mail
+        }
 
-    let registerParticipant (registration: Models.DomainModel) =
-        repo.create (fun _ -> registration)
-        >> Ok
-        >>= Http.sideEffect
-            (fun registration context -> 
-                Events.Service.getEvent registration.EventId context
-                |> Result.map 
-                    (fun event -> sendEventEmail registration.Email event context))
+    let registerParticipant (eventId, email) (registration: Models.WriteModel) =
+        result {
+            for participant
+                in repo.create
+                    (fun _ -> Models.models.writeToDomain (eventId, email) registration) do
+
+            yield sendEventEmail participant
+
+            return participant
+        }
 
     let getParticipants = 
-        repo.read >> Seq.map models.dbToDomain
+        result {
+            for participants in repo.read do
+            return Seq.map Models.models.dbToDomain participants
+        }
     
     let getParticipantEvents email = 
-        repo.read
-        >> queryParticipantBy email
-        >> Seq.map models.dbToDomain
-        >> Ok
+        result {
+            for participants in repo.read do
+            let participantsByMail =
+                participants
+                |> queryParticipantBy email
+            return Seq.map Models.models.dbToDomain participantsByMail
+        }
 
 
     let deleteParticipant email id = 
-        repo.read
-        >> queryParticipantByKey (email, id)
-        >> withError (participationNotFound email id)
-        >> Result.map repo.del
-        >> Result.bind (fun _ -> participationSuccessfullyDeleted email id)
+        result {
+            for participants in repo.read do
+            let! participantByMail =
+                participants
+                |> queryParticipantByKey (email, id)
+                |> withError [participationNotFound email id]
+
+            repo.del participantByMail
+
+            return participationSuccessfullyDeleted email id
+        }

@@ -2,14 +2,30 @@ namespace ArrangementService
 
 module Operators =
 
-    let (>>=) f g ctx =
-        match f ctx with
-        | Ok y -> g y ctx
-        | Error y -> Error y
-
-    let resultLift f x = f x >> Ok
-
     let withError error result =
         match result with
         | Some x -> Ok x
         | None -> Error error
+
+    type ResultBuilder() =
+        member this.Return(x) = fun _ -> Ok x
+        member this.ReturnFrom(x) = x
+        member this.Yield(f) = f >> Ok
+        member this.Delay(f) = f()
+
+        member this.Combine(lhs, rhs) =
+            fun ctx ->
+                match lhs ctx, rhs ctx with
+                | Ok _, rhs -> rhs
+                | Error e, _ -> Error e
+
+        member this.Bind(rx, f) =
+            match rx with
+            | Ok x -> f x 
+            | Error e -> fun _ -> Error e
+        
+        member this.For(rx, f) =
+            fun ctx ->
+                this.Bind(rx ctx, f) ctx
+
+    let result = ResultBuilder()

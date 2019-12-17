@@ -10,22 +10,30 @@ open Models
 module Handlers = 
 
     let registerForEvent (email, id) = 
-        getBody<WriteModel> 
-        >> Result.map (models.writeToDomain (id, email))
-        >>= Service.registerParticipant
-        >> Result.map models.domainToView
+        result {
+            for writeModel in getBody<WriteModel> do
+            for participant in Service.registerParticipant (id, email) writeModel do
+            return models.domainToView participant
+        }
 
     let getParticipants = 
-        Service.getParticipants
-        >> Seq.map models.domainToView
-        >> Ok
+        result {
+            for participants in Service.getParticipants do
+            return Seq.map models.domainToView participants
+        }
 
     let getParticipantEvents email = 
-        Service.getParticipantEvents email
-        >> Result.map (Seq.map models.domainToView)
-        >> Ok 
+        result {
+            for participants in Service.getParticipantEvents email do
+            return Seq.map models.domainToView participants
+        }
 
-    let deleteParticipant (email, id) = Service.deleteParticipant email id >>= sideEffect commitTransaction
+    let deleteParticipant (email, id) =
+        result {
+            for deleteResult in Service.deleteParticipant email id do
+            yield commitTransaction
+            return deleteResult
+        }
 
     let routes: HttpHandler =
         choose
