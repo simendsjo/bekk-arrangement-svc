@@ -4,6 +4,7 @@ open ArrangementService
 open ArrangementService.Operators
 open ArrangementService.Email.Models
 open ArrangementService.Email.Service
+open CalendarInvite
 
 open Queries
 open ErrorMessages
@@ -11,13 +12,23 @@ open ErrorMessages
 module Service = 
 
     let repo = Repo.from Models.models
-    
-    let createEmail participants (event: Events.Models.DomainModel) =
+
+    let createEmail participantEmail (event: Events.Models.DomainModel) =
         { Subject = event.Title |> Events.Models.unwrapTitle
           Message = event.Description |> Events.Models.unwrapDescription
           From = event.OrganizerEmail
-          To = participants
-          Cc = event.OrganizerEmail }
+          To = participantEmail
+          Cc = EmailAddress "ida.bosch@bekk.no" // Burde gjøre denne optional 
+          CalendarInvite = createCalendarAttachment 
+                            event.StartDate 
+                            event.EndDate
+                            event.Location 
+                            event.Id 
+                            event.Description 
+                            event.Title 
+                            event.OrganizerEmail 
+                            participantEmail 
+                            participantEmail }
 
     let sendEventEmail (participant: Models.DomainModel) =
         result {
