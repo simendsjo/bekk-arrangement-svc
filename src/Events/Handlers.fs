@@ -9,8 +9,6 @@ open ArrangementService.Events.Models
 
 module Handlers =
 
-    //let models = Models.models
-
     let getEvents =
         result {
             for events in Service.getEvents do

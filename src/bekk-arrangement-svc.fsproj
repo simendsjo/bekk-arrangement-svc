@@ -69,6 +69,7 @@
     <Compile Include="Email\Models.fs" />
     <Compile Include="Email\Service.fs" />
     <Compile Include="Events\ErrorMessages.fs" />
+    <Compile Include="Events\DomainModel.fs" />
     <Compile Include="Events\Models.fs" />
     <Compile Include="Events\Queries.fs" />
     <Compile Include="Events\Service.fs" />

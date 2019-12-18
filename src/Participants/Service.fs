@@ -12,9 +12,9 @@ module Service =
 
     let repo = Repo.from Models.models
     
-    let createEmail participants (event: Events.Models.DomainModel) =
-        { Subject = event.Title |> Events.Models.unwrapTitle
-          Message = event.Description |> Events.Models.unwrapDescription
+    let createEmail participants (event: Events.DomainModel.DomainModel) =
+        { Subject = event.Title |> Events.DomainModel.unwrapTitle
+          Message = event.Description |> Events.DomainModel.unwrapDescription
           From = event.OrganizerEmail
           To = participants
           Cc = event.OrganizerEmail }
