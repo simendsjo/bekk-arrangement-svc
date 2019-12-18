@@ -15,7 +15,7 @@ module Http =
         match endpoint context with
         | Ok result -> json result next context
         | Error errorMessage ->
-            rollback context |> ignore
+            rollbackTransaction context |> ignore
             convertCustomErrorToHttpErr errorMessage next context
 
     let getBody<'WriteModel> (context: HttpContext): Result<'WriteModel, CustomErrorMessage list> =

@@ -25,10 +25,8 @@ module Repo =
           del: 'dbModel -> Unit
           read: HttpContext -> Result<'table, CustomErrorMessage list> }
 
-    let save (ctx: HttpContext) = ctx.GetService<ArrangementDbContext>().SubmitUpdates()
-    let rollback (ctx: HttpContext) = ctx.GetService<ArrangementDbContext>().ClearUpdates()
-
-    let commitTransaction ctx = save ctx
+    let commitTransaction (ctx: HttpContext) = ctx.GetService<ArrangementDbContext>().SubmitUpdates()
+    let rollbackTransaction (ctx: HttpContext) = ctx.GetService<ArrangementDbContext>().ClearUpdates()
 
     let from (models: Models<'dbModel, 'domainModel, 'viewModel, 'writeModel, 'key, 'table>): Repo<'dbModel, 'domainModel, 'viewModel, 'writeModel, 'key, 'table> =
         { create =
