@@ -57,14 +57,15 @@
 
   <ItemGroup>
     <Compile Include="Config.fs" />
-    <Compile Include="Utils\Validation.fs" />
-    <Compile Include="Utils\Operators.fs" /> 
-    <Compile Include="Utils\Http.fs" /> 
+    <Compile Include="LanguageExtensions\Validation.fs" />
+    <Compile Include="LanguageExtensions\ResultComputationExpression.fs" /> 
+    <Compile Include="Common\CustomErrorMessage.fs" />
     <Compile Include="Common\DateTime.fs" />
     <Compile Include="Common\TimeStamp.fs" />
-    <Compile Include="Common\Validation.fs" />
+    <Compile Include="Common\Utils.fs" />
     <Compile Include="Database\DbContext.fs" />
     <Compile Include="Database\Repo.fs" />
+    <Compile Include="Http.fs" /> 
     <Compile Include="Email\SendgridApiModels.fs" />
     <Compile Include="Email\Models.fs" />
     <Compile Include="Email\Service.fs" />
@@ -75,6 +76,7 @@
     <Compile Include="Events\Service.fs" />
     <Compile Include="Events\Handlers.fs" />
     <Compile Include="Participants\ErrorMessages.fs" />
+    <Compile Include="Participants\DomainModel.fs"/>
     <Compile Include="Participants\Models.fs"/>
     <Compile Include="Participants\Queries.fs"/>
     <Compile Include="Participants\CalendarInvite.fs"/>

@@ -4,16 +4,16 @@ open System
 open Giraffe
 
 open ArrangementService
-open Http
+
+open TimeStamp
+open Validation
 open Database
 open Repo
-open ArrangementService.Email.Models
+open Email.Models
+open DomainModel
+open CustomErrorMessage
 
 module Models =
-    type DomainModel =
-        { Email: EmailAddress
-          EventId: Guid
-          RegistrationTime: int64 }
 
     type ViewModel =
         { Email: string
@@ -26,31 +26,30 @@ module Models =
     type Key = Guid * string
 
     type TableModel = ArrangementDbContext.dboSchema.``dbo.Participants``
-
     type DbModel = ArrangementDbContext.``dbo.ParticipantsEntity``
 
 
     let dbToDomain (dbRecord: DbModel): DomainModel =
         { Email = EmailAddress dbRecord.Email
-          EventId = dbRecord.EventId
-          RegistrationTime = dbRecord.RegistrationTime }
+          EventId = Events.DomainModel.Id dbRecord.EventId
+          RegistrationTime = TimeStamp dbRecord.RegistrationTime }
 
-    let writeToDomain ((id, email): Key) (_: WriteModel): Result<DomainModel, CustomErrorMessage list> =
-        Ok
-            { Email = EmailAddress email
-              EventId = id
-              RegistrationTime = DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds() }
+    let writeToDomain ((id, email): Key) ((): WriteModel): Result<DomainModel, CustomErrorMessage list> =
+        Ok DomainModel.Create
+          <*> EmailAddress.Parse email
+          <*> (Events.DomainModel.Id id |> Ok)
+          <*> (now () |> Ok)
 
     let updateDbWithDomain (db: DbModel) (domainModel: DomainModel) =
-        db.Email <- emailAddressToString domainModel.Email
-        db.EventId <- domainModel.EventId
-        db.RegistrationTime <- domainModel.RegistrationTime
+        db.Email <- domainModel.Email.Unwrap
+        db.EventId <- domainModel.EventId.Unwrap
+        db.RegistrationTime <- domainModel.RegistrationTime.Unwrap
         db
 
     let domainToView (domainModel: DomainModel): ViewModel =
-        { Email = emailAddressToString domainModel.Email
-          EventId = domainModel.EventId
-          RegistrationTime = domainModel.RegistrationTime }
+        { Email = domainModel.Email.Unwrap
+          EventId = domainModel.EventId.Unwrap
+          RegistrationTime = domainModel.RegistrationTime.Unwrap }
 
     let models: Models<DbModel, DomainModel, ViewModel, WriteModel, Key, TableModel> =
         { key = fun record -> (record.EventId, record.Email)

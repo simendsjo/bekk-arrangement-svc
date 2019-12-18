@@ -2,10 +2,13 @@ namespace ArrangementService.Events
 
 open Giraffe
 
-open ArrangementService.Http
-open ArrangementService.Operators
-open ArrangementService.Repo
-open ArrangementService.Events.Models
+open ArrangementService
+
+open Http
+open DomainModel
+open ResultComputationExpression
+open Repo
+open Events.Models
 
 module Handlers =
 
@@ -23,13 +26,13 @@ module Handlers =
 
     let getEvent id =
         result {
-            for event in Service.getEvent id do
+            for event in Service.getEvent (Id id) do
             return models.domainToView event
         }
 
     let deleteEvent id =
         result {
-            for result in Service.deleteEvent id do
+            for result in Service.deleteEvent (Id id) do
             yield commitTransaction
             return result
         }
@@ -39,7 +42,7 @@ module Handlers =
             for writeModel in getBody<WriteModel> do
             let! domainModel = writeToDomain id writeModel
 
-            for updatedEvent in Service.updateEvent id domainModel do
+            for updatedEvent in Service.updateEvent (Id id) domainModel do
             yield commitTransaction
 
             return models.domainToView updatedEvent

@@ -1,13 +1,25 @@
 namespace ArrangementService.Email
 
+open ArrangementService
+
+open Validation
 open SendgridApiModels
 
 module Models =
 
-    type EmailAddress = EmailAddress of string
+    let isAtSign =
+        function
+        | '@' -> true
+        | _ -> false
 
-    let emailAddressToString = function
-        | EmailAddress a -> a
+    type EmailAddress =
+        | EmailAddress of string
+        member this.Unwrap =
+            match this with
+            | EmailAddress e -> e
+        static member Parse(address: string) =
+            [ validate (String.exists isAtSign) "Email address must include an at sign (@)" ]
+            |> validateAll EmailAddress address
 
     type Email =
         { Subject: string
@@ -19,9 +31,9 @@ module Models =
 
     let emailToSendgridFormat (email: Email): SendGridFormat =
         { Personalizations =
-              [ { To = [ { Email = emailAddressToString email.To } ]
-                  Cc = [ { Email = emailAddressToString email.Cc } ] } ]
-          From = { Email = emailAddressToString email.From }
+              [ { To = [ { Email = email.To.Unwrap } ]
+                  Cc = [ { Email = email.Cc.Unwrap } ] } ]
+          From = { Email = email.From.Unwrap }
           Subject = email.Subject
           Content =
               [ { Value = email.Message

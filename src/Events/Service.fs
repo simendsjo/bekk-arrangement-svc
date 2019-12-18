@@ -1,8 +1,8 @@
 namespace ArrangementService.Events
 
-open ArrangementService.Operators
 open ArrangementService
 
+open ResultComputationExpression
 open Queries
 open ErrorMessages
 

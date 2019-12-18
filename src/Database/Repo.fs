@@ -3,9 +3,9 @@ namespace ArrangementService
 open Giraffe
 open Microsoft.AspNetCore.Http
 
-open Http
 open Database
-open Operators
+open CustomErrorMessage
+open ResultComputationExpression
 
 module Repo =
     type Models<'dbModel, 'DomainModel, 'ViewModel, 'WriteModel, 'key, 'table> =
@@ -26,6 +26,7 @@ module Repo =
           read: HttpContext -> Result<'table, CustomErrorMessage list> }
 
     let save (ctx: HttpContext) = ctx.GetService<ArrangementDbContext>().SubmitUpdates()
+    let rollback (ctx: HttpContext) = ctx.GetService<ArrangementDbContext>().ClearUpdates()
 
     let commitTransaction ctx = save ctx
 
@@ -36,13 +37,15 @@ module Repo =
                       for row in models.table
                                  >> models.create
                                  >> Ok do
-                          let! newThing = row
-                                          |> models.key
-                                          |> createDomainModel
-                          models.updateDbWithDomain row newThing |> ignore
-                          yield commitTransaction
-                          let! newlyCreatedThing = models.key row |> createDomainModel
-                          return newlyCreatedThing
+                      let! newThing =
+                            row
+                            |> models.key
+                            |> createDomainModel
+                      models.updateDbWithDomain row newThing |> ignore
+                      yield commitTransaction
+                      let! newlyCreatedThing =
+                        models.key row |> createDomainModel
+                      return newlyCreatedThing
                   }
 
           read = models.table >> Ok

@@ -2,9 +2,10 @@ namespace ArrangementService.Participants
 
 open Giraffe
 
-open ArrangementService.Http
-open ArrangementService.Operators
-open ArrangementService.Repo
+open ArrangementService
+open Http
+open ResultComputationExpression
+open Repo
 open Models
 
 module Handlers =

@@ -1,6 +1,4 @@
-namespace ArrangementService.Utils
-
-open System.Text.RegularExpressions
+namespace ArrangementService
 
 module Validation =
 
@@ -13,10 +11,8 @@ module Validation =
 
     let (<*>) = apply
 
-    let regexMatch regex input = Regex.IsMatch(input, regex)
-
-    let validate f (input: 'Type) errorMessage =
-        if f input then Ok() else Error errorMessage
+    let validate f errorMessage (input: 'Type) =
+        if f input then Ok () else Error errorMessage
 
     let sequence x =
         x

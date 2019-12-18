@@ -1,6 +1,6 @@
 namespace ArrangementService
 
-module Operators =
+module ResultComputationExpression =
 
     let withError error result =
         match result with
@@ -28,13 +28,14 @@ module Operators =
         member this.Return(x) = fun _ -> Ok x
         member this.ReturnFrom(x) = x
         member this.Yield(f) = f >> Ok
-        member this.Delay(f) = f()
+        member this.Delay(f) = f
+        member this.Run(f) = f()
 
         member this.Combine(lhs, rhs) =
             fun ctx ->
-                match lhs ctx, rhs ctx with
-                | Ok _, rhs -> rhs
-                | Error e, _ -> Error e
+                match lhs ctx with
+                | Ok _ -> rhs () ctx
+                | Error e -> Error e
 
         member this.Bind(rx, f) = fun ctx -> Result.bind (fun x -> f x ctx) rx
 

@@ -5,11 +5,12 @@ open Giraffe
 
 open ArrangementService
 
-open Utils.Validation
+open Validation
 open Database
 open Repo
-open Http
+open CustomErrorMessage
 open DateTime
+open Utils
 open Email.Models
 
 open DomainModel
@@ -39,12 +40,12 @@ module Models =
           OpenForRegistrationDate: DateTimeCustom }
 
     let writeToDomain (id: Key) (writeModel: WriteModel): Result<DomainModel, CustomErrorMessage list> =
-        Ok createDomainModel
+        Ok DomainModel.Create
           <*> (Id id |> Ok)
-          <*> validateTitle writeModel.Title
-          <*> validateDescription writeModel.Description
-          <*> validateLocation writeModel.Location
-          <*> validateEmail writeModel.OrganizerEmail
+          <*> Title.Parse writeModel.Title
+          <*> Description.Parse writeModel.Description
+          <*> Location.Parse writeModel.Location
+          <*> EmailAddress.Parse writeModel.OrganizerEmail
           <*> validateDateRange writeModel.OpenForRegistrationDate writeModel.StartDate writeModel.EndDate
 
     let dbToDomain (dbRecord: DbModel): DomainModel =
@@ -59,10 +60,10 @@ module Models =
               toCustomDateTime dbRecord.OpenForRegistrationDate dbRecord.OpenForRegistrationTime }
 
     let updateDbWithDomain (db: DbModel) (event: DomainModel) =
-        db.Title <- unwrapTitle event.Title
-        db.Description <- unwrapDescription event.Description
-        db.Location <- unwrapLocation event.Location
-        db.OrganizerEmail <- emailAddressToString event.OrganizerEmail
+        db.Title <- event.Title.Unwrap
+        db.Description <- event.Description.Unwrap
+        db.Location <- event.Location.Unwrap
+        db.OrganizerEmail <- event.OrganizerEmail.Unwrap
         db.StartDate <- customToDateTime event.StartDate.Date
         db.StartTime <- customToTimeSpan event.StartDate.Time
         db.EndDate <- customToDateTime event.EndDate.Date
@@ -72,11 +73,11 @@ module Models =
         db
 
     let domainToView (domainModel: DomainModel): ViewModel =
-        { Id = unwrapId domainModel.Id
-          Title = unwrapTitle domainModel.Title
-          Description = unwrapDescription domainModel.Description
-          Location = unwrapLocation domainModel.Location
-          OrganizerEmail = emailAddressToString domainModel.OrganizerEmail
+        { Id = domainModel.Id.Unwrap
+          Title = domainModel.Title.Unwrap
+          Description = domainModel.Description.Unwrap
+          Location = domainModel.Location.Unwrap
+          OrganizerEmail = domainModel.OrganizerEmail.Unwrap
           StartDate = domainModel.StartDate
           EndDate = domainModel.EndDate
           OpenForRegistrationDate = domainModel.OpenForRegistrationDate }

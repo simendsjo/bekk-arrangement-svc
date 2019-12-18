@@ -1,11 +1,12 @@
 namespace ArrangementService.Participants
 
 open ArrangementService
-open ArrangementService.Operators
-open ArrangementService.Email.Models
-open ArrangementService.Email.Service
-open CalendarInvite
 
+open ResultComputationExpression
+open Email.Models
+open Email.Service
+open CalendarInvite
+open DomainModel
 open Queries
 open ErrorMessages
 
@@ -14,8 +15,8 @@ module Service =
     let repo = Repo.from Models.models
 
     let createEmail participantEmail (event: Events.DomainModel.DomainModel) =
-        { Subject = event.Title |> Events.DomainModel.unwrapTitle
-          Message = event.Description |> Events.DomainModel.unwrapDescription
+        { Subject = event.Title.Unwrap
+          Message = event.Description.Unwrap
           From = event.OrganizerEmail
           To = participantEmail
           Cc = EmailAddress "ida.bosch@bekk.no" // Burde gjøre denne optional
@@ -24,7 +25,7 @@ module Service =
                   event.Description event.Title event.OrganizerEmail participantEmail
                   participantEmail }
 
-    let sendEventEmail (participant: Models.DomainModel) =
+    let sendEventEmail (participant: DomainModel) =
         result {
             for event in Events.Service.getEvent participant.EventId do
             let mail = createEmail participant.Email event

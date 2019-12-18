@@ -68,4 +68,4 @@ module DateTime =
               { Hour = time.Hours
                 Minute = time.Minutes } }
 
-    let now(): DateTimeCustom = toCustomDateTime DateTime.Now (TimeSpan(0, 0, 0))
+    let now (): DateTimeCustom = toCustomDateTime DateTime.Now (TimeSpan(0, 0, 0))

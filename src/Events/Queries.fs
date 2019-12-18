@@ -1,14 +1,15 @@
 namespace ArrangementService.Events
 
 open Models
+open DomainModel
 open System.Linq
 
 module Queries =
 
-    let queryEventBy id (events: IQueryable<DbModel>) =
+    let queryEventBy (id: Id) (events: IQueryable<DbModel>) =
         query {
             for event in events do
-                where (event.Id = id)
+                where (event.Id = id.Unwrap)
                 select (Some event)
                 exactlyOneOrDefault
         }
