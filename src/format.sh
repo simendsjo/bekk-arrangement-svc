@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-dotnet fake run format.fsx -t Format
+#dotnet fake run format.fsx -t Format

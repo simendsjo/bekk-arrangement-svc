@@ -39,11 +39,13 @@ module Models =
           OpenForRegistrationDate: DateTimeCustom }
 
     let writeToDomain (id: Key) (writeModel: WriteModel): Result<DomainModel, CustomErrorMessage list> =
-        Ok createDomainModel <*> (Id id |> Ok) <*> validateTitle writeModel.Title
-        <*> validateDescription writeModel.Description <*> validateLocation writeModel.Location
-        <*> validateEmail writeModel.OrganizerEmail
-        <*> validateDateRange writeModel.OpenForRegistrationDate writeModel.StartDate
-                writeModel.EndDate
+        Ok createDomainModel
+          <*> (Id id |> Ok)
+          <*> validateTitle writeModel.Title
+          <*> validateDescription writeModel.Description
+          <*> validateLocation writeModel.Location
+          <*> validateEmail writeModel.OrganizerEmail
+          <*> validateDateRange writeModel.OpenForRegistrationDate writeModel.StartDate writeModel.EndDate
 
     let dbToDomain (dbRecord: DbModel): DomainModel =
         { Id = Id dbRecord.Id

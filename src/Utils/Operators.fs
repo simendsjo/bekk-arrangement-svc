@@ -36,12 +36,8 @@ module Operators =
                 | Ok _, rhs -> rhs
                 | Error e, _ -> Error e
 
-        member this.Bind(rx, f) =
-            fun ctx ->
-                Result.bind (fun x -> f x ctx) rx
-        
-        member this.For(rx, f) =
-            fun ctx ->
-                this.Bind(rx ctx, f) ctx
+        member this.Bind(rx, f) = fun ctx -> Result.bind (fun x -> f x ctx) rx
+
+        member this.For(rx, f) = fun ctx -> this.Bind (rx ctx, f) ctx
 
     let result = ResultBuilder()
