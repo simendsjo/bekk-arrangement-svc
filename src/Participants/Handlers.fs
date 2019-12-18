@@ -7,38 +7,39 @@ open ArrangementService.Operators
 open ArrangementService.Repo
 open Models
 
-module Handlers = 
+module Handlers =
 
-    let registerForEvent (email, id) = 
+    let registerForEvent (email, id) =
         result {
             for writeModel in getBody<WriteModel> do
-            for participant in Service.registerParticipant (id, email) writeModel do
-            return models.domainToView participant
+                for participant in Service.registerParticipant (id, email) writeModel do
+                    return models.domainToView participant
         }
 
-    let getParticipants = 
+    let getParticipants =
         result {
             for participants in Service.getParticipants do
-            return Seq.map models.domainToView participants
+                return Seq.map models.domainToView participants
         }
 
-    let getParticipantEvents email = 
+    let getParticipantEvents email =
         result {
             for participants in Service.getParticipantEvents email do
-            return Seq.map models.domainToView participants
+                return Seq.map models.domainToView participants
         }
 
     let deleteParticipant (email, id) =
         result {
             for deleteResult in Service.deleteParticipant email id do
-            yield commitTransaction
-            return deleteResult
+                yield commitTransaction
+                return deleteResult
         }
 
     let routes: HttpHandler =
         choose
-            [ GET >=> choose 
-                        [ route "/participants" >=> handle getParticipants 
-                          routef "/participant/%s" (handle << getParticipantEvents) ]
-              DELETE >=> choose [ routef "/participant/%s/events/%O" (handle << deleteParticipant) ]
+            [ GET >=> choose
+                          [ route "/participants" >=> handle getParticipants
+                            routef "/participant/%s" (handle << getParticipantEvents) ]
+              DELETE
+              >=> choose [ routef "/participant/%s/events/%O" (handle << deleteParticipant) ]
               POST >=> choose [ routef "/participant/%s/events/%O" (handle << registerForEvent) ] ]

@@ -26,25 +26,23 @@ module Repo =
           read: HttpContext -> Result<'table, CustomErrorMessage list> }
 
     let save (ctx: HttpContext) = ctx.GetService<ArrangementDbContext>().SubmitUpdates()
-    
-    let commitTransaction ctx =
-        save ctx
+
+    let commitTransaction ctx = save ctx
 
     let from (models: Models<'dbModel, 'domainModel, 'viewModel, 'writeModel, 'key, 'table>): Repo<'dbModel, 'domainModel, 'viewModel, 'writeModel, 'key, 'table> =
         { create =
               fun createDomainModel ->
                   result {
-                      for row in models.table >> models.create >> Ok do
-                      let! newThing =
-                            row 
-                            |> models.key 
-                            |> createDomainModel
-                      models.updateDbWithDomain row newThing |> ignore
-                      yield commitTransaction
-                      let! newlyCreatedThing =
-                            models.key row
-                            |> createDomainModel
-                      return newlyCreatedThing
+                      for row in models.table
+                                 >> models.create
+                                 >> Ok do
+                          let! newThing = row
+                                          |> models.key
+                                          |> createDomainModel
+                          models.updateDbWithDomain row newThing |> ignore
+                          yield commitTransaction
+                          let! newlyCreatedThing = models.key row |> createDomainModel
+                          return newlyCreatedThing
                   }
 
           read = models.table >> Ok

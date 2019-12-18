@@ -18,7 +18,7 @@ module Models =
 
     type TableModel = ArrangementDbContext.dboSchema.``dbo.Events``
     type DbModel = ArrangementDbContext.``dbo.EventsEntity``
-    
+
     type ViewModel =
         { Id: Guid
           Title: string
@@ -39,13 +39,11 @@ module Models =
           OpenForRegistrationDate: DateTimeCustom }
 
     let writeToDomain (id: Key) (writeModel: WriteModel): Result<DomainModel, CustomErrorMessage list> =
-        Ok createDomainModel
-          <*> (Id id |> Ok)
-          <*> validateTitle writeModel.Title 
-          <*> validateDescription writeModel.Description 
-          <*> validateLocation writeModel.Location
-          <*> validateEmail writeModel.OrganizerEmail
-          <*> validateDateRange writeModel.OpenForRegistrationDate writeModel.StartDate writeModel.EndDate
+        Ok createDomainModel <*> (Id id |> Ok) <*> validateTitle writeModel.Title
+        <*> validateDescription writeModel.Description <*> validateLocation writeModel.Location
+        <*> validateEmail writeModel.OrganizerEmail
+        <*> validateDateRange writeModel.OpenForRegistrationDate writeModel.StartDate
+                writeModel.EndDate
 
     let dbToDomain (dbRecord: DbModel): DomainModel =
         { Id = Id dbRecord.Id
@@ -55,7 +53,8 @@ module Models =
           OrganizerEmail = EmailAddress dbRecord.OrganizerEmail
           StartDate = toCustomDateTime dbRecord.StartDate dbRecord.StartTime
           EndDate = toCustomDateTime dbRecord.EndDate dbRecord.EndTime
-          OpenForRegistrationDate = toCustomDateTime dbRecord.OpenForRegistrationDate dbRecord.OpenForRegistrationTime }
+          OpenForRegistrationDate =
+              toCustomDateTime dbRecord.OpenForRegistrationDate dbRecord.OpenForRegistrationTime }
 
     let updateDbWithDomain (db: DbModel) (event: DomainModel) =
         db.Title <- unwrapTitle event.Title
@@ -81,7 +80,7 @@ module Models =
           OpenForRegistrationDate = domainModel.OpenForRegistrationDate }
 
     let models: Models<DbModel, DomainModel, ViewModel, WriteModel, Key, TableModel> =
-        { key = fun record -> record.Id 
+        { key = fun record -> record.Id
           table = fun ctx -> ctx.GetService<ArrangementDbContext>().Dbo.Events
           create = fun table -> table.Create()
           delete = fun record -> record.Delete()
@@ -89,6 +88,3 @@ module Models =
           updateDbWithDomain = updateDbWithDomain
           domainToView = domainToView
           writeToDomain = writeToDomain }
-
-   
-        
