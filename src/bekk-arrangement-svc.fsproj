@@ -61,6 +61,7 @@
     <Compile Include="Utils\Operators.fs" /> 
     <Compile Include="Utils\Http.fs" /> 
     <Compile Include="Common\DateTime.fs" />
+    <Compile Include="Common\TimeStamp.fs" />
     <Compile Include="Common\Validation.fs" />
     <Compile Include="Database\DbContext.fs" />
     <Compile Include="Database\Repo.fs" />
