@@ -16,9 +16,9 @@ module Http =
         | Ok result -> json result next context
         | Error errorMessage ->
             rollbackTransaction context |> ignore
-            convertUserMessageToHttpError errorMessage next context
+            convertUserMessagesToHttpError errorMessage next context
 
     let getBody<'WriteModel> (context: HttpContext): Result<'WriteModel, UserMessage list> =
         try
             Ok(context.BindJsonAsync<'WriteModel>().Result)
-        with _ -> Error [ "Feilformatert writemodel" ]
+        with _ -> Error [ "Feilformatert writemodel" |> BadInput ]

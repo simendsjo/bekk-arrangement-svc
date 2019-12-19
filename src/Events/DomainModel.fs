@@ -5,6 +5,7 @@ open System
 open ArrangementService
 
 open Validation
+open UserMessage
 open Utils
 open DateTime
 open Email.Models
@@ -24,8 +25,8 @@ module DomainModel =
             match this with
             | Title title -> title
         static member Parse(title: string) =
-            [ validateMinLength 3 "Tittel må ha minst 3 tegn"
-              validateMaxLength 60 "Tittel må være mindre enn 60 tegn" ]
+            [ validateMinLength 3 (BadInput "Tittel må ha minst 3 tegn")
+              validateMaxLength 60 (BadInput "Tittel må være mindre enn 60 tegn") ]
             |> validateAll Title title
 
     type Description =
@@ -34,8 +35,8 @@ module DomainModel =
             match this with
             | Description description -> description
         static member Parse(description: string) =
-            [ validateMinLength 3 "Beskrivelse må ha minst 3 tegn"
-              validateMaxLength 255 "Beskrivelse må være mindre enn 255 tegn" ]
+            [ validateMinLength 3 (BadInput "Beskrivelse må ha minst 3 tegn")
+              validateMaxLength 255 (BadInput "Beskrivelse må være mindre enn 255 tegn") ]
             |> validateAll Description description
 
     type Location =
@@ -44,8 +45,8 @@ module DomainModel =
             match this with
             | Location location -> location
         static member Parse(location: string) =
-            [ validateMinLength 3 "Sted må ha minst 3 tegn"
-              validateMaxLength 30 "Sted må være mindre enn 30 tegn" ]
+            [ validateMinLength 3 (BadInput "Sted må ha minst 3 tegn")
+              validateMaxLength 30 (BadInput "Sted må være mindre enn 30 tegn") ]
             |> validateAll Location location
 
     type DomainModel =

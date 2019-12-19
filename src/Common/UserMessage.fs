@@ -8,7 +8,9 @@ module UserMessage =
 
     type HttpError = HttpFunc -> HttpContext -> HttpFuncResult
 
-    type UserMessage = string
+    type UserMessage =
+        | NotFound of string
+        | BadInput of string
 
-    let convertUserMessageToHttpError (errors: UserMessage list): HttpError =
+    let convertUserMessagesToHttpError (errors: UserMessage list): HttpError =
         RequestErrors.BAD_REQUEST errors

@@ -3,6 +3,7 @@ namespace ArrangementService.Email
 open ArrangementService
 
 open Validation
+open UserMessage
 open SendgridApiModels
 
 module Models =
@@ -18,7 +19,7 @@ module Models =
             match this with
             | EmailAddress e -> e
         static member Parse(address: string) =
-            [ validate (String.exists isAtSign) "Email address must include an at sign (@)" ]
+            [ validate (String.exists isAtSign) (BadInput "Email address must include an at sign (@)") ]
             |> validateAll EmailAddress address
 
     type Email =
