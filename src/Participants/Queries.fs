@@ -1,7 +1,7 @@
 namespace ArrangementService.Participants
 
 open Models
-open ErrorMessages
+open UserMessages
 open System.Linq
 
 open ArrangementService

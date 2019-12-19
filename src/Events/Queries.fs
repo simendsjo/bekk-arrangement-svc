@@ -1,7 +1,7 @@
 namespace ArrangementService.Events
 
 open Models
-open ErrorMessages
+open UserMessages
 open DomainModel
 open System.Linq
 

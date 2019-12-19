@@ -4,7 +4,7 @@ open Giraffe
 open Microsoft.AspNetCore.Http
 
 open Database
-open CustomErrorMessage
+open UserMessage
 open ResultComputationExpression
 
 module Repo =
@@ -17,13 +17,13 @@ module Repo =
           dbToDomain: 'dbModel -> 'DomainModel
           updateDbWithDomain: 'dbModel -> 'DomainModel -> 'dbModel
           domainToView: 'DomainModel -> 'ViewModel
-          writeToDomain: 'key -> 'WriteModel -> Result<'DomainModel, CustomErrorMessage list> }
+          writeToDomain: 'key -> 'WriteModel -> Result<'DomainModel, UserMessage list> }
 
     type Repo<'dbModel, 'domainModel, 'viewModel, 'writeModel, 'key, 'table> =
-        { create: ('key -> Result<'domainModel, CustomErrorMessage list>) -> HttpContext -> Result<'domainModel, CustomErrorMessage list>
+        { create: ('key -> Result<'domainModel, UserMessage list>) -> HttpContext -> Result<'domainModel, UserMessage list>
           update: 'domainModel -> 'dbModel -> 'domainModel
           del: 'dbModel -> Unit
-          read: HttpContext -> Result<'table, CustomErrorMessage list> }
+          read: HttpContext -> Result<'table, UserMessage list> }
 
     let commitTransaction (ctx: HttpContext) = ctx.GetService<ArrangementDbContext>().SubmitUpdates()
     let rollbackTransaction (ctx: HttpContext) = ctx.GetService<ArrangementDbContext>().ClearUpdates()

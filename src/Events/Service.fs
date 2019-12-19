@@ -4,7 +4,7 @@ open ArrangementService
 
 open ResultComputationExpression
 open Queries
-open ErrorMessages
+open UserMessages
 
 module Service =
 

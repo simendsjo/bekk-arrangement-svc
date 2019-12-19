@@ -8,7 +8,7 @@ open Email.Service
 open CalendarInvite
 open DomainModel
 open Queries
-open ErrorMessages
+open UserMessages
 
 module Service =
 

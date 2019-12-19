@@ -11,7 +11,7 @@ open Database
 open Repo
 open Email.Models
 open DomainModel
-open CustomErrorMessage
+open UserMessage
 
 module Models =
 
@@ -34,7 +34,7 @@ module Models =
           EventId = Events.DomainModel.Id dbRecord.EventId
           RegistrationTime = TimeStamp dbRecord.RegistrationTime }
 
-    let writeToDomain ((id, email): Key) ((): WriteModel): Result<DomainModel, CustomErrorMessage list> =
+    let writeToDomain ((id, email): Key) ((): WriteModel): Result<DomainModel, UserMessage list> =
         Ok DomainModel.Create
           <*> EmailAddress.Parse email
           <*> (Events.DomainModel.Id id |> Ok)

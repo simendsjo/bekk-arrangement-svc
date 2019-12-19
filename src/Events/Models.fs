@@ -8,7 +8,7 @@ open ArrangementService
 open Validation
 open Database
 open Repo
-open CustomErrorMessage
+open UserMessage
 open DateTime
 open Utils
 open Email.Models
@@ -39,7 +39,7 @@ module Models =
           EndDate: DateTimeCustom
           OpenForRegistrationDate: DateTimeCustom }
 
-    let writeToDomain (id: Key) (writeModel: WriteModel): Result<DomainModel, CustomErrorMessage list> =
+    let writeToDomain (id: Key) (writeModel: WriteModel): Result<DomainModel, UserMessage list> =
         Ok DomainModel.Create
           <*> (Id id |> Ok)
           <*> Title.Parse writeModel.Title

@@ -4,11 +4,11 @@ namespace ArrangementService
 open Giraffe
 open Microsoft.AspNetCore.Http
 
-module CustomErrorMessage =
+module UserMessage =
 
     type HttpError = HttpFunc -> HttpContext -> HttpFuncResult
 
-    type CustomErrorMessage = string
+    type UserMessage = string
 
-    let convertCustomErrorToHttpErr (errors: CustomErrorMessage list): HttpError =
+    let convertUserMessageToHttpError (errors: UserMessage list): HttpError =
         RequestErrors.BAD_REQUEST errors
