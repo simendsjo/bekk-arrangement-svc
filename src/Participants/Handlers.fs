@@ -35,7 +35,7 @@ module Handlers =
     let deleteParticipant (email, id) =
         result {
             let! emailAddress = EmailAddress.Parse email
-            for deleteResult in Service.deleteParticipant (id, emailAddress) do
+            for deleteResult in Service.deleteParticipant (Events.DomainModel.Id id, emailAddress) do
             yield commitTransaction
             return deleteResult
         }
