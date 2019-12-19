@@ -54,7 +54,6 @@ module Service =
             return Seq.map Models.models.dbToDomain participantsByMail
         }
 
-
     let deleteParticipant (eventId, email) =
         result {
             for participants in repo.read do
@@ -62,7 +61,6 @@ module Service =
             let! participantByMail =
                 participants
                 |> queryParticipantByKey (eventId, email)
-                |> withError [ participationNotFound (eventId, email) ]
 
             repo.del participantByMail
 

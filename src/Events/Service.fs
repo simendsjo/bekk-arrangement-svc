@@ -31,7 +31,6 @@ module Service =
             let! event =
                 events
                 |> queryEventBy id
-                |> withError (eventNotFound id)
 
             return models.dbToDomain event
         }
@@ -49,7 +48,6 @@ module Service =
             let! oldEvent =
                 events
                 |> queryEventBy id
-                |> withError (eventNotFound id)
 
             return repo.update event oldEvent
         }
@@ -61,7 +59,6 @@ module Service =
             let! event =
                 events
                 |> queryEventBy id
-                |> withError (eventNotFound id)
 
             repo.del event
             return eventSuccessfullyDeleted id

@@ -1,8 +1,12 @@
 namespace ArrangementService.Events
 
 open Models
+open ErrorMessages
 open DomainModel
 open System.Linq
+
+open ArrangementService
+open ResultComputationExpression
 
 module Queries =
 
@@ -12,7 +16,7 @@ module Queries =
                 where (event.Id = id.Unwrap)
                 select (Some event)
                 exactlyOneOrDefault
-        }
+        } |> withError (eventNotFound id)
 
     let queryEventsOrganizedBy (organizerEmail: string) (events: IQueryable<DbModel>) =
         query {
