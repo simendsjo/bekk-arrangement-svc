@@ -63,8 +63,8 @@ module Service =
 
             let! participantByMail =
                 participants
-                    |> queryParticipantByKey (email, id)
-                    |> withError [ participationNotFound email id ]
+                |> queryParticipantByKey (email, id)
+                |> withError [ participationNotFound email id ]
 
             repo.del participantByMail
 
