@@ -16,7 +16,7 @@ module Queries =
                 where (event.Id = id.Unwrap)
                 select (Some event)
                 exactlyOneOrDefault
-        } |> withError (eventNotFound id)
+        } |> withError [ eventNotFound id ]
 
     let queryEventsOrganizedBy (organizerEmail: string) (events: IQueryable<DbModel>) =
         query {
