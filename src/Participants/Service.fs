@@ -32,11 +32,9 @@ module Service =
             yield sendMail mail
         }
 
-    let registerParticipant (eventId, email) (registration: Models.WriteModel) =
+    let registerParticipant registration =
         result {
-            for participant in repo.create
-                                   (fun _ ->
-                                       Models.models.writeToDomain (eventId, email) registration) do
+            for participant in repo.create registration do
 
             yield sendEventEmail participant
 
@@ -57,16 +55,16 @@ module Service =
         }
 
 
-    let deleteParticipant email id =
+    let deleteParticipant (eventId, email) =
         result {
             for participants in repo.read do
 
             let! participantByMail =
                 participants
-                |> queryParticipantByKey (email, id)
-                |> withError [ participationNotFound email id ]
+                |> queryParticipantByKey (eventId, email)
+                |> withError [ participationNotFound (eventId, email) ]
 
             repo.del participantByMail
 
-            return participationSuccessfullyDeleted email id
+            return participationSuccessfullyDeleted (eventId, email)
         }

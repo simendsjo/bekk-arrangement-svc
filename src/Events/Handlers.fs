@@ -51,7 +51,7 @@ module Handlers =
     let createEvent =
         result {
             for writeModel in getBody<Models.WriteModel> do
-            for newEvent in Service.createEvent writeModel do
+            for newEvent in Service.createEvent (fun id -> models.writeToDomain id writeModel) do
             return models.domainToView newEvent
         }
 

@@ -36,9 +36,9 @@ module Service =
             return models.dbToDomain event
         }
 
-    let createEvent writemodel =
+    let createEvent event =
         result {
-            for newEvent in repo.create (fun id -> models.writeToDomain id writemodel) do
+            for newEvent in repo.create event do
             return newEvent
         }
 
@@ -58,11 +58,11 @@ module Service =
         result {
             for events in repo.read do
 
-                let! event =
-                    events
-                    |> queryEventBy id
-                    |> withError (eventNotFound id)
+            let! event =
+                events
+                |> queryEventBy id
+                |> withError (eventNotFound id)
 
-                repo.del event
-                return eventSuccessfullyDeleted id
+            repo.del event
+            return eventSuccessfullyDeleted id
         }

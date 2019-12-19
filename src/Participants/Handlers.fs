@@ -7,13 +7,15 @@ open Http
 open ResultComputationExpression
 open Repo
 open Models
+open Email.Models
 
 module Handlers =
 
-    let registerForEvent (email, id) =
+    let registerForEvent (email, eventId) =
         result {
             for writeModel in getBody<WriteModel> do
-            for participant in Service.registerParticipant (id, email) writeModel do
+            for participant in Service.registerParticipant
+                (fun _ -> models.writeToDomain (eventId, email) writeModel) do
             return models.domainToView participant
         }
 
@@ -25,13 +27,15 @@ module Handlers =
 
     let getParticipantEvents email =
         result {
-            for participants in Service.getParticipantEvents email do
+            let! emailAddress = EmailAddress.Parse email
+            for participants in Service.getParticipantEvents emailAddress do
             return Seq.map models.domainToView participants
         }
 
     let deleteParticipant (email, id) =
         result {
-            for deleteResult in Service.deleteParticipant email id do
+            let! emailAddress = EmailAddress.Parse email
+            for deleteResult in Service.deleteParticipant (id, emailAddress) do
             yield commitTransaction
             return deleteResult
         }
