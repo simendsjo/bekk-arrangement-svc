@@ -1,17 +1,16 @@
-namespace ArrangementService.Participants
+namespace ArrangementService.Participant
 
 open ArrangementService
 
 open Email.Models
 open TimeStamp
 
-module DomainModel =
-    type DomainModel =
-        { Email: EmailAddress
-          EventId: Events.DomainModel.Id
-          RegistrationTime: TimeStamp }
-        static member Create =
-          fun email eventId registrationTime ->
-            { Email = email
-              EventId = eventId
-              RegistrationTime = registrationTime}
+type Participant =
+    { Email: EmailAddress
+      EventId: Event.Id
+      RegistrationTime: TimeStamp }
+    static member Create =
+      fun email eventId registrationTime ->
+        { Email = email
+          EventId = eventId
+          RegistrationTime = registrationTime}

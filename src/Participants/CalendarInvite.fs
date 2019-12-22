@@ -1,4 +1,4 @@
-namespace ArrangementService.Participants
+namespace ArrangementService.Participant
 
 open ArrangementService.DateTime
 

@@ -1,4 +1,4 @@
-namespace ArrangementService.Participants
+namespace ArrangementService.Participant
 
 open System
 open Giraffe
@@ -10,7 +10,6 @@ open Validation
 open Database
 open Repo
 open Email.Models
-open DomainModel
 open UserMessage
 
 module Models =
@@ -28,30 +27,29 @@ module Models =
     type TableModel = ArrangementDbContext.dboSchema.``dbo.Participants``
     type DbModel = ArrangementDbContext.``dbo.ParticipantsEntity``
 
-
-    let dbToDomain (dbRecord: DbModel): DomainModel =
+    let dbToDomain (dbRecord: DbModel): Participant =
         { Email = EmailAddress dbRecord.Email
-          EventId = Events.DomainModel.Id dbRecord.EventId
+          EventId = Event.Id dbRecord.EventId
           RegistrationTime = TimeStamp dbRecord.RegistrationTime }
 
-    let writeToDomain ((id, email): Key) ((): WriteModel): Result<DomainModel, UserMessage list> =
-        Ok DomainModel.Create
+    let writeToDomain ((id, email): Key) ((): WriteModel): Result<Participant, UserMessage list> =
+        Ok Participant.Create
           <*> EmailAddress.Parse email
-          <*> (Events.DomainModel.Id id |> Ok)
+          <*> (Event.Id id |> Ok)
           <*> (now () |> Ok)
 
-    let updateDbWithDomain (db: DbModel) (domainModel: DomainModel) =
-        db.Email <- domainModel.Email.Unwrap
-        db.EventId <- domainModel.EventId.Unwrap
-        db.RegistrationTime <- domainModel.RegistrationTime.Unwrap
+    let updateDbWithDomain (db: DbModel) (participant: Participant) =
+        db.Email <- participant.Email.Unwrap
+        db.EventId <- participant.EventId.Unwrap
+        db.RegistrationTime <- participant.RegistrationTime.Unwrap
         db
 
-    let domainToView (domainModel: DomainModel): ViewModel =
-        { Email = domainModel.Email.Unwrap
-          EventId = domainModel.EventId.Unwrap
-          RegistrationTime = domainModel.RegistrationTime.Unwrap }
+    let domainToView (participant: Participant): ViewModel =
+        { Email = participant.Email.Unwrap
+          EventId = participant.EventId.Unwrap
+          RegistrationTime = participant.RegistrationTime.Unwrap }
 
-    let models: Models<DbModel, DomainModel, ViewModel, WriteModel, Key, TableModel> =
+    let models: Models<DbModel, Participant, ViewModel, WriteModel, Key, TableModel> =
         { key = fun record -> (record.EventId, record.Email)
           table = fun ctx -> ctx.GetService<ArrangementDbContext>().Dbo.Participants
 

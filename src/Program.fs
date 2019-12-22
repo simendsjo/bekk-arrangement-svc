@@ -18,7 +18,7 @@ open migrator
 open Database
 open Logging
 
-let webApp = choose [ Events.Handlers.routes; Health.healthCheck; Participants.Handlers.routes ]
+let webApp = choose [ Event.Handlers.routes; Health.healthCheck; Participant.Handlers.routes ]
 
 let private configuration =
     let builder = ConfigurationBuilder()

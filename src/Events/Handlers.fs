@@ -1,14 +1,13 @@
-namespace ArrangementService.Events
+namespace ArrangementService.Event
 
 open Giraffe
 
 open ArrangementService
 
 open Http
-open DomainModel
 open ResultComputationExpression
 open Repo
-open Events.Models
+open Event.Models
 
 module Handlers =
 

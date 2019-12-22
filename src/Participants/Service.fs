@@ -1,4 +1,4 @@
-namespace ArrangementService.Participants
+namespace ArrangementService.Participant
 
 open ArrangementService
 
@@ -6,7 +6,6 @@ open ResultComputationExpression
 open Email.Models
 open Email.Service
 open CalendarInvite
-open DomainModel
 open Queries
 open UserMessages
 
@@ -14,7 +13,7 @@ module Service =
 
     let repo = Repo.from Models.models
 
-    let createEmail participantEmail (event: Events.DomainModel.DomainModel) =
+    let createEmail participantEmail (event: Event.Event) =
         { Subject = event.Title.Unwrap
           Message = event.Description.Unwrap
           From = event.OrganizerEmail
@@ -25,9 +24,9 @@ module Service =
                   event.Description event.Title event.OrganizerEmail participantEmail
                   participantEmail }
 
-    let sendEventEmail (participant: DomainModel) =
+    let sendEventEmail (participant: Participant) =
         result {
-            for event in Events.Service.getEvent participant.EventId do
+            for event in Event.Service.getEvent participant.EventId do
             let mail = createEmail participant.Email event
             yield sendMail mail
         }
