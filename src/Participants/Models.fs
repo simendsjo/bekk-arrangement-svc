@@ -11,6 +11,7 @@ open Database
 open Repo
 open UserMessage
 open ArrangementService.Email
+open ArrangementService.DomainModels
 
   type ViewModel =
       { Email: string

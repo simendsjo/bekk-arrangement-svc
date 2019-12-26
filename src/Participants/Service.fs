@@ -3,11 +3,10 @@ namespace ArrangementService.Participant
 open ArrangementService
 
 open ResultComputationExpression
-open Email.Service
 open CalendarInvite
 open Queries
 open UserMessages
-open ArrangementService.Email
+open ArrangementService.DomainModels
 
 module Service =
 
@@ -18,7 +17,7 @@ module Service =
           Message = event.Description.Unwrap
           From = event.OrganizerEmail
           To = participantEmail
-          Cc = EmailAddress "ida.bosch@bekk.no" // Burde gjøre denne optional
+          Cc = Email.EmailAddress "ida.bosch@bekk.no" // Burde gjøre denne optional
           CalendarInvite =
               createCalendarAttachment event.StartDate event.EndDate event.Location event.Id
                   event.Description event.Title event.OrganizerEmail participantEmail
@@ -28,7 +27,7 @@ module Service =
         result {
             for event in Event.Service.getEvent participant.EventId do
             let mail = createEmail participant.Email event
-            yield sendMail mail
+            yield Email.Service.sendMail mail
         }
 
     let registerParticipant registration =

@@ -12,6 +12,7 @@ open DateTime
 open Utils
 open UserMessage
 open ArrangementService.Email
+open ArrangementService.DomainModels
 
 type TableModel = ArrangementDbContext.dboSchema.``dbo.Events``
 type DbModel = ArrangementDbContext.``dbo.EventsEntity``

@@ -2,6 +2,7 @@ namespace ArrangementService.Email
 
 open ArrangementService
 open SendgridApiModels
+open ArrangementService.DomainModels
 
 module Models =
     let emailToSendgridFormat (email: Email): SendGridFormat =

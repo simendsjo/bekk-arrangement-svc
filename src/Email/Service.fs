@@ -10,6 +10,7 @@ open Newtonsoft.Json.Serialization
 open ArrangementService
 open SendgridApiModels
 open Models
+open ArrangementService.DomainModels
 
 module Service =
 
