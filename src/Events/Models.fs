@@ -10,32 +10,32 @@ open Database
 open Repo
 open DateTime
 open Utils
-open Email.Models
 open UserMessage
+open ArrangementService.Email
+
+type TableModel = ArrangementDbContext.dboSchema.``dbo.Events``
+type DbModel = ArrangementDbContext.``dbo.EventsEntity``
+
+type ViewModel =
+    { Id: Guid
+      Title: string
+      Description: string
+      Location: string
+      OrganizerEmail: string
+      StartDate: DateTimeCustom
+      EndDate: DateTimeCustom
+      OpenForRegistrationDate: DateTimeCustom }
+
+type WriteModel =
+    { Title: string
+      Description: string
+      Location: string
+      OrganizerEmail: string
+      StartDate: DateTimeCustom
+      EndDate: DateTimeCustom
+      OpenForRegistrationDate: DateTimeCustom }
 
 module Models =
-
-    type TableModel = ArrangementDbContext.dboSchema.``dbo.Events``
-    type DbModel = ArrangementDbContext.``dbo.EventsEntity``
-
-    type ViewModel =
-        { Id: Guid
-          Title: string
-          Description: string
-          Location: string
-          OrganizerEmail: string
-          StartDate: DateTimeCustom
-          EndDate: DateTimeCustom
-          OpenForRegistrationDate: DateTimeCustom }
-
-    type WriteModel =
-        { Title: string
-          Description: string
-          Location: string
-          OrganizerEmail: string
-          StartDate: DateTimeCustom
-          EndDate: DateTimeCustom
-          OpenForRegistrationDate: DateTimeCustom }
 
     let writeToDomain (id: Key) (writeModel: WriteModel): Result<Event, UserMessage list> =
         Ok Event.Create
@@ -70,15 +70,15 @@ module Models =
         db.OpenForRegistrationTime <- customToTimeSpan event.OpenForRegistrationDate.Time
         db
 
-    let domainToView (domainModel: Event): ViewModel =
-        { Id = domainModel.Id.Unwrap
-          Title = domainModel.Title.Unwrap
-          Description = domainModel.Description.Unwrap
-          Location = domainModel.Location.Unwrap
-          OrganizerEmail = domainModel.OrganizerEmail.Unwrap
-          StartDate = domainModel.StartDate
-          EndDate = domainModel.EndDate
-          OpenForRegistrationDate = domainModel.OpenForRegistrationDate }
+    let domainToView (event: Event): ViewModel =
+        { Id = event.Id.Unwrap
+          Title = event.Title.Unwrap
+          Description = event.Description.Unwrap
+          Location = event.Location.Unwrap
+          OrganizerEmail = event.OrganizerEmail.Unwrap
+          StartDate = event.StartDate
+          EndDate = event.EndDate
+          OpenForRegistrationDate = event.OpenForRegistrationDate }
 
     let models: Models<DbModel, Event, ViewModel, WriteModel, Key, TableModel> =
         { key = fun record -> record.Id

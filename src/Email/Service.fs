@@ -8,8 +8,8 @@ open Newtonsoft.Json
 open Newtonsoft.Json.Serialization
 
 open ArrangementService
-open Models
 open SendgridApiModels
+open Models
 
 module Service =
 

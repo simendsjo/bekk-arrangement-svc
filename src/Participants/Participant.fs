@@ -1,9 +1,6 @@
-namespace ArrangementService.Participant
+namespace ArrangementService
 
-open ArrangementService
-
-open Email.Models
-open TimeStamp
+open ArrangementService.Email
 
 type Participant =
     { Email: EmailAddress

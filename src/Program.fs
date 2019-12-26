@@ -13,12 +13,17 @@ open Microsoft.IdentityModel.Tokens
 open Microsoft.AspNetCore.Hosting
 
 open ArrangementService
-open ArrangementService.Email.SendgridApiModels
 open migrator
 open Database
 open Logging
+open SendgridApiModels
 
-let webApp = choose [ Event.Handlers.routes; Health.healthCheck; Participant.Handlers.routes ]
+let webApp =
+    choose [
+        Health.healthCheck 
+        Event.Handlers.routes
+        Participant.Handlers.routes
+        ]
 
 let private configuration =
     let builder = ConfigurationBuilder()

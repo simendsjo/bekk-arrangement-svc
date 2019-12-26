@@ -7,7 +7,7 @@ open Http
 open ResultComputationExpression
 open Repo
 open Models
-open Email.Models
+open ArrangementService.Email
 
 module Handlers =
 

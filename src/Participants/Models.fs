@@ -9,23 +9,23 @@ open TimeStamp
 open Validation
 open Database
 open Repo
-open Email.Models
 open UserMessage
+open ArrangementService.Email
+
+  type ViewModel =
+      { Email: string
+        EventId: Guid
+        RegistrationTime: int64 }
+
+  // Empty for now
+  type WriteModel = Unit
+
+  type Key = Guid * string
+
+  type TableModel = ArrangementDbContext.dboSchema.``dbo.Participants``
+  type DbModel = ArrangementDbContext.``dbo.ParticipantsEntity``
 
 module Models =
-
-    type ViewModel =
-        { Email: string
-          EventId: Guid
-          RegistrationTime: int64 }
-
-    // Empty for now
-    type WriteModel = Unit
-
-    type Key = Guid * string
-
-    type TableModel = ArrangementDbContext.dboSchema.``dbo.Participants``
-    type DbModel = ArrangementDbContext.``dbo.ParticipantsEntity``
 
     let dbToDomain (dbRecord: DbModel): Participant =
         { Email = EmailAddress dbRecord.Email

@@ -1,12 +1,11 @@
 namespace ArrangementService.Participant
 
-open Models
 open UserMessages
 open System.Linq
 
 open ArrangementService
 
-open Email.Models
+open ArrangementService.Email
 open ResultComputationExpression
 
 module Queries =

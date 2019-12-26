@@ -3,17 +3,17 @@ namespace ArrangementService.Participant
 open ArrangementService
 
 open ResultComputationExpression
-open Email.Models
 open Email.Service
 open CalendarInvite
 open Queries
 open UserMessages
+open ArrangementService.Email
 
 module Service =
 
     let repo = Repo.from Models.models
 
-    let createEmail participantEmail (event: Event.Event) =
+    let createEmail participantEmail (event: Event) =
         { Subject = event.Title.Unwrap
           Message = event.Description.Unwrap
           From = event.OrganizerEmail

@@ -1,6 +1,6 @@
 namespace ArrangementService.Participant
 
-open ArrangementService.DateTime
+open ArrangementService
 
 module CalendarInvite =
 
