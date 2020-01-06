@@ -37,7 +37,7 @@ END:VCALENDAR" (toUtcString startTime) (System.DateTimeOffset.UtcNow.ToString())
             (fromAddress.ToString()) (toName.ToString()) (toAddress.ToString())
 
     let createMessage (event: Event) (participant: Participant) =
-        let url = sprintf "http://localhost:3000/%O/cancel/%O" event.Id.Unwrap participant.EventId.Unwrap
+        let url = sprintf "http://localhost:3000/%O/cancel/%s" event.Id.Unwrap participant.Email.Unwrap
         sprintf "Hei %s.
 Du er nå påmeldt %s.
 Vi gleder oss til å se deg på %s den %i/%i/%i kl %i:%i.
