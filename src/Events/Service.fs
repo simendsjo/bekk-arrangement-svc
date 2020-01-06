@@ -1,4 +1,4 @@
-namespace ArrangementService.Events
+namespace ArrangementService.Event
 
 open ArrangementService
 
@@ -8,7 +8,7 @@ open UserMessages
 
 module Service =
 
-    let models = Models.models
+    let models = ArrangementService.Event.Models.models
     let repo = Repo.from models
 
     let getEvents =

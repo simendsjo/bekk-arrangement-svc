@@ -1,4 +1,4 @@
-namespace ArrangementService.Email
+namespace ArrangementService
 
 module SendgridApiModels =
 

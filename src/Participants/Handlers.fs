@@ -1,4 +1,4 @@
-namespace ArrangementService.Participants
+namespace ArrangementService.Participant
 
 open Giraffe
 
@@ -7,7 +7,7 @@ open Http
 open ResultComputationExpression
 open Repo
 open Models
-open Email.Models
+open ArrangementService.Email
 
 module Handlers =
 
@@ -35,7 +35,7 @@ module Handlers =
     let deleteParticipant (email, id) =
         result {
             let! emailAddress = EmailAddress.Parse email
-            for deleteResult in Service.deleteParticipant (Events.DomainModel.Id id, emailAddress) do
+            for deleteResult in Service.deleteParticipant (Event.Id id, emailAddress) do
             yield commitTransaction
             return deleteResult
         }
