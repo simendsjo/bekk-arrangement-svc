@@ -12,55 +12,52 @@ module Service =
 
     let repo = Repo.from Models.models
 
-    let createEmail participantEmail (event: Event) =
-        { Subject = event.Title.Unwrap
-          Message = event.Description.Unwrap
+    let createEmail participant (event: Event) =
+        { Subject = sprintf "Du ble påmeldt %s" event.Title.Unwrap
+          Message = (createMessage event participant)
           From = event.OrganizerEmail
-          To = participantEmail
+          To = participant.Email
           Cc = Email.EmailAddress "ida.bosch@bekk.no" // Burde gjøre denne optional
           CalendarInvite =
-              createCalendarAttachment event.StartDate event.EndDate event.Location event.Id
-                  event.Description event.Title event.OrganizerEmail participantEmail
-                  participantEmail }
+              createCalendarAttachment event.StartDate event.EndDate event.Location event.Id event.Description
+                  event.Title event.OrganizerEmail participant.Email participant.Email }
 
     let sendEventEmail (participant: Participant) =
         result {
             for event in Event.Service.getEvent participant.EventId do
-            let mail = createEmail participant.Email event
-            yield Email.Service.sendMail mail
+                let mail = createEmail participant event
+                yield Email.Service.sendMail mail
         }
 
     let registerParticipant registration =
         result {
             for participant in repo.create registration do
 
-            yield sendEventEmail participant
+                yield sendEventEmail participant
 
-            return participant
+                return participant
         }
 
     let getParticipants =
         result {
             for participants in repo.read do
-            return Seq.map Models.models.dbToDomain participants
+                return Seq.map Models.models.dbToDomain participants
         }
 
     let getParticipantEvents email =
         result {
             for participants in repo.read do
-            let participantsByMail = participants |> queryParticipantBy email
-            return Seq.map Models.models.dbToDomain participantsByMail
+                let participantsByMail = participants |> queryParticipantBy email
+                return Seq.map Models.models.dbToDomain participantsByMail
         }
 
     let deleteParticipant (eventId, email) =
         result {
             for participants in repo.read do
 
-            let! participantByMail =
-                participants
-                |> queryParticipantByKey (eventId, email)
+                let! participantByMail = participants |> queryParticipantByKey (eventId, email)
 
-            repo.del participantByMail
+                repo.del participantByMail
 
-            return participationSuccessfullyDeleted (eventId, email)
+                return participationSuccessfullyDeleted (eventId, email)
         }
