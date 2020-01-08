@@ -16,16 +16,16 @@ module Service =
         { Subject = sprintf "Du ble påmeldt %s" event.Title.Unwrap
           Message = (createMessage event participant)
           From = event.OrganizerEmail
-          To = participant.Email
+          To = Email.EmailAddress participant
           Cc = Email.EmailAddress "ida.bosch@bekk.no" // Burde gjøre denne optional
           CalendarInvite =
               createCalendarAttachment event.StartDate event.EndDate event.Location event.Id event.Description
-                  event.Title event.OrganizerEmail participant.Email participant.Email }
+                  event.Title event.OrganizerEmail participant participant }
 
     let sendEventEmail (participant: Participant) =
         result {
             for event in Event.Service.getEvent participant.EventId do
-                let mail = createEmail participant event
+                let mail = createEmail participant.Email.Unwrap event
                 yield Email.Service.sendMail mail
         }
 
@@ -55,9 +55,9 @@ module Service =
         result {
             for participants in repo.read do
 
-                let! participantByMail = participants |> queryParticipantByKey (eventId, email)
+                let! participant = participants |> queryParticipantByKey (eventId, email)
 
-                repo.del participantByMail
+                repo.del participant
 
                 return participationSuccessfullyDeleted (eventId, email)
         }

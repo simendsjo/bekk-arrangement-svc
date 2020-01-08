@@ -34,18 +34,18 @@ END:VALARM
 END:VEVENT
 END:VCALENDAR" (toUtcString startTime) (System.DateTimeOffset.UtcNow.ToString()) (toUtcString endTime)
             (location.ToString()) guid (description.ToString()) (description.ToString()) (subject.ToString())
-            (fromAddress.ToString()) (toName.ToString()) (toAddress.ToString())
+            (fromAddress.ToString()) toName toAddress
 
-    let createMessage (event: Event) (participant: Participant) =
-        let url = sprintf "https://api.dev.bekk.no/arrangement-svc/%O/cancel/%s" event.Id.Unwrap participant.Email.Unwrap
-        sprintf "Hei %s.
+    let createMessage (event: Event) participant =
+        let url = sprintf "https://api.dev.bekk.no/arrangement-svc/%O/cancel/%s" event.Id.Unwrap participant //Må endre denne URLen
+        sprintf "Hei %s! 😄
 Du er nå påmeldt %s.
-Vi gleder oss til å se deg på %s den %i/%i/%i kl %i:%i.
+Vi gleder oss til å se deg på %s den %i/%i/%i kl %i:%i 🎉
 Siden det er begrenset med plasser, setter vi pris på om du melder deg av hvis du ikke lenger
 kan delta. Da blir det plass til andre på ventelisten 😊
 Klikk her for å melde deg av: %s.
 Bare spør meg om det er noe du lurer på.
 Vi sees!
-Hilsen %s i Bekk." participant.Email.Unwrap event.Title.Unwrap event.Location.Unwrap event.StartDate.Date.Day
+Hilsen %s i Bekk" participant event.Title.Unwrap event.Location.Unwrap event.StartDate.Date.Day
             event.StartDate.Date.Month event.StartDate.Date.Year event.StartDate.Time.Hour event.StartDate.Time.Minute
             url event.OrganizerEmail.Unwrap
