@@ -1,17 +1,9 @@
 namespace ArrangementService.Participant
 
-open ArrangementService
 open ArrangementService.DomainModels
+open ArrangementService.DateTime
 
 module CalendarInvite =
-
-    let toUtcString (dt: DateTimeCustom) =
-        sprintf "%s%s%sT%s%s%sZ" (dt.Date.Year.ToString()) (dt.Date.Month.ToString().PadLeft(2, '0'))
-            (dt.Date.Day.ToString().PadLeft(2, '0')) (dt.Time.Hour.ToString().PadLeft(2, '0'))  (dt.Time.Minute.ToString().PadLeft(2, '0'))  "00" // Format: "20200101T192209Z"
-
-    let toReadableString (dt: DateTimeCustom) =
-        sprintf "%s/%s/%s kl %s:%s" (dt.Date.Day.ToString().PadLeft(2, '0')) (dt.Date.Month.ToString().PadLeft(2, '0'))
-            (dt.Date.Year.ToString()) (dt.Time.Hour.ToString().PadLeft(2, '0'))  (dt.Time.Minute.ToString().PadLeft(2, '0')) 
 
     let createCalendarAttachment (event: Event) participantEmail =
         ["BEGIN:VCALENDAR"
