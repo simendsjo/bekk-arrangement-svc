@@ -18,9 +18,7 @@ module Service =
           From = event.OrganizerEmail
           To = Email.EmailAddress participant
           Cc = Email.EmailAddress "ida.bosch@bekk.no" // Burde gjøre denne optional
-          CalendarInvite =
-              createCalendarAttachment event.StartDate event.EndDate event.Location event.Id event.Description
-                  event.Title event.OrganizerEmail participant participant }
+          CalendarInvite = createCalendarAttachment event participant }
 
     let sendEventEmail (participant: Participant) =
         result {
