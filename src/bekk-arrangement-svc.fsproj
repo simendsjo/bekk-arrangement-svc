@@ -60,12 +60,13 @@
     <Compile Include="LanguageExtensions\Validation.fs" />
     <Compile Include="LanguageExtensions\ResultComputationExpression.fs" /> 
     <Compile Include="Common\UserMessage.fs" />
-    <Compile Include="Common\DateTime.fs" />
-    <Compile Include="Common\TimeStamp.fs" />
-    <Compile Include="Common\Utils.fs" />
     <Compile Include="Database\DbContext.fs" />
     <Compile Include="Database\Repo.fs" />
-    <Compile Include="Http.fs" /> 
+    <Compile Include="Common\Http.fs" /> 
+    <Compile Include="Common\Auth.fs" />
+    <Compile Include="DomainTypes\DateTime.fs" />
+    <Compile Include="DomainTypes\TimeStamp.fs" />
+    <Compile Include="DomainTypes\Utils.fs" />
     <Compile Include="DomainTypes\Email.fs" />
     <Compile Include="DomainTypes\Event.fs" />
     <Compile Include="DomainTypes\DomainModels.fs" />

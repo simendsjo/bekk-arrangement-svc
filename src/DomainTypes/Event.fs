@@ -4,7 +4,7 @@ open System
 open ArrangementService
 
 open Validation
-open Utils
+open ArrangementService.Utils
 open UserMessage
 
 type Key = Guid
