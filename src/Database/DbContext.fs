@@ -19,3 +19,4 @@ module Database =
 
     let createDbContext (connectionString: string): ArrangementSql.dataContext =
         ArrangementSql.GetDataContext(connectionString)
+

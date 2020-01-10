@@ -25,7 +25,9 @@ module Models =
           Title: string
           Description: string
           Location: string
+          OrganizerName: string
           OrganizerEmail: string
+          MaxParticipants: int
           StartDate: DateTimeCustom
           EndDate: DateTimeCustom
           OpenForRegistrationDate: DateTimeCustom }
@@ -34,36 +36,39 @@ module Models =
         { Title: string
           Description: string
           Location: string
+          OrganizerName: string
           OrganizerEmail: string
+          MaxParticipants: int
           StartDate: DateTimeCustom
           EndDate: DateTimeCustom
           OpenForRegistrationDate: DateTimeCustom }
 
     let writeToDomain (id: Key) (writeModel: WriteModel): Result<DomainModel, UserMessage list> =
-        Ok DomainModel.Create
-          <*> (Id id |> Ok)
-          <*> Title.Parse writeModel.Title
-          <*> Description.Parse writeModel.Description
-          <*> Location.Parse writeModel.Location
-          <*> EmailAddress.Parse writeModel.OrganizerEmail
-          <*> validateDateRange writeModel.OpenForRegistrationDate writeModel.StartDate writeModel.EndDate
+        Ok DomainModel.Create <*> (Id id |> Ok) <*> Title.Parse writeModel.Title
+        <*> Description.Parse writeModel.Description <*> Location.Parse writeModel.Location
+        <*> OrganizerName.Parse writeModel.OrganizerName 
+        <*> EmailAddress.Parse writeModel.OrganizerEmail <*> MaxParticipants.Parse writeModel.MaxParticipants
+        <*> validateDateRange writeModel.OpenForRegistrationDate writeModel.StartDate writeModel.EndDate
 
     let dbToDomain (dbRecord: DbModel): DomainModel =
         { Id = Id dbRecord.Id
           Title = Title dbRecord.Title
           Description = Description dbRecord.Description
           Location = Location dbRecord.Location
+          OrganizerName = OrganizerName dbRecord.OrganizerName
           OrganizerEmail = EmailAddress dbRecord.OrganizerEmail
+          MaxParticipants = MaxParticipants dbRecord.MaxParticipants
           StartDate = toCustomDateTime dbRecord.StartDate dbRecord.StartTime
           EndDate = toCustomDateTime dbRecord.EndDate dbRecord.EndTime
-          OpenForRegistrationDate =
-              toCustomDateTime dbRecord.OpenForRegistrationDate dbRecord.OpenForRegistrationTime }
+          OpenForRegistrationDate = toCustomDateTime dbRecord.OpenForRegistrationDate dbRecord.OpenForRegistrationTime }
 
     let updateDbWithDomain (db: DbModel) (event: DomainModel) =
         db.Title <- event.Title.Unwrap
         db.Description <- event.Description.Unwrap
         db.Location <- event.Location.Unwrap
+        db.OrganizerName <- event.OrganizerName.Unwrap
         db.OrganizerEmail <- event.OrganizerEmail.Unwrap
+        db.MaxParticipants <- event.MaxParticipants.Unwrap
         db.StartDate <- customToDateTime event.StartDate.Date
         db.StartTime <- customToTimeSpan event.StartDate.Time
         db.EndDate <- customToDateTime event.EndDate.Date
@@ -77,7 +82,9 @@ module Models =
           Title = domainModel.Title.Unwrap
           Description = domainModel.Description.Unwrap
           Location = domainModel.Location.Unwrap
+          OrganizerName = domainModel.OrganizerName.Unwrap
           OrganizerEmail = domainModel.OrganizerEmail.Unwrap
+          MaxParticipants = domainModel.MaxParticipants.Unwrap
           StartDate = domainModel.StartDate
           EndDate = domainModel.EndDate
           OpenForRegistrationDate = domainModel.OpenForRegistrationDate }

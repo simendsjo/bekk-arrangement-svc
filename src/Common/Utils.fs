@@ -15,6 +15,9 @@ module Utils =
     let validateBefore errorMessage (before, after) =
         validate (fun (x, y) -> x < y) errorMessage (before, after) 
 
+    let validateNotNegative errorMessage number = 
+        validate (fun x -> x >= 0) errorMessage number
+
     let validateDateRange openDate startDate endDate =
         [ fun (openDate, startDate, _) ->
             validateBefore (BadInput "Registreringsdato må være før åpningsdato") (openDate, startDate)
