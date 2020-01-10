@@ -1,4 +1,4 @@
-namespace ArrangementService.Events
+namespace ArrangementService.Event
 
 open System
 open Giraffe
@@ -8,49 +8,54 @@ open ArrangementService
 open Validation
 open Database
 open Repo
-open UserMessage
 open DateTime
 open Utils
-open Email.Models
+open UserMessage
+open ArrangementService.Email
+open ArrangementService.DomainModels
 
-open DomainModel
+type TableModel = ArrangementDbContext.dboSchema.``dbo.Events``
+type DbModel = ArrangementDbContext.``dbo.EventsEntity``
+
+
+type ViewModel =
+      { Id: Guid
+        Title: string
+        Description: string
+        Location: string
+        OrganizerName: string
+        OrganizerEmail: string
+        MaxParticipants: int
+        StartDate: DateTimeCustom
+        EndDate: DateTimeCustom
+        OpenForRegistrationDate: DateTimeCustom }
+
+type WriteModel =
+      { Title: string
+        Description: string
+        Location: string
+        OrganizerName: string
+        OrganizerEmail: string
+        MaxParticipants: int
+        StartDate: DateTimeCustom
+        EndDate: DateTimeCustom
+        OpenForRegistrationDate: DateTimeCustom }
 
 module Models =
 
-    type TableModel = ArrangementDbContext.dboSchema.``dbo.Events``
-    type DbModel = ArrangementDbContext.``dbo.EventsEntity``
+    let writeToDomain (id: Key) (writeModel: WriteModel): Result<Event, UserMessage list> =
+        Ok Event.Create 
+          <*> (Id id |> Ok) 
+          <*> Title.Parse writeModel.Title
+          <*> Description.Parse writeModel.Description 
+          <*> Location.Parse writeModel.Location
+          <*> OrganizerName.Parse writeModel.OrganizerName 
+          <*> EmailAddress.Parse writeModel.OrganizerEmail 
+          <*> MaxParticipants.Parse writeModel.MaxParticipants
+          <*> validateDateRange writeModel.OpenForRegistrationDate writeModel.StartDate writeModel.EndDate
 
-    type ViewModel =
-        { Id: Guid
-          Title: string
-          Description: string
-          Location: string
-          OrganizerName: string
-          OrganizerEmail: string
-          MaxParticipants: int
-          StartDate: DateTimeCustom
-          EndDate: DateTimeCustom
-          OpenForRegistrationDate: DateTimeCustom }
 
-    type WriteModel =
-        { Title: string
-          Description: string
-          Location: string
-          OrganizerName: string
-          OrganizerEmail: string
-          MaxParticipants: int
-          StartDate: DateTimeCustom
-          EndDate: DateTimeCustom
-          OpenForRegistrationDate: DateTimeCustom }
-
-    let writeToDomain (id: Key) (writeModel: WriteModel): Result<DomainModel, UserMessage list> =
-        Ok DomainModel.Create <*> (Id id |> Ok) <*> Title.Parse writeModel.Title
-        <*> Description.Parse writeModel.Description <*> Location.Parse writeModel.Location
-        <*> OrganizerName.Parse writeModel.OrganizerName 
-        <*> EmailAddress.Parse writeModel.OrganizerEmail <*> MaxParticipants.Parse writeModel.MaxParticipants
-        <*> validateDateRange writeModel.OpenForRegistrationDate writeModel.StartDate writeModel.EndDate
-
-    let dbToDomain (dbRecord: DbModel): DomainModel =
+    let dbToDomain (dbRecord: DbModel): Event =
         { Id = Id dbRecord.Id
           Title = Title dbRecord.Title
           Description = Description dbRecord.Description
@@ -62,7 +67,7 @@ module Models =
           EndDate = toCustomDateTime dbRecord.EndDate dbRecord.EndTime
           OpenForRegistrationDate = toCustomDateTime dbRecord.OpenForRegistrationDate dbRecord.OpenForRegistrationTime }
 
-    let updateDbWithDomain (db: DbModel) (event: DomainModel) =
+    let updateDbWithDomain (db: DbModel) (event: Event) =
         db.Title <- event.Title.Unwrap
         db.Description <- event.Description.Unwrap
         db.Location <- event.Location.Unwrap
@@ -77,7 +82,7 @@ module Models =
         db.OpenForRegistrationTime <- customToTimeSpan event.OpenForRegistrationDate.Time
         db
 
-    let domainToView (domainModel: DomainModel): ViewModel =
+    let domainToView (domainModel: Event): ViewModel =
         { Id = domainModel.Id.Unwrap
           Title = domainModel.Title.Unwrap
           Description = domainModel.Description.Unwrap
@@ -89,7 +94,7 @@ module Models =
           EndDate = domainModel.EndDate
           OpenForRegistrationDate = domainModel.OpenForRegistrationDate }
 
-    let models: Models<DbModel, DomainModel, ViewModel, WriteModel, Key, TableModel> =
+    let models: Models<DbModel, Event, ViewModel, WriteModel, Key, TableModel> =
         { key = fun record -> record.Id
           table = fun ctx -> ctx.GetService<ArrangementDbContext>().Dbo.Events
           create = fun table -> table.Create()

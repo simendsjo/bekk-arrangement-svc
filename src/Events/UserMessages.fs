@@ -1,4 +1,4 @@
-namespace ArrangementService.Events
+namespace ArrangementService.Event
 
 open ArrangementService
 open UserMessage

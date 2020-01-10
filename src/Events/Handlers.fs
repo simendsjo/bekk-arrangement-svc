@@ -1,21 +1,20 @@
-namespace ArrangementService.Events
+namespace ArrangementService.Event
 
 open Giraffe
 
 open ArrangementService
 
 open Http
-open DomainModel
 open ResultComputationExpression
 open Repo
-open Events.Models
+open Models
 
 module Handlers =
 
     let getEvents =
         result {
             for events in Service.getEvents do
-            return Seq.map models.domainToView events
+            return Seq.map Models.domainToView events
         }
 
     let getEventsOrganizedBy organizerEmail =
@@ -50,7 +49,7 @@ module Handlers =
 
     let createEvent =
         result {
-            for writeModel in getBody<Models.WriteModel> do
+            for writeModel in getBody<WriteModel> do
             for newEvent in Service.createEvent (fun id -> models.writeToDomain id writeModel) do
             return models.domainToView newEvent
         }

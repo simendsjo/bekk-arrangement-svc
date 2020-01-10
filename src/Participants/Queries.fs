@@ -1,18 +1,17 @@
-namespace ArrangementService.Participants
+namespace ArrangementService.Participant
 
-open Models
 open UserMessages
 open System.Linq
 
 open ArrangementService
 
-open Email.Models
+open ArrangementService.Email
 open ResultComputationExpression
 
 module Queries =
 
     let queryParticipantByKey
-        (id: Events.DomainModel.Id, email: EmailAddress)
+        (id: Event.Id, email: EmailAddress)
         (participants: DbModel IQueryable) =
             query {
                 for participant in participants do
