@@ -1,7 +1,6 @@
 namespace ArrangementService
 
 open Giraffe
-open Giraffe.Core
 
 module Auth =
 
