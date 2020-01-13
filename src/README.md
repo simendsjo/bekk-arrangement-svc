@@ -20,6 +20,7 @@ An F# service for collecting and maintaining data about events.
 
 ### First time setup
 
+- Open the project from the `src` folder in the terminal to avoid error messages in Visual Studio Code
 - You will need to create the database `arrangement-db` on you local SQL server, if it does not already exist. Use the query ```CREATE DATABASE [arrangement-db]```. 
 - In `appsettings.json`, make sure your database is running on this address. If this doesn't work you can try to connect to the development database. You can find the address for the development database in the secrets manager on AWS.
 
