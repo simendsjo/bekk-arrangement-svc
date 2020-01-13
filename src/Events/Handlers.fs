@@ -9,6 +9,7 @@ open Repo
 open Models
 
 open Giraffe
+open ArrangementService.Authorization
 
 module Handlers =
 
@@ -61,6 +62,6 @@ module Handlers =
                           [ route "/events" >=> handle getEvents
                             routef "/events/%O" (handle << getEvent)
                             routef "/events/organizer/%s" (handle << getEventsOrganizedBy) ]
-              DELETE >=> choose [ routef "/events/%O" (fun id -> isAdmin >=> (handle << deleteEvent) id ) ]
-              PUT >=> choose [ routef "/events/%O" (fun id -> isAdmin >=> (handle << updateEvent) id) ]
+              DELETE >=> choose [ routef "/events/%O" (fun id -> userCanEditEvent id >=> (handle << deleteEvent) id ) ]
+              PUT >=> choose [ routef "/events/%O" (fun id -> userCanEditEvent id >=> (handle << updateEvent) id) ]
               POST >=> choose [ route "/events" >=> handle createEvent ] ]

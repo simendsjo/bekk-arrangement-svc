@@ -1,14 +1,26 @@
 namespace ArrangementService
 
 open Giraffe
+open Giraffe.Core
 
 module Auth =
 
+    let rec anyOf these orElse =
+        fun next ctx ->
+            match these with
+            | [] -> orElse earlyReturn ctx
+            | thisOne::rest -> thisOne (fun _ _ -> anyOf rest orElse next ctx) next ctx
+
     let private permissionKey = "https://api.bekk.no/claims/permission"
-    let private hasPermission permission errorMessage = authorizeUser (fun user -> user.HasClaim (permissionKey, permission)) (errorMessage permission)  
+    let adminPermission = "admin:arrangement"
+    let readPermissions = "read:arrangement"
 
-    let private accessDenied permission = setStatusCode 403 >=> text (sprintf "Access Denied, you do not have permission <%s>" permission)
-    let private mustBeAdmin permission = setStatusCode 403 >=> text (sprintf "Access denies, you do not have admin permission <%s>" permission)
+    let accessDenied problemDescription = setStatusCode 403 >=> text problemDescription
 
-    let isUser: HttpHandler = hasPermission "read:arrangement" accessDenied
-    let isAdmin: HttpHandler = hasPermission "admin:arrangement" mustBeAdmin
+    let hasPermission permission = authorizeUser (fun user -> user.HasClaim (permissionKey, permission))
+
+    let isAdmin = hasPermission adminPermission
+    let isLoggedIn = hasPermission readPermissions
+
+    let makeSureUserIsLoggedIn: HttpHandler = isLoggedIn (accessDenied (sprintf "Access Denied, you do not have permission <%s>" readPermissions))
+    let makeSureUserIsAdmin: HttpHandler = isAdmin (accessDenied (sprintf "Access Denied, you do not have permission <%s>" adminPermission))
