@@ -6,9 +6,10 @@ module Auth =
 
     let rec anyOf these orElse =
         fun next ctx ->
+            let failureHandler rest _ _ = anyOf rest orElse next ctx
             match these with
             | [] -> orElse earlyReturn ctx
-            | thisOne::rest -> thisOne (fun _ _ -> anyOf rest orElse next ctx) next ctx
+            | authorize::rest -> authorize (failureHandler rest) next ctx
 
     let private permissionKey = "https://api.bekk.no/claims/permission"
     let adminPermission = "admin:arrangement"
