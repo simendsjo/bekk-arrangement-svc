@@ -1,6 +1,7 @@
 namespace ArrangementService
 
 open Giraffe
+open Microsoft.AspNetCore.Http
 
 module Auth =
 
@@ -11,16 +12,23 @@ module Auth =
             | [] -> orElse earlyReturn ctx
             | authorize::rest -> authorize (failureHandler rest) next ctx
 
-    let private permissionKey = "https://api.bekk.no/claims/permission"
-    let adminPermission = "admin:arrangement"
-    let readPermissions = "read:arrangement"
-
     let accessDenied problemDescription = setStatusCode 403 >=> text problemDescription
 
-    let hasPermission permission = authorizeUser (fun user -> user.HasClaim (permissionKey, permission))
+    let hasPermission permissionKey permission =
+        authorizeUser (fun user -> user.HasClaim (permissionKey, permission))
 
-    let isAdmin = hasPermission adminPermission
-    let isLoggedIn = hasPermission readPermissions
+    let isAdmin config =
+        hasPermission config.permissionsAndClaimsKey config.adminPermissionClaim
+    let isLoggedIn config =
+        hasPermission config.permissionsAndClaimsKey config.readPermissionClaim
 
-    let makeSureUserIsLoggedIn: HttpHandler = isLoggedIn (accessDenied (sprintf "Access Denied, you do not have permission <%s>" readPermissions))
-    let makeSureUserIsAdmin: HttpHandler = isAdmin (accessDenied (sprintf "Access Denied, you do not have permission <%s>" adminPermission))
+    let makeSureUserIsAdmin: HttpHandler =
+        fun next ctx ->
+            isAdmin
+                (ctx.GetService<AppConfig>())
+                (accessDenied "Access Denied, you do not have admin permissions") next ctx
+    let makeSureUserIsLoggedIn: HttpHandler =
+        fun next ctx ->
+            isLoggedIn
+                (ctx.GetService<AppConfig>())
+                (accessDenied "Access Denied, you need to be logged in to perform this action") next ctx

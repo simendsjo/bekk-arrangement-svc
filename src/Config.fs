@@ -1,4 +1,7 @@
 namespace ArrangementService
 
 type AppConfig =
-    { isProd: bool }
+    { isProd: bool
+      permissionsAndClaimsKey: string
+      adminPermissionClaim: string
+      readPermissionClaim: string }
