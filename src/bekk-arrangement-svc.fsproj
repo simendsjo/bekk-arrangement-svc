@@ -52,7 +52,7 @@
     <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
     <PackageReference Include="SQLProvider" Version="1.1.74" />
     <PackageReference Include="System.Data.SqlClient" Version="4.7.0" />
-    <PackageReference Include="Giraffe" Version="3.4.*" />
+    <PackageReference Include="Giraffe" Version="4.0.1" />
   </ItemGroup>
 
   <ItemGroup>
@@ -60,15 +60,17 @@
     <Compile Include="LanguageExtensions\Validation.fs" />
     <Compile Include="LanguageExtensions\ResultComputationExpression.fs" /> 
     <Compile Include="Common\UserMessage.fs" />
-    <Compile Include="Common\DateTime.fs" />
-    <Compile Include="Common\TimeStamp.fs" />
-    <Compile Include="Common\Utils.fs" />
     <Compile Include="Database\DbContext.fs" />
     <Compile Include="Database\Repo.fs" />
-    <Compile Include="Http.fs" /> 
+    <Compile Include="Common\Http.fs" /> 
+    <Compile Include="Common\Auth.fs" />
+    <Compile Include="DomainTypes\DateTime.fs" />
+    <Compile Include="DomainTypes\TimeStamp.fs" />
+    <Compile Include="DomainTypes\Utils.fs" />
     <Compile Include="DomainTypes\Email.fs" />
     <Compile Include="DomainTypes\Event.fs" />
     <Compile Include="DomainTypes\DomainModels.fs" />
+    <Compile Include="DomainTypes\Authorization.fs" />
     <Compile Include="Email\SendgridApiModels.fs" />
     <Compile Include="Email\Models.fs" />
     <Compile Include="Email\Service.fs" />

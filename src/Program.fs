@@ -49,8 +49,12 @@ let configureServices (services: IServiceCollection) =
         ({ ApiKey = configuration.["Sendgrid:Apikey"]
            SendgridUrl = configuration.["Sendgrid:SendgridUrl"] })
     |> ignore
-    services.AddSingleton<AppConfig>
-        ({ isProd = configuration.["Auth0:Scheduled_Tasks_Audience"] = "https://api.bekk.no" }) |> ignore  // For å sende mail: bytt ut = med <>
+    let config =
+         { isProd = configuration.["Auth0:Scheduled_Tasks_Audience"] = "https://api.bekk.no"
+           permissionsAndClaimsKey = configuration.["Auth0:Permission_Claim_Type"]
+           adminPermissionClaim = configuration.["Auth0:Admin_Claim"]
+           readPermissionClaim = configuration.["Auth0:Read_Claim" ]}
+    services.AddSingleton<AppConfig> config |> ignore  // For å sende mail: bytt ut = med <>
     dbContext.SaveContextSchema() |> ignore
     services.AddAuthentication(fun options ->
             options.DefaultAuthenticateScheme <- JwtBearerDefaults.AuthenticationScheme
