@@ -17,18 +17,17 @@ module Auth =
     let hasPermission permissionKey permission =
         authorizeUser (fun user -> user.HasClaim (permissionKey, permission))
 
-    let isAdmin config =
-        hasPermission config.permissionsAndClaimsKey config.adminPermissionClaim
-    let isLoggedIn config =
-        hasPermission config.permissionsAndClaimsKey config.readPermissionClaim
+    let isAdmin failure =
+        fun next (ctx: HttpContext) ->
+            let config = ctx.GetService<AppConfig>()
+            hasPermission config.permissionsAndClaimsKey config.adminPermissionClaim failure next ctx
+
+    let isLoggedIn failure =
+        fun next (ctx: HttpContext) -> 
+            let config = ctx.GetService<AppConfig>()
+            hasPermission config.permissionsAndClaimsKey config.readPermissionClaim failure next ctx
 
     let makeSureUserIsAdmin: HttpHandler =
-        fun next ctx ->
-            isAdmin
-                (ctx.GetService<AppConfig>())
-                (accessDenied "Access Denied, you do not have admin permissions") next ctx
+            isAdmin (accessDenied "Access Denied, you do not have admin permissions")
     let makeSureUserIsLoggedIn: HttpHandler =
-        fun next ctx ->
-            isLoggedIn
-                (ctx.GetService<AppConfig>())
-                (accessDenied "Access Denied, you need to be logged in to perform this action") next ctx
+            isLoggedIn (accessDenied "Access Denied, you need to be logged in to perform this action")
