@@ -70,7 +70,6 @@
     <Compile Include="DomainTypes\Email.fs" />
     <Compile Include="DomainTypes\Event.fs" />
     <Compile Include="DomainTypes\DomainModels.fs" />
-    <Compile Include="DomainTypes\Authorization.fs" />
     <Compile Include="Email\SendgridApiModels.fs" />
     <Compile Include="Email\Models.fs" />
     <Compile Include="Email\Service.fs" />
@@ -78,12 +77,14 @@
     <Compile Include="Events\Models.fs" />
     <Compile Include="Events\Queries.fs" />
     <Compile Include="Events\Service.fs" />
+    <Compile Include="Events\Authorization.fs" />
     <Compile Include="Events\Handlers.fs" />
     <Compile Include="Participants\UserMessages.fs" />
     <Compile Include="Participants\Models.fs"/>
     <Compile Include="Participants\Queries.fs"/>
     <Compile Include="Participants\CalendarInvite.fs"/>
     <Compile Include="Participants\Service.fs"/>
+    <Compile Include="Participants\Authorization.fs" />
     <Compile Include="Participants\Handlers.fs"/>
     <Compile Include="Health\Health.fs" />
     <Compile Include="Logging.fs" /> 

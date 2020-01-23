@@ -2,14 +2,13 @@ namespace ArrangementService.Event
 
 open ArrangementService
 
-open Auth
 open Http
 open ResultComputationExpression
 open Repo
 open Models
+open Authorization
 
 open Giraffe
-open ArrangementService.Authorization
 
 module Handlers =
 

@@ -8,6 +8,7 @@ open ResultComputationExpression
 open Repo
 open Models
 open ArrangementService.Email
+open Authorization
 
 module Handlers =
 
@@ -48,13 +49,14 @@ module Handlers =
             [ GET
               >=> choose
                       [ route "/participants" >=> handle getParticipants
-                        routef "/participant/%s"
+                        routef "/participants/%s"
                             (handle << getParticipantEvents) ]
               DELETE
               >=> choose
-                      [ routef "/participant/%s/events/%O"
-                            (handle << deleteParticipant) ]
+                      [ routef "/participants/%s/events/%O" (fun parameters ->
+                            userCanCancel parameters
+                            >=> (handle << deleteParticipant) parameters) ]
               POST
               >=> choose
-                      [ routef "/participant/%s/events/%O"
+                      [ routef "/participants/%s/events/%O"
                             (handle << registerForEvent) ] ]

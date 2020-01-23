@@ -1,13 +1,15 @@
-namespace ArrangementService
+namespace ArrangementService.Event
 
 open Giraffe
+open Microsoft.AspNetCore.Http
 
+open ArrangementService
 open Auth
 
 module Authorization =
 
     let userCreatedEvent eventId onFail =
-        fun next ctx ->
+        fun next (ctx: HttpContext) ->
             // Inntil videre feiler vi ubetinget her.
             // Må implementere denne featuren,
             // ellers er det berre admin som kan redigere events
