@@ -34,7 +34,7 @@ module ResultComputationExpression =
      - `return ...` takes a regular value and wraps it up.
 
      - `return! ...` takes a Result value and wraps it up.
-        
+
     *)
     type ResultBuilder() =
         member this.Return(x) = fun _ -> Ok x
@@ -47,10 +47,11 @@ module ResultComputationExpression =
         member this.Combine(lhs, rhs) =
             fun ctx ->
                 match lhs ctx with
-                | Ok _ -> this.Run(rhs) ctx
+                | Ok _ -> this.Run (rhs) ctx
                 | Error e -> Error e
 
-        member this.Bind(rx, f) = fun ctx -> Result.bind (fun x -> f x ctx) rx
+        member this.Bind(rx, f) =
+            fun ctx -> Result.bind (fun x -> f x ctx) rx
         member this.For(rx, f) = fun ctx -> this.Bind (rx ctx, f) ctx
 
     let result = ResultBuilder()

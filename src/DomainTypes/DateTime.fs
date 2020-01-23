@@ -8,8 +8,7 @@ type Date =
       Month: int
       Year: int }
 
-    member this.ToTuple =
-        (this.Year, this.Month, this.Day)
+    member this.ToTuple = (this.Year, this.Month, this.Day)
 
     interface IComparable with
         member this.CompareTo obj =
@@ -21,21 +20,21 @@ type Date =
                 else if thisDate < otherDate then -1
                 else 0
             | _ -> 0
+
     override this.Equals obj =
         match obj with
         | :? Date as other ->
             this <= other && other <= this
         | _ -> false
-    override this.GetHashCode() =
-        this.ToTuple.GetHashCode()
+
+    override this.GetHashCode() = this.ToTuple.GetHashCode()
 
 [<CustomComparison; CustomEquality>]
 type Time =
     { Hour: int
       Minute: int }
 
-    member this.ToTuple =
-        (this.Hour, this.Minute)
+    member this.ToTuple = (this.Hour, this.Minute)
 
     interface IComparable with
         member this.CompareTo obj =
@@ -47,13 +46,14 @@ type Time =
                 else if thisTime < otherTime then -1
                 else 0
             | _ -> 0
+
     override this.Equals obj =
         match obj with
         | :? Time as other ->
             this <= other && other <= this
         | _ -> false
-    override this.GetHashCode() =
-        this.ToTuple.GetHashCode()
+
+    override this.GetHashCode() = this.ToTuple.GetHashCode()
 
 
 [<CustomComparison; CustomEquality>]
@@ -71,19 +71,23 @@ type DateTimeCustom =
                 else if this.Time < other.Time then -1
                 else 0
             | _ -> 0
+
     override this.Equals obj =
         match obj with
         | :? DateTimeCustom as other ->
             this <= other && other <= this
         | _ -> false
+
     override this.GetHashCode() =
         this.Date.GetHashCode() + this.Time.GetHashCode()
 
 module DateTime =
 
-    let customToDateTime (date: Date): DateTime = DateTime(date.Year, date.Month, date.Day, 0, 0, 0)
+    let customToDateTime (date: Date): DateTime =
+        DateTime(date.Year, date.Month, date.Day, 0, 0, 0)
 
-    let customToTimeSpan (time: Time): TimeSpan = TimeSpan(time.Hour, time.Minute, 0)
+    let customToTimeSpan (time: Time): TimeSpan =
+        TimeSpan(time.Hour, time.Minute, 0)
 
     let toCustomDateTime (date: DateTime) (time: TimeSpan): DateTimeCustom =
         { Date =
@@ -94,12 +98,19 @@ module DateTime =
               { Hour = time.Hours
                 Minute = time.Minutes } }
 
-    let now (): DateTimeCustom = toCustomDateTime DateTime.Now (TimeSpan(0, 0, 0))
+    let now(): DateTimeCustom =
+        toCustomDateTime DateTime.Now (TimeSpan(0, 0, 0))
 
     let toUtcString (dt: DateTimeCustom) =
-        sprintf "%s%s%sT%s%s%sZ" (dt.Date.Year.ToString()) (dt.Date.Month.ToString().PadLeft(2, '0'))
-            (dt.Date.Day.ToString().PadLeft(2, '0')) (dt.Time.Hour.ToString().PadLeft(2, '0'))  (dt.Time.Minute.ToString().PadLeft(2, '0'))  "00" // Format: "20200101T192209Z"
+        sprintf "%s%s%sT%s%s%sZ" (dt.Date.Year.ToString())
+            (dt.Date.Month.ToString().PadLeft(2, '0'))
+            (dt.Date.Day.ToString().PadLeft(2, '0'))
+            (dt.Time.Hour.ToString().PadLeft(2, '0'))
+            (dt.Time.Minute.ToString().PadLeft(2, '0'))
+            "00" // Format: "20200101T192209Z"
 
     let toReadableString (dt: DateTimeCustom) =
-        sprintf "%s/%s/%s kl %s:%s" (dt.Date.Day.ToString().PadLeft(2, '0')) (dt.Date.Month.ToString().PadLeft(2, '0'))
-            (dt.Date.Year.ToString()) (dt.Time.Hour.ToString().PadLeft(2, '0'))  (dt.Time.Minute.ToString().PadLeft(2, '0')) 
+        sprintf "%s/%s/%s kl %s:%s" (dt.Date.Day.ToString().PadLeft(2, '0'))
+            (dt.Date.Month.ToString().PadLeft(2, '0'))
+            (dt.Date.Year.ToString()) (dt.Time.Hour.ToString().PadLeft(2, '0'))
+            (dt.Time.Minute.ToString().PadLeft(2, '0'))

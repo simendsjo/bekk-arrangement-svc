@@ -1,4 +1,3 @@
-
 namespace ArrangementService
 
 open Giraffe
@@ -22,9 +21,10 @@ module UserMessage =
 
         let reduceErrors (errorCode, errorMessages) =
             function
-            | NotFound errorMessage -> (ResourceNotFound, errorMessages @ [errorMessage])
-            | BadInput errorMessage -> 
-                let messages = errorMessages @ [errorMessage]
+            | NotFound errorMessage ->
+                (ResourceNotFound, errorMessages @ [ errorMessage ])
+            | BadInput errorMessage ->
+                let messages = errorMessages @ [ errorMessage ]
                 match errorCode with
                 | ResourceNotFound -> (ResourceNotFound, messages)
                 | _ -> (BadRequest, messages)
@@ -35,4 +35,5 @@ module UserMessage =
             match errorCode with
             | ResourceNotFound -> RequestErrors.NOT_FOUND errorMessages
             | BadRequest -> RequestErrors.BAD_REQUEST errorMessages
-            | InternalError -> ServerErrors.INTERNAL_ERROR "Something has gone wrong"
+            | InternalError ->
+                ServerErrors.INTERNAL_ERROR "Something has gone wrong"

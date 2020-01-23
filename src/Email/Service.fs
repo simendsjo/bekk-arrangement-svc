@@ -20,8 +20,10 @@ module Service =
             let! _ = Http.AsyncRequestString
                          (options.SendgridUrl, httpMethod = "POST",
                           headers =
-                              [ "Authorization", (sprintf "Bearer %s" options.ApiKey)
-                                "Content-Type", "application/json" ], body = BinaryUpload byteBody)
+                              [ "Authorization",
+                                (sprintf "Bearer %s" options.ApiKey)
+                                "Content-Type", "application/json" ],
+                          body = BinaryUpload byteBody)
             ()
         }
         |> Async.Start
@@ -37,7 +39,8 @@ module Service =
 
         let serializerSettings =
             let settings = JsonSerializerSettings()
-            settings.ContractResolver <- CamelCasePropertyNamesContractResolver()
+            settings.ContractResolver <-
+                CamelCasePropertyNamesContractResolver()
             settings
 
         (emailToSendgridFormat email, serializerSettings)

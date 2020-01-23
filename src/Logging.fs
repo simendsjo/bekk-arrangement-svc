@@ -33,28 +33,32 @@ module Logging =
         | _ -> nameClaim.Value
 
     let getEmployeeId (ctx: HttpContext) =
-        let idClaim = ctx.User.FindFirst "https://api.bekk.no/claims/employeeId"
+        let idClaim =
+            ctx.User.FindFirst(ctx.GetService<AppConfig>().userIdClaimsKey)
         match idClaim with
         | null -> "Fant ikke bruker-id"
         | _ -> idClaim.Value
 
     let getConsumerName (ctx: HttpContext) =
         let hasValue, value = ctx.Request.Headers.TryGetValue("X-ConsumerName")
-        if hasValue then value.ToString()
-        else "Consumer name is not set. Make sure to set the X-ConsumerName header"
+        if hasValue then
+            value.ToString()
+        else
+            "Consumer name is not set. Make sure to set the X-ConsumerName header"
 
     let createExceptionMessage (ex: Exception) (ctx: HttpContext) =
-        let logEventId = Guid.NewGuid().ToString().Split(Convert.ToChar("-")).[0]
+        let logEventId =
+            Guid.NewGuid().ToString().Split(Convert.ToChar("-")).[0]
+        let userMessage =
+            sprintf
+                "Beklager det skjedde en feil! Den er logget med id %s Ta kontakt med Forvaltning om du ønsker videre oppfølging."
         { LogEventId = logEventId
           LogLevel = LogLevel.Error
           ExceptionType = ex.GetType()
           ExceptionMessage = ex.Message
           Name = getEmployeeName ctx
           UserId = getEmployeeId ctx
-          UserMessage =
-              (sprintf
-                  "Beklager det skjedde en feil! Den er logget med id %s Ta kontakt med Forvaltning om du ønsker videre oppfølging."
-                   logEventId)
+          UserMessage = userMessage logEventId
           RequestUrl = ctx.GetRequestUrl()
           RequestMethod = ctx.Request.Method
           RequestConsumerName = getConsumerName ctx
@@ -70,10 +74,15 @@ module Logging =
             logger.Error("{@Logmessage}", exceptionMessage)
             json exceptionMessage next ctx
 
-    let config = { SerilogConfig.defaults with ErrorHandler = fun ex _ -> setStatusCode 500 >=> errorHandler ex }
+    let config =
+        { SerilogConfig.defaults with
+              ErrorHandler = fun ex _ -> setStatusCode 500 >=> errorHandler ex }
     let createLoggingApp webApp config = SerilogAdapter.Enable(webApp, config)
 
     Log.Logger <-
-        LoggerConfiguration().Enrich.FromLogContext().MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
-            .MinimumLevel.Override("System", LogEventLevel.Warning).MinimumLevel.Warning()
-            .WriteTo.Console(JsonFormatter()).CreateLogger()
+        LoggerConfiguration().Enrich.FromLogContext()
+            .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+            .MinimumLevel.Override("System", LogEventLevel.Warning)
+            .MinimumLevel.Warning()
+            .WriteTo.Console(JsonFormatter())
+            .CreateLogger()

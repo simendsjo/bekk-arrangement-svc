@@ -19,11 +19,8 @@ open Logging
 open SendgridApiModels
 
 let webApp =
-    choose [
-        Health.healthCheck 
-        Event.Handlers.routes
-        Participant.Handlers.routes
-        ]
+    choose
+        [ Health.healthCheck; Event.Handlers.routes; Participant.Handlers.routes ]
 
 let private configuration =
     let builder = ConfigurationBuilder()
@@ -31,14 +28,18 @@ let private configuration =
     builder.AddEnvironmentVariables() |> ignore
     builder.Build()
 
-let configureCors (builder: CorsPolicyBuilder) = builder.AllowAnyMethod().AllowAnyHeader().AllowAnyOrigin() |> ignore
+let configureCors (builder: CorsPolicyBuilder) =
+    builder.AllowAnyMethod().AllowAnyHeader().AllowAnyOrigin() |> ignore
 
 let configureApp (app: IApplicationBuilder) =
     app.Use(fun context next ->
-        context.Request.Path <- context.Request.Path.Value.Replace(configuration.["VIRTUAL_PATH"], "") |> PathString
+        context.Request.Path <-
+            context.Request.Path.Value.Replace
+                (configuration.["VIRTUAL_PATH"], "") |> PathString
         next.Invoke())
     |> ignore
-    app.UseAuthentication().UseCors(configureCors).UseGiraffe(createLoggingApp webApp config)
+    app.UseAuthentication().UseCors(configureCors)
+       .UseGiraffe(createLoggingApp webApp config)
 
 let configureServices (services: IServiceCollection) =
     services.AddCors() |> ignore
@@ -50,22 +51,31 @@ let configureServices (services: IServiceCollection) =
            SendgridUrl = configuration.["Sendgrid:SendgridUrl"] })
     |> ignore
     let config =
-         { isProd = configuration.["Auth0:Scheduled_Tasks_Audience"] = "https://api.bekk.no"
-           permissionsAndClaimsKey = configuration.["Auth0:Permission_Claim_Type"]
-           adminPermissionClaim = configuration.["Auth0:Admin_Claim"]
-           readPermissionClaim = configuration.["Auth0:Read_Claim" ]}
-    services.AddSingleton<AppConfig> config |> ignore  // For å sende mail: bytt ut = med <>
+        { isProd =
+              configuration.["Auth0:Scheduled_Tasks_Audience"] =
+                  "https://api.bekk.no"
+          permissionsAndClaimsKey =
+              configuration.["Auth0:Permission_Claim_Type"]
+          userIdClaimsKey = configuration.["Auth0:UserId_Claim"]
+          adminPermissionClaim = configuration.["Auth0:Admin_Claim"]
+          readPermissionClaim = configuration.["Auth0:Read_Claim"] }
+    services.AddSingleton<AppConfig> config
+    |> ignore // For å sende mail: bytt ut = med <>
     dbContext.SaveContextSchema() |> ignore
     services.AddAuthentication(fun options ->
-            options.DefaultAuthenticateScheme <- JwtBearerDefaults.AuthenticationScheme
-            options.DefaultChallengeScheme <- JwtBearerDefaults.AuthenticationScheme)
+            options.DefaultAuthenticateScheme <-
+                JwtBearerDefaults.AuthenticationScheme
+            options.DefaultChallengeScheme <-
+                JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(fun options ->
             let audiences =
                 [ configuration.["Auth0:Audience"]
                   configuration.["Auth0:Scheduled_Tasks_Audience"] ]
-            options.Authority <- sprintf "https://%s" configuration.["Auth0:Issuer_Domain"]
+            options.Authority <-
+                sprintf "https://%s" configuration.["Auth0:Issuer_Domain"]
             options.TokenValidationParameters <-
-                TokenValidationParameters(ValidateIssuer = false, ValidAudiences = audiences))
+                TokenValidationParameters
+                    (ValidateIssuer = false, ValidAudiences = audiences))
     |> ignore
 
 [<EntryPoint>]
@@ -80,7 +90,7 @@ let main _ =
         .UseIISIntegration()
         .UseWebRoot(webRoot)
         .Configure(Action<IApplicationBuilder> configureApp)
-        .ConfigureKestrel(fun context options -> options.AllowSynchronousIO <- true)
+        .ConfigureKestrel(fun _ options -> options.AllowSynchronousIO <- true)
         .ConfigureServices(configureServices)
         .Build()
         .Run()

@@ -12,7 +12,7 @@ module Validation =
     let (<*>) = apply
 
     let validate f errorMessage (input: 'Type) =
-        if f input then Ok () else Error errorMessage
+        if f input then Ok() else Error errorMessage
 
     let sequence x =
         x
@@ -23,7 +23,8 @@ module Validation =
 
     let validateAll constructor thingToValidate validationFunctions =
         validationFunctions
-        |> List.map (fun validationFunction -> validationFunction thingToValidate)
+        |> List.map
+            (fun validationFunction -> validationFunction thingToValidate)
         |> sequence
         |> function
         | [] -> constructor thingToValidate |> Ok

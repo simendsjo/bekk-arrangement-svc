@@ -13,18 +13,19 @@ open UserMessage
 open ArrangementService.Email
 open ArrangementService.DomainModels
 
-  type ViewModel =
-      { Email: string
-        EventId: Guid
-        RegistrationTime: int64 }
+type ViewModel =
+    { Email: string
+      EventId: Guid
+      RegistrationTime: int64 }
 
-  // Empty for now
-  type WriteModel = Unit
+// Empty for now
+type WriteModel = Unit
 
-  type Key = Guid * string
+type Key = Guid * string
 
-  type TableModel = ArrangementDbContext.dboSchema.``dbo.Participants``
-  type DbModel = ArrangementDbContext.``dbo.ParticipantsEntity``
+type TableModel = ArrangementDbContext.dboSchema.``dbo.Participants``
+
+type DbModel = ArrangementDbContext.``dbo.ParticipantsEntity``
 
 module Models =
 
@@ -34,10 +35,8 @@ module Models =
           RegistrationTime = TimeStamp dbRecord.RegistrationTime }
 
     let writeToDomain ((id, email): Key) ((): WriteModel): Result<Participant, UserMessage list> =
-        Ok Participant.Create
-          <*> EmailAddress.Parse email
-          <*> (Event.Id id |> Ok)
-          <*> (now () |> Ok)
+        Ok Participant.Create <*> EmailAddress.Parse email
+        <*> (Event.Id id |> Ok) <*> (now() |> Ok)
 
     let updateDbWithDomain (db: DbModel) (participant: Participant) =
         db.Email <- participant.Email.Unwrap
@@ -52,7 +51,8 @@ module Models =
 
     let models: Models<DbModel, Participant, ViewModel, WriteModel, Key, TableModel> =
         { key = fun record -> (record.EventId, record.Email)
-          table = fun ctx -> ctx.GetService<ArrangementDbContext>().Dbo.Participants
+          table =
+              fun ctx -> ctx.GetService<ArrangementDbContext>().Dbo.Participants
 
           create = fun table -> table.Create()
           delete = fun record -> record.Delete()

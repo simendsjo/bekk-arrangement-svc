@@ -14,6 +14,10 @@ module Authorization =
             onFail earlyReturn ctx
 
     let userCanEditEvent eventId =
-            anyOf [isAdmin; userCreatedEvent eventId]
-                (accessDenied
-                    (sprintf "You are trying to edit an event (id %O) which you did not create" eventId))
+        anyOf
+            [ isAdmin
+              userCreatedEvent eventId ]
+            (accessDenied
+                (sprintf
+                    "You are trying to edit an event (id %O) which you did not create"
+                     eventId))

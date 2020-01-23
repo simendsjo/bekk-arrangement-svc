@@ -6,9 +6,11 @@ open UserMessage
 
 type EmailAddress =
     | EmailAddress of string
+
     member this.Unwrap =
         match this with
         | EmailAddress e -> e
+
     static member Parse(address: string) =
 
         let isAtSign =
@@ -16,6 +18,6 @@ type EmailAddress =
             | '@' -> true
             | _ -> false
 
-        [ validate (String.exists isAtSign) (BadInput "Email address must include an at sign (@)") ]
+        [ validate (String.exists isAtSign)
+              (BadInput "Email address must include an at sign (@)") ]
         |> validateAll EmailAddress address
-

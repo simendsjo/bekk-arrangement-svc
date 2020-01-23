@@ -1,0 +1,6 @@
+{
+  "$schema": "http://json.schemastore.org/fantomas",
+  "KeepNewlineAfter": true,
+  "IndentOnTryWith": true,
+  "PageWidth": 80
+}

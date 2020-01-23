@@ -11,12 +11,13 @@ module Database =
     let DatabaseVendor = Common.DatabaseProviderTypes.MSSQLSERVER
 
     [<Literal>]
-    let ResolutionPath = "~/.nuget/packages/system.data.sqlclient/4.7.0/lib/netcoreapp2.1"
+    let ResolutionPath =
+        "~/.nuget/packages/system.data.sqlclient/4.7.0/lib/netcoreapp2.1"
 
-    type ArrangementSql = SqlDataProvider<ContextSchemaPath="DbSchema.json", ConnectionString=ConnectionString, DatabaseVendor=DatabaseVendor, ResolutionPath=ResolutionPath>
+    type ArrangementSql =
+        SqlDataProvider<ContextSchemaPath="DbSchema.json", ConnectionString=ConnectionString, DatabaseVendor=DatabaseVendor, ResolutionPath=ResolutionPath>
 
     type ArrangementDbContext = ArrangementSql.dataContext
 
     let createDbContext (connectionString: string): ArrangementSql.dataContext =
         ArrangementSql.GetDataContext(connectionString)
-

@@ -17,7 +17,9 @@ module Service =
           Message = (createMessage event participant)
           From = event.OrganizerEmail
           To = Email.EmailAddress participant
-          Cc = Email.EmailAddress "ida.bosch@bekk.no" // Burde gjøre denne optional
+          Cc =
+              Email.EmailAddress
+                  "ida.bosch@bekk.no" // Burde gjøre denne optional
           CalendarInvite = createCalendarAttachment event participant }
 
     let sendEventEmail (participant: Participant) =
@@ -45,7 +47,8 @@ module Service =
     let getParticipantEvents email =
         result {
             for participants in repo.read do
-                let participantsByMail = participants |> queryParticipantBy email
+                let participantsByMail =
+                    participants |> queryParticipantBy email
                 return Seq.map Models.models.dbToDomain participantsByMail
         }
 
@@ -53,7 +56,8 @@ module Service =
         result {
             for participants in repo.read do
 
-                let! participant = participants |> queryParticipantByKey (eventId, email)
+                let! participant = participants
+                                   |> queryParticipantByKey (eventId, email)
 
                 repo.del participant
 

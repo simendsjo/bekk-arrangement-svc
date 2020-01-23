@@ -10,17 +10,20 @@ open ResultComputationExpression
 
 module Queries =
 
-    let queryParticipantByKey
-        (id: Event.Id, email: EmailAddress)
+    let queryParticipantByKey (id: Event.Id, email: EmailAddress)
         (participants: DbModel IQueryable) =
-            query {
-                for participant in participants do
-                    where (participant.Email = email.Unwrap && participant.EventId = id.Unwrap)
-                    select (Some participant)
-                    exactlyOneOrDefault
-            } |> withError [ participationNotFound (id, email) ]
+        query {
+            for participant in participants do
+                where
+                    (participant.Email = email.Unwrap
+                     && participant.EventId = id.Unwrap)
+                select (Some participant)
+                exactlyOneOrDefault
+        }
+        |> withError [ participationNotFound (id, email) ]
 
-    let queryParticipantBy (email: EmailAddress) (participants: DbModel IQueryable) =
+    let queryParticipantBy (email: EmailAddress)
+        (participants: DbModel IQueryable) =
         query {
             for participant in participants do
                 where (participant.Email = email.Unwrap)

@@ -25,8 +25,10 @@ module Repo =
           del: 'dbModel -> Unit
           read: HttpContext -> Result<'table, UserMessage list> }
 
-    let commitTransaction (ctx: HttpContext) = ctx.GetService<ArrangementDbContext>().SubmitUpdates()
-    let rollbackTransaction (ctx: HttpContext) = ctx.GetService<ArrangementDbContext>().ClearUpdates()
+    let commitTransaction (ctx: HttpContext) =
+        ctx.GetService<ArrangementDbContext>().SubmitUpdates()
+    let rollbackTransaction (ctx: HttpContext) =
+        ctx.GetService<ArrangementDbContext>().ClearUpdates()
 
     let from (models: Models<'dbModel, 'domainModel, 'viewModel, 'writeModel, 'key, 'table>): Repo<'dbModel, 'domainModel, 'viewModel, 'writeModel, 'key, 'table> =
         { create =
@@ -35,15 +37,14 @@ module Repo =
                       for row in models.table
                                  >> models.create
                                  >> Ok do
-                      let! newThing =
-                            row
-                            |> models.key
-                            |> createDomainModel
-                      models.updateDbWithDomain row newThing |> ignore
-                      yield commitTransaction
-                      let! newlyCreatedThing =
-                        models.key row |> createDomainModel
-                      return newlyCreatedThing
+                          let! newThing = row
+                                          |> models.key
+                                          |> createDomainModel
+                          models.updateDbWithDomain row newThing |> ignore
+                          yield commitTransaction
+                          let! newlyCreatedThing = models.key row
+                                                   |> createDomainModel
+                          return newlyCreatedThing
                   }
 
           read = models.table >> Ok
