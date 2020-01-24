@@ -42,7 +42,7 @@ module Repo =
     /// and this function can be removed when it is
     /// resolved. Then we can return "row" from create
     /// directly (after commitTransaction of course).
-    let getNewRow keyf row table (ctx: HttpContext) =
+    let getNewRow key row table (ctx: HttpContext) =
         query {
             for row in table ctx do
                 select row
@@ -51,7 +51,7 @@ module Repo =
         // We do a sequential read of the table here because
         // tuple comparison (for instance) can't be translated
         // to SQL in the above query.
-        |> Array.tryFind (fun x -> keyf x = keyf row)
+        |> Array.tryFind (fun x -> key x = key row)
         |> function
         | Some x -> Ok x
         | None -> Error []
