@@ -12,11 +12,11 @@ module Service =
 
     let repo = Repo.from Models.models
 
-    let createEmail participant (event: Event) =
+    let createEmail (participant: Participant) (event: Event) =
         { Subject = sprintf "Du ble påmeldt %s" event.Title.Unwrap
-          Message = (createMessage event participant)
+          Message = createMessage event participant
           From = event.OrganizerEmail
-          To = Email.EmailAddress participant
+          To = participant.Email
           Cc =
               Email.EmailAddress
                   "ida.bosch@bekk.no" // Burde gjøre denne optional
@@ -25,7 +25,7 @@ module Service =
     let sendEventEmail (participant: Participant) =
         result {
             for event in Event.Service.getEvent participant.EventId do
-                let mail = createEmail participant.Email.Unwrap event
+                let mail = createEmail participant event
                 yield Email.Service.sendMail mail
         }
 

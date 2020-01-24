@@ -47,7 +47,7 @@ module ResultComputationExpression =
         member this.Combine(lhs, rhs) =
             fun ctx ->
                 match lhs ctx with
-                | Ok _ -> this.Run (rhs) ctx
+                | Ok _ -> this.Run rhs ctx
                 | Error e -> Error e
 
         member this.Bind(rx, f) =

@@ -2,15 +2,16 @@ namespace ArrangementService
 
 open Giraffe
 open Microsoft.AspNetCore.Http
+open System.Linq
 
 open Database
 open UserMessage
 open ResultComputationExpression
 
 module Repo =
-    type Models<'dbModel, 'DomainModel, 'ViewModel, 'WriteModel, 'key, 'table> =
+    type Models<'dbModel, 'DomainModel, 'ViewModel, 'WriteModel, 'key, 'table when 'table :> IQueryable<'dbModel>> =
         { table: HttpContext -> 'table
-          create: 'table -> 'dbModel
+          create: HttpContext -> 'dbModel
           delete: 'dbModel -> Unit
           key: 'dbModel -> 'key
 
@@ -19,7 +20,7 @@ module Repo =
           domainToView: 'DomainModel -> 'ViewModel
           writeToDomain: 'key -> 'WriteModel -> Result<'DomainModel, UserMessage list> }
 
-    type Repo<'dbModel, 'domainModel, 'viewModel, 'writeModel, 'key, 'table> =
+    type Repo<'dbModel, 'domainModel, 'viewModel, 'writeModel, 'key, 'table when 'table :> IQueryable<'dbModel>> =
         { create: ('key -> Result<'domainModel, UserMessage list>) -> HttpContext -> Result<'domainModel, UserMessage list>
           update: 'domainModel -> 'dbModel -> 'domainModel
           del: 'dbModel -> Unit
@@ -27,29 +28,39 @@ module Repo =
 
     let commitTransaction (ctx: HttpContext) =
         ctx.GetService<ArrangementDbContext>().SubmitUpdates()
+
     let rollbackTransaction (ctx: HttpContext) =
         ctx.GetService<ArrangementDbContext>().ClearUpdates()
+
+    let wtf keyf key table (ctx: HttpContext) =
+        query {
+            for row in table ctx do
+                select row
+        }
+        |> Seq.toArray
+        |> Array.tryFind (fun x -> keyf x = key)
+        |> function
+        | Some x -> Ok x
+        | None -> Error []
 
     let from (models: Models<'dbModel, 'domainModel, 'viewModel, 'writeModel, 'key, 'table>): Repo<'dbModel, 'domainModel, 'viewModel, 'writeModel, 'key, 'table> =
         { create =
               fun createDomainModel ->
                   result {
-                      for row in models.table
-                                 >> models.create
-                                 >> Ok do
+                      for row in models.create >> Ok do
                           let! newThing = row
                                           |> models.key
                                           |> createDomainModel
                           models.updateDbWithDomain row newThing |> ignore
                           yield commitTransaction
-                          let! newlyCreatedThing = models.key row
-                                                   |> createDomainModel
-                          return newlyCreatedThing
+                          for lol in wtf models.key (models.key row)
+                                         models.table do
+                              return models.dbToDomain lol
                   }
 
           read = models.table >> Ok
           update =
-              fun newEvent event ->
-                  models.updateDbWithDomain event newEvent |> ignore
-                  event |> models.dbToDomain
+              fun newRow row ->
+                  models.updateDbWithDomain row newRow |> ignore
+                  row |> models.dbToDomain
           del = fun row -> models.delete row }

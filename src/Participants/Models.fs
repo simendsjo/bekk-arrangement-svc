@@ -1,6 +1,7 @@
 namespace ArrangementService.Participant
 
 open System
+open System.Linq
 open Giraffe
 
 open ArrangementService
@@ -12,6 +13,7 @@ open Repo
 open UserMessage
 open ArrangementService.Email
 open ArrangementService.DomainModels
+open Microsoft.AspNetCore.Http
 
 type ViewModel =
     { Email: string
@@ -23,16 +25,20 @@ type WriteModel = Unit
 
 type Key = Guid * string
 
-type TableModel = ArrangementDbContext.dboSchema.``dbo.Participants``
-
 type DbModel = ArrangementDbContext.``dbo.ParticipantsEntity``
 
+type TableModel = ArrangementDbContext.dboSchema.``dbo.Participants``
+
 module Models =
+
+    let getParticipants (ctx: HttpContext) =
+        ctx.GetService<ArrangementDbContext>().Dbo.Participants
 
     let dbToDomain (dbRecord: DbModel): Participant =
         { Email = EmailAddress dbRecord.Email
           EventId = Event.Id dbRecord.EventId
-          RegistrationTime = TimeStamp dbRecord.RegistrationTime }
+          RegistrationTime = TimeStamp dbRecord.RegistrationTime
+          CancellationToken = dbRecord.CancellationToken |> Some }
 
     let writeToDomain ((id, email): Key) ((): WriteModel): Result<Participant, UserMessage list> =
         Ok Participant.Create <*> EmailAddress.Parse email
@@ -49,12 +55,11 @@ module Models =
           EventId = participant.EventId.Unwrap
           RegistrationTime = participant.RegistrationTime.Unwrap }
 
-    let models: Models<DbModel, Participant, ViewModel, WriteModel, Key, TableModel> =
+    let models: Models<DbModel, Participant, ViewModel, WriteModel, Key, IQueryable<DbModel>> =
         { key = fun record -> (record.EventId, record.Email)
-          table =
-              fun ctx -> ctx.GetService<ArrangementDbContext>().Dbo.Participants
 
-          create = fun table -> table.Create()
+          table = fun ctx -> getParticipants ctx :> IQueryable<DbModel>
+          create = fun ctx -> (getParticipants ctx).Create()
           delete = fun record -> record.Delete()
 
           dbToDomain = dbToDomain
