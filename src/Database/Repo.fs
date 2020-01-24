@@ -32,13 +32,26 @@ module Repo =
     let rollbackTransaction (ctx: HttpContext) =
         ctx.GetService<ArrangementDbContext>().ClearUpdates()
 
-    let wtf keyf key table (ctx: HttpContext) =
+    /// We need to read out the updated database row
+    /// since sqlprovider currently does not update
+    /// the newly created row with anything but the
+    /// primary key. Default values set by the db or
+    /// timestamps and similar are not reflected in
+    /// the object. This is talked about in issue
+    /// https://github.com/fsprojects/SQLProvider/issues/620
+    /// and this function can be removed when it is
+    /// resolved. Then we can return "row" from create
+    /// directly (after commitTransaction of course).
+    let getNewRow keyf row table (ctx: HttpContext) =
         query {
             for row in table ctx do
                 select row
         }
         |> Seq.toArray
-        |> Array.tryFind (fun x -> keyf x = key)
+        // We do a sequential read of the table here because
+        // tuple comparison (for instance) can't be translated
+        // to SQL in the above query.
+        |> Array.tryFind (fun x -> keyf x = keyf row)
         |> function
         | Some x -> Ok x
         | None -> Error []
@@ -53,9 +66,8 @@ module Repo =
                                           |> createDomainModel
                           models.updateDbWithDomain row newThing |> ignore
                           yield commitTransaction
-                          for lol in wtf models.key (models.key row)
-                                         models.table do
-                              return models.dbToDomain lol
+                          for newRow in getNewRow models.key row models.table do
+                              return models.dbToDomain newRow
                   }
 
           read = models.table >> Ok

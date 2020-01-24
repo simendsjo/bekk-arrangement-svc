@@ -46,7 +46,7 @@ type WriteModel =
 
 module Models =
 
-    let getEvents (ctx: HttpContext) =
+    let getEvents (ctx: HttpContext): TableModel =
         ctx.GetService<ArrangementDbContext>().Dbo.Events
 
     let writeToDomain (id: Key) (writeModel: WriteModel): Result<Event, UserMessage list> =

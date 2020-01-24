@@ -31,7 +31,7 @@ type TableModel = ArrangementDbContext.dboSchema.``dbo.Participants``
 
 module Models =
 
-    let getParticipants (ctx: HttpContext) =
+    let getParticipants (ctx: HttpContext): TableModel =
         ctx.GetService<ArrangementDbContext>().Dbo.Participants
 
     let dbToDomain (dbRecord: DbModel): Participant =
