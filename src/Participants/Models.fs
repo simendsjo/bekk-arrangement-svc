@@ -17,8 +17,9 @@ open Microsoft.AspNetCore.Http
 
 type ViewModel =
     { Email: string
-      EventId: Guid
-      RegistrationTime: int64 }
+      EventId: string
+      RegistrationTime: int64
+      CancellationToken: string }
 
 // Empty for now
 type WriteModel = Unit
@@ -30,6 +31,9 @@ type DbModel = ArrangementDbContext.``dbo.ParticipantsEntity``
 type TableModel = ArrangementDbContext.dboSchema.``dbo.Participants``
 
 module Models =
+
+    let private optionToNullable<'T when 'T :> obj> (maybe: 'T option) =
+        if maybe.IsSome then maybe.Value.ToString() else null
 
     let getParticipants (ctx: HttpContext): TableModel =
         ctx.GetService<ArrangementDbContext>().Dbo.Participants
@@ -52,8 +56,9 @@ module Models =
 
     let domainToView (participant: Participant): ViewModel =
         { Email = participant.Email.Unwrap
-          EventId = participant.EventId.Unwrap
-          RegistrationTime = participant.RegistrationTime.Unwrap }
+          EventId = participant.EventId.Unwrap.ToString()
+          RegistrationTime = participant.RegistrationTime.Unwrap
+          CancellationToken = optionToNullable participant.CancellationToken }
 
     let models: Models<DbModel, Participant, ViewModel, WriteModel, Key, IQueryable<DbModel>> =
         { key = fun record -> (record.EventId, record.Email)
