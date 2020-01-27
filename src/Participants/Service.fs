@@ -38,12 +38,6 @@ module Service =
                 return participant
         }
 
-    let getParticipants =
-        result {
-            for participants in repo.read do
-                return Seq.map Models.models.dbToDomain participants
-        }
-
     let getParticipant (eventId, email) =
         result {
             for participants in repo.read do

@@ -8,7 +8,7 @@ open Auth
 
 module Authorization =
 
-    let userHasCancellationToken (email, eventId) onFail =
+    let userHasCancellationToken (eventId, email) onFail =
         fun next (ctx: HttpContext) ->
             let fail() = onFail earlyReturn ctx
 

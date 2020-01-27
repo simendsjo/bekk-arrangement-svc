@@ -12,7 +12,7 @@ open Authorization
 
 module Handlers =
 
-    let registerForEvent (email, eventId) =
+    let registerForEvent (eventId, email) =
         result {
             for writeModel in getBody<WriteModel> do
                 for participant in Service.registerParticipant
@@ -22,12 +22,6 @@ module Handlers =
                     return models.domainToView participant
         }
 
-    let getParticipants =
-        result {
-            for participants in Service.getParticipants do
-                return Seq.map models.domainToView participants
-        }
-
     let getParticipantEvents email =
         result {
             let! emailAddress = EmailAddress.Parse email
@@ -35,7 +29,7 @@ module Handlers =
                 return Seq.map models.domainToView participants
         }
 
-    let deleteParticipant (email, id) =
+    let deleteParticipant (id, email) =
         result {
             let! emailAddress = EmailAddress.Parse email
             for deleteResult in Service.deleteParticipant
@@ -48,15 +42,14 @@ module Handlers =
         choose
             [ GET
               >=> choose
-                      [ route "/participants" >=> handle getParticipants
-                        routef "/participants/%s"
+                      [ routef "/participants/%s/events"
                             (handle << getParticipantEvents) ]
               DELETE
               >=> choose
-                      [ routef "/participants/%s/events/%O" (fun parameters ->
+                      [ routef "/events/%O/participants/%s" (fun parameters ->
                             userCanCancel parameters
                             >=> (handle << deleteParticipant) parameters) ]
               POST
               >=> choose
-                      [ routef "/participants/%s/events/%O"
+                      [ routef "/events/%O/participants/%s"
                             (handle << registerForEvent) ] ]
