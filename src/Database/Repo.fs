@@ -16,9 +16,7 @@ module Repo =
           key: 'dbModel -> 'key
 
           dbToDomain: 'dbModel -> 'DomainModel
-          updateDbWithDomain: 'dbModel -> 'DomainModel -> 'dbModel
-          domainToView: 'DomainModel -> 'ViewModel
-          writeToDomain: 'key -> 'WriteModel -> Result<'DomainModel, UserMessage list> }
+          updateDbWithDomain: 'dbModel -> 'DomainModel -> 'dbModel }
 
     type Repo<'dbModel, 'domainModel, 'viewModel, 'writeModel, 'key, 'table when 'table :> IQueryable<'dbModel>> =
         { create: ('key -> Result<'domainModel, UserMessage list>) -> HttpContext -> Result<'domainModel, UserMessage list>

@@ -1,5 +1,6 @@
 namespace ArrangementService.Participant
 
+open System
 open ArrangementService
 
 open ResultComputationExpression
@@ -7,6 +8,7 @@ open CalendarInvite
 open Queries
 open UserMessages
 open ArrangementService.DomainModels
+open ArrangementService.Email
 
 module Service =
 
@@ -17,23 +19,24 @@ module Service =
           Message = createMessage event participant
           From = event.OrganizerEmail
           To = participant.Email
-          Cc =
-              Email.EmailAddress
-                  "ida.bosch@bekk.no" // Burde gjøre denne optional
+          Cc = EmailAddress "ida.bosch@bekk.no" // Burde gjøre denne optional
           CalendarInvite = createCalendarAttachment event participant }
 
-    let sendEventEmail (participant: Participant) =
+    let sendEventEmail redirectUrl (participant: Participant) =
         result {
             for event in Event.Service.getEvent participant.EventId do
                 let mail = createEmail participant event
-                yield Email.Service.sendMail mail
+                yield Service.sendMail mail
         }
 
-    let registerParticipant registration =
+    let registerParticipant redirectUrlTemplate registration =
         result {
+
             for participant in repo.create registration do
 
-                yield sendEventEmail participant
+                let redirectUrl =
+                    Models.createRedirectUrl redirectUrlTemplate participant
+                yield sendEventEmail redirectUrl participant
 
                 return participant
         }

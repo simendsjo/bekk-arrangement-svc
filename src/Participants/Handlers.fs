@@ -9,24 +9,30 @@ open Repo
 open Models
 open ArrangementService.Email
 open Authorization
+open System.Web
 
 module Handlers =
 
     let registerForEvent (eventId, email) =
         result {
             for writeModel in getBody<WriteModel> do
+                let redirectUrlTemplate =
+                    HttpUtility.UrlDecode writeModel.redirectUrlTemplate
+
                 for participant in Service.registerParticipant
+                                       redirectUrlTemplate
                                        (fun _ ->
-                                           models.writeToDomain
-                                               (eventId, email) writeModel) do
-                    return models.domainToView participant
+                                           writeToDomain (eventId, email)
+                                               writeModel) do
+                    return domainToViewWithRedirectUrl redirectUrlTemplate
+                               participant
         }
 
     let getParticipantEvents email =
         result {
             let! emailAddress = EmailAddress.Parse email
             for participants in Service.getParticipantEvents emailAddress do
-                return Seq.map models.domainToView participants
+                return Seq.map domainToView participants
         }
 
     let deleteParticipant (id, email) =

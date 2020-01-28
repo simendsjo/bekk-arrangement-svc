@@ -111,6 +111,4 @@ module Models =
           delete = fun record -> record.Delete()
 
           dbToDomain = dbToDomain
-          updateDbWithDomain = updateDbWithDomain
-          domainToView = domainToView
-          writeToDomain = writeToDomain }
+          updateDbWithDomain = updateDbWithDomain }

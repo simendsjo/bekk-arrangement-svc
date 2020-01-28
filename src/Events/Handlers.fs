@@ -21,13 +21,13 @@ module Handlers =
     let getEventsOrganizedBy organizerEmail =
         result {
             for events in Service.getEventsOrganizedBy organizerEmail do
-                return Seq.map models.domainToView events
+                return Seq.map domainToView events
         }
 
     let getEvent id =
         result {
             for event in Service.getEvent (Id id) do
-                return models.domainToView event
+                return domainToView event
         }
 
     let deleteEvent id =
@@ -44,17 +44,16 @@ module Handlers =
 
                 for updatedEvent in Service.updateEvent (Id id) domainModel do
                     yield commitTransaction
-                    return models.domainToView updatedEvent
+                    return domainToView updatedEvent
         }
 
     let createEvent =
         result {
             for writeModel in getBody<WriteModel> do
                 for newEvent in Service.createEvent
-                                    (fun id ->
-                                        models.writeToDomain id writeModel) do
+                                    (fun id -> writeToDomain id writeModel) do
 
-                    return models.domainToView newEvent
+                    return domainToView newEvent
         }
 
     let routes: HttpHandler =
