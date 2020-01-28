@@ -1,18 +1,18 @@
 namespace ArrangementService.Participant
 
-open System
 open ArrangementService
 
 open ResultComputationExpression
 open CalendarInvite
 open Queries
 open UserMessages
+open Models
 open ArrangementService.DomainModels
 open ArrangementService.Email
 
 module Service =
 
-    let repo = Repo.from Models.models
+    let repo = Repo.from models
 
     let createEmail (participant: Participant) (event: Event) =
         { Subject = sprintf "Du ble påmeldt %s" event.Title.Unwrap
@@ -35,7 +35,7 @@ module Service =
             for participant in repo.create registration do
 
                 let redirectUrl =
-                    Models.createRedirectUrl redirectUrlTemplate participant
+                    createRedirectUrl redirectUrlTemplate participant
                 yield sendEventEmail redirectUrl participant
 
                 return participant
@@ -51,12 +51,12 @@ module Service =
                 return participant
         }
 
-    let getParticipantEvents email =
+    let getParticipationsForParticipant email =
         result {
             for participants in repo.read do
                 let participantsByMail =
                     participants |> queryParticipantBy email
-                return Seq.map Models.models.dbToDomain participantsByMail
+                return Seq.map models.dbToDomain participantsByMail
         }
 
     let deleteParticipant (eventId, email) =

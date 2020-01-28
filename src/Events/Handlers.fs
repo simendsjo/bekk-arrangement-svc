@@ -15,13 +15,13 @@ module Handlers =
     let getEvents =
         result {
             for events in Service.getEvents do
-                return Seq.map Models.domainToView events
+                return Seq.map domainToView events |> Seq.toList
         }
 
     let getEventsOrganizedBy organizerEmail =
         result {
             for events in Service.getEventsOrganizedBy organizerEmail do
-                return Seq.map domainToView events
+                return Seq.map domainToView events |> Seq.toList
         }
 
     let getEvent id =

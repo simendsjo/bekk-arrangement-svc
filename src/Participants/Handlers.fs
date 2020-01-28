@@ -24,15 +24,16 @@ module Handlers =
                                        (fun _ ->
                                            writeToDomain (eventId, email)
                                                writeModel) do
-                    return domainToViewWithRedirectUrl redirectUrlTemplate
+                    return domainToViewWithCancelInfo redirectUrlTemplate
                                participant
         }
 
-    let getParticipantEvents email =
+    let getParticipationsForParticipant email =
         result {
             let! emailAddress = EmailAddress.Parse email
-            for participants in Service.getParticipantEvents emailAddress do
-                return Seq.map domainToView participants
+            for participants in Service.getParticipationsForParticipant
+                                    emailAddress do
+                return Seq.map domainToView participants |> Seq.toList
         }
 
     let deleteParticipant (id, email) =
@@ -49,7 +50,7 @@ module Handlers =
             [ GET
               >=> choose
                       [ routef "/participants/%s/events"
-                            (handle << getParticipantEvents) ]
+                            (handle << getParticipationsForParticipant) ]
               DELETE
               >=> choose
                       [ routef "/events/%O/participants/%s" (fun parameters ->

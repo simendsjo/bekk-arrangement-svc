@@ -40,9 +40,7 @@ module CalendarInvite =
                 // Eller kanskje må frontenden spesifisere kor urlen skal lede?
                 "https://api.dev.bekk.no/arrangement-svc/events/%O/participants/%s?cancellationToken=%s"
                 event.Id.Unwrap participant.Email.Unwrap
-                (participant.CancellationToken
-                 |> Option.map (fun ct -> ct.ToString())
-                 |> Option.defaultValue "missing")
+                (participant.CancellationToken.ToString())
         [ "Hei! 😄"
           sprintf "Du er nå påmeldt %s." event.Title.Unwrap
           sprintf "Vi gleder oss til å se deg på %s den %s 🎉"

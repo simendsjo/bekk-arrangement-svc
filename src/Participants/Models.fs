@@ -18,9 +18,12 @@ open Microsoft.AspNetCore.Http
 type ViewModel =
     { Email: string
       EventId: string
-      RegistrationTime: int64
+      RegistrationTime: int64 }
+
+type NewlyCreatedParticipationViewModel =
+    { Participant: ViewModel
       CancellationToken: string
-      redirectUrl: string option }
+      RedirectUrl: string }
 
 type WriteModel =
     { redirectUrlTemplate: string }
@@ -39,9 +42,7 @@ module Models =
                                     participant.EventId.Unwrap.ToString())
                            .Replace("{email}", participant.Email.Unwrap)
                            .Replace("{cancellationToken}",
-                                    participant.CancellationToken
-                                    |> Option.map (fun x -> x.ToString())
-                                    |> Option.defaultValue "")
+                                    participant.CancellationToken.ToString())
 
     let getParticipants (ctx: HttpContext): TableModel =
         ctx.GetService<ArrangementDbContext>().Dbo.Participants
@@ -50,11 +51,11 @@ module Models =
         { Email = EmailAddress dbRecord.Email
           EventId = Event.Id dbRecord.EventId
           RegistrationTime = TimeStamp dbRecord.RegistrationTime
-          CancellationToken = dbRecord.CancellationToken |> Some }
+          CancellationToken = dbRecord.CancellationToken }
 
     let writeToDomain ((id, email): Key) (_: WriteModel): Result<Participant, UserMessage list> =
         Ok Participant.Create <*> EmailAddress.Parse email
-        <*> (Event.Id id |> Ok) <*> (now() |> Ok)
+        <*> (Event.Id id |> Ok) <*> (now() |> Ok) <*> (Guid.NewGuid() |> Ok)
 
     let updateDbWithDomain (db: DbModel) (participant: Participant) =
         db.Email <- participant.Email.Unwrap
@@ -64,22 +65,15 @@ module Models =
 
     let domainToView (participant: Participant): ViewModel =
 
-        let optionToNullable (maybe: 'T option) =
-            if maybe.IsSome then maybe.Value.ToString() else null
-
         { Email = participant.Email.Unwrap
           EventId = participant.EventId.Unwrap.ToString()
-          RegistrationTime = participant.RegistrationTime.Unwrap
-          CancellationToken = optionToNullable participant.CancellationToken
-          redirectUrl = None }
+          RegistrationTime = participant.RegistrationTime.Unwrap }
 
-    let domainToViewWithRedirectUrl redirectUrlTemplate
-        (participant: Participant): ViewModel =
-
-        let viewModel = domainToView participant
-        { viewModel with
-              redirectUrl =
-                  createRedirectUrl redirectUrlTemplate participant |> Some }
+    let domainToViewWithCancelInfo redirectUrlTemplate
+        (participant: Participant): NewlyCreatedParticipationViewModel =
+        { Participant = domainToView participant
+          CancellationToken = participant.CancellationToken.ToString()
+          RedirectUrl = createRedirectUrl redirectUrlTemplate participant }
 
     let models: Models<DbModel, Participant, ViewModel, WriteModel, Key, IQueryable<DbModel>> =
         { key = fun record -> (record.EventId, record.Email)

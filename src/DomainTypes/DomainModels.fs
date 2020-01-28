@@ -39,10 +39,10 @@ type Participant =
     { Email: Email.EmailAddress
       EventId: Event.Id
       RegistrationTime: TimeStamp
-      CancellationToken: Guid option }
+      CancellationToken: Guid }
     static member Create =
-        fun email eventId registrationTime ->
+        fun email eventId registrationTime cancellationToken ->
             { Email = email
               EventId = eventId
               RegistrationTime = registrationTime
-              CancellationToken = None }
+              CancellationToken = cancellationToken }
