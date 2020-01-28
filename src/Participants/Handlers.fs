@@ -24,8 +24,7 @@ module Handlers =
                                        (fun _ ->
                                            writeToDomain (eventId, email)
                                                writeModel) do
-                    return domainToViewWithCancelInfo redirectUrlTemplate
-                               participant
+                    return domainToViewWithCancelInfo participant
         }
 
     let getParticipationsForParticipant email =

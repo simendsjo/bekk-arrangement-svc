@@ -33,21 +33,14 @@ module CalendarInvite =
           "END:VCALENDAR" ]
         |> String.concat "\n"
 
-    let createMessage (event: Event) (participant: Participant) =
-        let url =
-            sprintf
-                // URLen må fikses, og gjerne lede til frontenden
-                // Eller kanskje må frontenden spesifisere kor urlen skal lede?
-                "https://api.dev.bekk.no/arrangement-svc/events/%O/participants/%s?cancellationToken=%s"
-                event.Id.Unwrap participant.Email.Unwrap
-                (participant.CancellationToken.ToString())
+    let createMessage redirectUrl (event: Event) (participant: Participant) =
         [ "Hei! 😄"
           sprintf "Du er nå påmeldt %s." event.Title.Unwrap
           sprintf "Vi gleder oss til å se deg på %s den %s 🎉"
               event.Location.Unwrap (toReadableString event.StartDate)
           "Siden det er begrenset med plasser, setter vi pris på om du melder deg av hvis du ikke lenger"
           "kan delta. Da blir det plass til andre på ventelisten 😊"
-          sprintf "Klikk her for å melde deg av: %s." url
+          sprintf "Klikk her for å melde deg av: %s." redirectUrl
           "Bare spør meg om det er noe du lurer på."
           "Vi sees!"
           sprintf "Hilsen %s i Bekk" event.OrganizerEmail.Unwrap ]

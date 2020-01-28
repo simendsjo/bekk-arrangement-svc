@@ -22,8 +22,7 @@ type ViewModel =
 
 type NewlyCreatedParticipationViewModel =
     { Participant: ViewModel
-      CancellationToken: string
-      RedirectUrl: string }
+      CancellationToken: string }
 
 type WriteModel =
     { redirectUrlTemplate: string }
@@ -69,11 +68,9 @@ module Models =
           EventId = participant.EventId.Unwrap.ToString()
           RegistrationTime = participant.RegistrationTime.Unwrap }
 
-    let domainToViewWithCancelInfo redirectUrlTemplate
-        (participant: Participant): NewlyCreatedParticipationViewModel =
+    let domainToViewWithCancelInfo (participant: Participant): NewlyCreatedParticipationViewModel =
         { Participant = domainToView participant
-          CancellationToken = participant.CancellationToken.ToString()
-          RedirectUrl = createRedirectUrl redirectUrlTemplate participant }
+          CancellationToken = participant.CancellationToken.ToString() }
 
     let models: Models<DbModel, Participant, ViewModel, WriteModel, Key, IQueryable<DbModel>> =
         { key = fun record -> (record.EventId, record.Email)

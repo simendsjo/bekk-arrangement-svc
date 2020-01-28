@@ -14,9 +14,9 @@ module Service =
 
     let repo = Repo.from models
 
-    let createEmail (participant: Participant) (event: Event) =
+    let createEmail redirectUrl (participant: Participant) (event: Event) =
         { Subject = sprintf "Du ble påmeldt %s" event.Title.Unwrap
-          Message = createMessage event participant
+          Message = createMessage redirectUrl event participant
           From = event.OrganizerEmail
           To = participant.Email
           Cc = EmailAddress "ida.bosch@bekk.no" // Burde gjøre denne optional
@@ -25,7 +25,7 @@ module Service =
     let sendEventEmail redirectUrl (participant: Participant) =
         result {
             for event in Event.Service.getEvent participant.EventId do
-                let mail = createEmail participant event
+                let mail = createEmail redirectUrl participant event
                 yield Service.sendMail mail
         }
 
