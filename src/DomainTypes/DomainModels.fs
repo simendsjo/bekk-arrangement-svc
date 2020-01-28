@@ -1,6 +1,7 @@
 namespace ArrangementService.DomainModels
 
 open ArrangementService
+open System
 
 type Email =
     { Subject: string
@@ -37,9 +38,11 @@ type Event =
 type Participant =
     { Email: Email.EmailAddress
       EventId: Event.Id
-      RegistrationTime: TimeStamp }
+      RegistrationTime: TimeStamp
+      CancellationToken: Guid }
     static member Create =
-        fun email eventId registrationTime ->
+        fun email eventId registrationTime cancellationToken ->
             { Email = email
               EventId = eventId
-              RegistrationTime = registrationTime }
+              RegistrationTime = registrationTime
+              CancellationToken = cancellationToken }

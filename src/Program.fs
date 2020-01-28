@@ -17,6 +17,8 @@ open migrator
 open Database
 open Logging
 open SendgridApiModels
+open Giraffe.Serialization
+open Thoth.Json.Net
 
 let webApp =
     choose
@@ -77,6 +79,15 @@ let configureServices (services: IServiceCollection) =
                 TokenValidationParameters
                     (ValidateIssuer = false, ValidAudiences = audiences))
     |> ignore
+
+    let extraEncoder =
+        Extra.empty |> Extra.withInt64
+
+    services.AddSingleton<Json.IJsonSerializer>
+        (Thoth.Json.Giraffe.ThothSerializer
+            (extra = extraEncoder, isCamelCase = true, skipNullField = true))
+    |> ignore
+
 
 [<EntryPoint>]
 let main _ =

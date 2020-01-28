@@ -8,33 +8,34 @@ open ResultComputationExpression
 open Repo
 open Models
 open ArrangementService.Email
+open Authorization
+open System.Web
 
 module Handlers =
 
-    let registerForEvent (email, eventId) =
+    let registerForEvent (eventId, email) =
         result {
             for writeModel in getBody<WriteModel> do
+                let redirectUrlTemplate =
+                    HttpUtility.UrlDecode writeModel.redirectUrlTemplate
+
                 for participant in Service.registerParticipant
+                                       redirectUrlTemplate
                                        (fun _ ->
-                                           models.writeToDomain
-                                               (eventId, email) writeModel) do
-                    return models.domainToView participant
+                                           writeToDomain (eventId, email)
+                                               writeModel) do
+                    return domainToViewWithCancelInfo participant
         }
 
-    let getParticipants =
-        result {
-            for participants in Service.getParticipants do
-                return Seq.map models.domainToView participants
-        }
-
-    let getParticipantEvents email =
+    let getParticipationsForParticipant email =
         result {
             let! emailAddress = EmailAddress.Parse email
-            for participants in Service.getParticipantEvents emailAddress do
-                return Seq.map models.domainToView participants
+            for participants in Service.getParticipationsForParticipant
+                                    emailAddress do
+                return Seq.map domainToView participants |> Seq.toList
         }
 
-    let deleteParticipant (email, id) =
+    let deleteParticipant (id, email) =
         result {
             let! emailAddress = EmailAddress.Parse email
             for deleteResult in Service.deleteParticipant
@@ -47,14 +48,14 @@ module Handlers =
         choose
             [ GET
               >=> choose
-                      [ route "/participants" >=> handle getParticipants
-                        routef "/participant/%s"
-                            (handle << getParticipantEvents) ]
+                      [ routef "/participants/%s/events"
+                            (handle << getParticipationsForParticipant) ]
               DELETE
               >=> choose
-                      [ routef "/participant/%s/events/%O"
-                            (handle << deleteParticipant) ]
+                      [ routef "/events/%O/participants/%s" (fun parameters ->
+                            userCanCancel parameters
+                            >=> (handle << deleteParticipant) parameters) ]
               POST
               >=> choose
-                      [ routef "/participant/%s/events/%O"
+                      [ routef "/events/%O/participants/%s"
                             (handle << registerForEvent) ] ]

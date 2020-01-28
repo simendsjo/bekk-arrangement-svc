@@ -1,6 +1,7 @@
 namespace ArrangementService.Event
 
 open System
+open System.Linq
 open Giraffe
 
 open ArrangementService
@@ -13,6 +14,7 @@ open Utils
 open UserMessage
 open ArrangementService.Email
 open ArrangementService.DomainModels
+open Microsoft.AspNetCore.Http
 
 type TableModel = ArrangementDbContext.dboSchema.``dbo.Events``
 
@@ -43,6 +45,9 @@ type WriteModel =
       OpenForRegistrationDate: DateTimeCustom }
 
 module Models =
+
+    let getEvents (ctx: HttpContext): TableModel =
+        ctx.GetService<ArrangementDbContext>().Dbo.Events
 
     let writeToDomain (id: Key) (writeModel: WriteModel): Result<Event, UserMessage list> =
         Ok Event.Create <*> (Id id |> Ok) <*> Title.Parse writeModel.Title
@@ -98,12 +103,12 @@ module Models =
           EndDate = domainModel.EndDate
           OpenForRegistrationDate = domainModel.OpenForRegistrationDate }
 
-    let models: Models<DbModel, Event, ViewModel, WriteModel, Key, TableModel> =
+    let models: Models<DbModel, Event, ViewModel, WriteModel, Key, IQueryable<DbModel>> =
         { key = fun record -> record.Id
-          table = fun ctx -> ctx.GetService<ArrangementDbContext>().Dbo.Events
-          create = fun table -> table.Create()
+
+          table = fun ctx -> getEvents ctx :> IQueryable<DbModel>
+          create = fun ctx -> (getEvents ctx).Create()
           delete = fun record -> record.Delete()
+
           dbToDomain = dbToDomain
-          updateDbWithDomain = updateDbWithDomain
-          domainToView = domainToView
-          writeToDomain = writeToDomain }
+          updateDbWithDomain = updateDbWithDomain }

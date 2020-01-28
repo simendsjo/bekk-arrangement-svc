@@ -5,7 +5,8 @@ open ArrangementService.DateTime
 
 module CalendarInvite =
 
-    let createCalendarAttachment (event: Event) participantEmail =
+    let createCalendarAttachment (event: Event) (participant: Participant) =
+        let participantEmail = participant.Email.Unwrap
         [ "BEGIN:VCALENDAR"
           "PRODID:-//Schedule a Meeting"
           "VERSION:2.0"
@@ -32,17 +33,14 @@ module CalendarInvite =
           "END:VCALENDAR" ]
         |> String.concat "\n"
 
-    let createMessage (event: Event) participant =
-        let url =
-            sprintf "https://api.dev.bekk.no/arrangement-svc/%O/cancel/%s"
-                event.Id.Unwrap participant //Må endre denne URLen
+    let createMessage redirectUrl (event: Event) (participant: Participant) =
         [ "Hei! 😄"
           sprintf "Du er nå påmeldt %s." event.Title.Unwrap
           sprintf "Vi gleder oss til å se deg på %s den %s 🎉"
               event.Location.Unwrap (toReadableString event.StartDate)
           "Siden det er begrenset med plasser, setter vi pris på om du melder deg av hvis du ikke lenger"
           "kan delta. Da blir det plass til andre på ventelisten 😊"
-          sprintf "Klikk her for å melde deg av: %s." url
+          sprintf "Klikk her for å melde deg av: %s." redirectUrl
           "Bare spør meg om det er noe du lurer på."
           "Vi sees!"
           sprintf "Hilsen %s i Bekk" event.OrganizerEmail.Unwrap ]

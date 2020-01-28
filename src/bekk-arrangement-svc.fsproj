@@ -53,6 +53,7 @@
     <PackageReference Include="SQLProvider" Version="1.1.74" />
     <PackageReference Include="System.Data.SqlClient" Version="4.7.0" />
     <PackageReference Include="Giraffe" Version="4.0.1" />
+    <PackageReference Include="Thoth.Json.Giraffe" Version="3.1.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -70,7 +71,6 @@
     <Compile Include="DomainTypes\Email.fs" />
     <Compile Include="DomainTypes\Event.fs" />
     <Compile Include="DomainTypes\DomainModels.fs" />
-    <Compile Include="DomainTypes\Authorization.fs" />
     <Compile Include="Email\SendgridApiModels.fs" />
     <Compile Include="Email\Models.fs" />
     <Compile Include="Email\Service.fs" />
@@ -78,13 +78,15 @@
     <Compile Include="Events\Models.fs" />
     <Compile Include="Events\Queries.fs" />
     <Compile Include="Events\Service.fs" />
+    <Compile Include="Events\Authorization.fs" />
     <Compile Include="Events\Handlers.fs" />
     <Compile Include="Participants\UserMessages.fs" />
-    <Compile Include="Participants\Models.fs"/>
-    <Compile Include="Participants\Queries.fs"/>
-    <Compile Include="Participants\CalendarInvite.fs"/>
-    <Compile Include="Participants\Service.fs"/>
-    <Compile Include="Participants\Handlers.fs"/>
+    <Compile Include="Participants\Models.fs" />
+    <Compile Include="Participants\Queries.fs" />
+    <Compile Include="Participants\CalendarInvite.fs" />
+    <Compile Include="Participants\Service.fs" />
+    <Compile Include="Participants\Authorization.fs" />
+    <Compile Include="Participants\Handlers.fs" />
     <Compile Include="Health\Health.fs" />
     <Compile Include="Logging.fs" /> 
     <Compile Include="Program.fs" />

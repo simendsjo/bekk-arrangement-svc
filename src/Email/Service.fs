@@ -35,7 +35,7 @@ module Service =
             if context.GetService<AppConfig>().isProd then
                 sendMailProd sendgridConfig
             else
-                printfn "%s"
+                printfn "%A"
 
         let serializerSettings =
             let settings = JsonSerializerSettings()
