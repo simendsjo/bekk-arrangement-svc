@@ -5,4 +5,5 @@ type AppConfig =
       userIdClaimsKey: string
       permissionsAndClaimsKey: string
       adminPermissionClaim: string
-      readPermissionClaim: string }
+      readPermissionClaim: string
+      sendMailInDevEnvWhiteList: string list }

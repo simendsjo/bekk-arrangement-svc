@@ -30,12 +30,7 @@ module Service =
 
     let sendMail (email: Email) (context: HttpContext) =
         let sendgridConfig = context.GetService<SendgridOptions>()
-
-        let mailFunction =
-            if context.GetService<AppConfig>().isProd then
-                sendMailProd sendgridConfig
-            else
-                printfn "%A"
+        let appConfig = context.GetService<AppConfig>()
 
         let serializerSettings =
             let settings = JsonSerializerSettings()
@@ -43,6 +38,16 @@ module Service =
                 CamelCasePropertyNamesContractResolver()
             settings
 
-        (emailToSendgridFormat email, serializerSettings)
-        |> JsonConvert.SerializeObject
-        |> mailFunction
+        let serializedEmail =
+            (emailToSendgridFormat email, serializerSettings)
+            |> JsonConvert.SerializeObject
+
+        let actuallySendMail() =
+            serializedEmail |> sendMailProd sendgridConfig
+
+        if appConfig.isProd then
+            actuallySendMail()
+        else
+            printf "%A" serializedEmail
+            if appConfig.sendMailInDevEnvWhiteList
+               |> List.contains email.To.Unwrap then actuallySendMail()

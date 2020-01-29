@@ -60,7 +60,11 @@ let configureServices (services: IServiceCollection) =
               configuration.["Auth0:Permission_Claim_Type"]
           userIdClaimsKey = configuration.["Auth0:UserId_Claim"]
           adminPermissionClaim = configuration.["Auth0:Admin_Claim"]
-          readPermissionClaim = configuration.["Auth0:Read_Claim"] }
+          readPermissionClaim = configuration.["Auth0:Read_Claim"]
+          sendMailInDevEnvWhiteList =
+              configuration.["Sendgrid:Dev_White_List_Addresses"].Split(',')
+              |> Seq.toList
+              |> List.map (fun s -> s.Trim()) }
     services.AddSingleton<AppConfig> config
     |> ignore // For å sende mail: bytt ut = med <>
     dbContext.SaveContextSchema() |> ignore
