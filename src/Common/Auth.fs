@@ -12,8 +12,14 @@ module Auth =
             | [] -> orElse earlyReturn ctx
             | authorize :: rest -> authorize (failureHandler rest) next ctx
 
+    let notFound problemDescription =
+        setStatusCode 404 >=> text problemDescription
+
     let accessDenied problemDescription =
         setStatusCode 403 >=> text problemDescription
+
+    let serverError problemDescription =
+        setStatusCode 500 >=> text problemDescription
 
     let hasPermission permissionKey permission =
         authorizeUser (fun user -> user.HasClaim(permissionKey, permission))

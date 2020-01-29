@@ -51,11 +51,20 @@ module Service =
                 return participant
         }
 
+    let getParticipantsForEvent (eventId: Event.Id) =
+        result {
+            for participants in repo.read do
+
+                let attendies = participants |> queryParticipantsBy eventId
+
+                return attendies
+        }
+
     let getParticipationsForParticipant email =
         result {
             for participants in repo.read do
                 let participantsByMail =
-                    participants |> queryParticipantBy email
+                    participants |> queryParticipantionByParticipant email
                 return Seq.map models.dbToDomain participantsByMail
         }
 

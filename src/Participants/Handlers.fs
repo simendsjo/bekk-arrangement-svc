@@ -10,6 +10,7 @@ open Models
 open ArrangementService.Email
 open Authorization
 open System.Web
+open System
 
 module Handlers =
 
@@ -57,5 +58,6 @@ module Handlers =
                             >=> (handle << deleteParticipant) parameters) ]
               POST
               >=> choose
-                      [ routef "/events/%O/participants/%s"
-                            (handle << registerForEvent) ] ]
+                      [ routef "/events/%O/participants/%s" (fun (eventId: Guid, email) ->
+                            eventHasAvailableSpots eventId
+                            >=> (handle << registerForEvent) (eventId, email)) ] ]

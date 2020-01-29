@@ -22,10 +22,18 @@ module Queries =
         }
         |> withError [ participationNotFound (id, email) ]
 
-    let queryParticipantBy (email: EmailAddress)
+    let queryParticipantionByParticipant (email: EmailAddress)
         (participants: DbModel IQueryable) =
         query {
             for participant in participants do
                 where (participant.Email = email.Unwrap)
+                select participant
+        }
+
+    let queryParticipantsBy (eventId: Event.Id)
+        (participants: DbModel IQueryable) =
+        query {
+            for participant in participants do
+                where (participant.EventId = eventId.Unwrap)
                 select participant
         }
