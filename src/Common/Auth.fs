@@ -8,7 +8,7 @@ open UserMessage
 
 module Auth =
 
-    let rec anyOf these =
+    let anyOf these =
         fun ctx ->
             let auths =
                 these |> List.map (fun authorize -> authorize ctx)
@@ -21,7 +21,7 @@ module Auth =
                     | Error errors -> errors)
                 |> Error
 
-    let isAuthorized permissionKey permission =
+    let private isAuthorized permissionKey permission =
         result {
             for user in (fun (ctx: HttpContext) -> ctx.User |> Ok) do
                 if user.HasClaim(permissionKey, permission) then

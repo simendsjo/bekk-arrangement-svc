@@ -10,15 +10,15 @@ open UserMessage
 
 module Authorization =
 
-    let getCancellationTokenFromQuery (ctx: HttpContext) =
-        ctx.GetQueryStringValue "cancellationToken"
+    let queryParam param (ctx: HttpContext) =
+        ctx.GetQueryStringValue param
         |> Result.mapError
             (fun _ ->
-                [ AccessDenied "Missing query parameter 'cancellationToken'" ])
+                [ BadInput(sprintf "Missing query parameter '%s'" param) ])
 
     let userHasCancellationToken (eventId, email) =
         result {
-            for cancellationToken in getCancellationTokenFromQuery do
+            for cancellationToken in queryParam "cancellationToken" do
 
                 for participant in Service.getParticipant
                                        (Event.Id eventId,
