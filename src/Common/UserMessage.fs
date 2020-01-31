@@ -36,21 +36,18 @@ module UserMessage =
         let reduceErrors (errorCode, errorMessages) current =
 
             let hasGreaterOrEqualSeverityThan prev next =
-                match prev with
-                | ResourceNotFound ->
-                    match next with
-                    | NotFound m -> Same m
-                    | _ -> Less
-                | Forbidden ->
-                    match next with
-                    | NotFound m -> Greater(ResourceNotFound, m)
-                    | AccessDenied m -> Same m
-                    | _ -> Less
-                | BadRequest ->
-                    match next with
-                    | NotFound m -> Greater(ResourceNotFound, m)
-                    | AccessDenied m -> Greater(Forbidden, m)
-                    | BadInput m -> Same m
+                match prev, next with
+                | ResourceNotFound, NotFound m -> Same m
+                | ResourceNotFound, _ -> Less
+
+                | Forbidden, NotFound m -> Greater(ResourceNotFound, m)
+                | Forbidden, AccessDenied m -> Same m
+                | Forbidden, _ -> Less
+
+                | BadRequest, NotFound m -> Greater(ResourceNotFound, m)
+                | BadRequest, AccessDenied m -> Greater(Forbidden, m)
+                | BadRequest, BadInput m -> Same m
+
                 | _ -> Less
 
             match current |> hasGreaterOrEqualSeverityThan errorCode with
