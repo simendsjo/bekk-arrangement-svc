@@ -67,9 +67,11 @@ module Handlers =
               DELETE
               >=> choose
                       [ routef "/events/%O" (fun id ->
-                            userCanEditEvent id >=> (handle << deleteEvent) id) ]
+                            check (userCanEditEvent id)
+                            >=> (handle << deleteEvent) id) ]
               PUT
               >=> choose
                       [ routef "/events/%O" (fun id ->
-                            userCanEditEvent id >=> (handle << updateEvent) id) ]
+                            check (userCanEditEvent id)
+                            >=> (handle << updateEvent) id) ]
               POST >=> choose [ route "/events" >=> handle createEvent ] ]

@@ -10,36 +10,36 @@ open UserMessage
 
 module Authorization =
 
-    let userHasCancellationToken (eventId, email) onFail =
-        fun next (ctx: HttpContext) ->
-            let fail() = onFail earlyReturn ctx
+    let getCancellationTokenFromQuery (ctx: HttpContext) =
+        ctx.GetQueryStringValue "cancellationToken"
+        |> Result.mapError
+            (fun _ ->
+                [ AccessDenied "Missing query parameter 'cancellationToken'" ])
 
-            let cancellationToken = ctx.GetQueryStringValue "cancellationToken"
+    let userHasCancellationToken (eventId, email) =
+        result {
+            for cancellationToken in getCancellationTokenFromQuery do
 
-            match cancellationToken with
-            | Error _ -> fail()
-            | Ok cancellationToken ->
-
-                let participant =
-                    Service.getParticipant
-                        (Event.Id eventId, Email.EmailAddress email) ctx
-
-                match participant with
-                | Error _ -> fail()
-                | Ok participant ->
+                for participant in Service.getParticipant
+                                       (Event.Id eventId,
+                                        Email.EmailAddress email) do
 
                     let hasCorrectCancellationToken =
                         cancellationToken =
                             participant.CancellationToken.ToString()
 
-                    if hasCorrectCancellationToken then next ctx else fail()
+                    if hasCorrectCancellationToken then
+                        return ()
+                    else
+                        return! [ AccessDenied
+                                      "You cannot delete your participation without your cancellation token" ]
+                                |> Error
+        }
 
     let userCanCancel eventIdAndEmail =
         anyOf
             [ isAdmin
               userHasCancellationToken eventIdAndEmail ]
-            (accessDenied
-                "You cannot delete your participation without your cancellation token")
 
     let eventHasAvailableSpots eventId =
         result {

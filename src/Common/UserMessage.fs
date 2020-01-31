@@ -48,7 +48,9 @@ module UserMessage =
                 | BadRequest, AccessDenied m -> Greater(Forbidden, m)
                 | BadRequest, BadInput m -> Same m
 
-                | _ -> Less
+                | _, NotFound m -> Greater(ResourceNotFound, m)
+                | _, AccessDenied m -> Greater(Forbidden, m)
+                | _, BadInput m -> Greater(BadRequest, m)
 
             match current |> hasGreaterOrEqualSeverityThan errorCode with
             | Greater(greaterErrorCode, message) ->

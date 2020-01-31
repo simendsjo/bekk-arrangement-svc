@@ -13,7 +13,7 @@ module Http =
 
     let check (condition: Handler<Unit>) (next: HttpFunc) (context: HttpContext) =
         match condition context with
-        | Ok() -> earlyReturn context
+        | Ok() -> next context
         | Error errorMessage ->
             convertUserMessagesToHttpError errorMessage next context
 
