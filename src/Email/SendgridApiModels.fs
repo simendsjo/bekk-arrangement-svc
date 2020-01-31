@@ -6,8 +6,7 @@ module SendgridApiModels =
         { Email: string }
 
     type Personalization =
-        { To: SendGridEmailAddress list
-          Cc: SendGridEmailAddress list }
+        { To: SendGridEmailAddress list }
 
     type Content =
         { Type: string

@@ -7,8 +7,7 @@ open ArrangementService.DomainModels
 module Models =
     let emailToSendgridFormat (email: Email): SendGridFormat =
         { Personalizations =
-              [ { To = [ { Email = email.To.Unwrap } ]
-                  Cc = [ { Email = email.Cc.Unwrap } ] } ]
+              [ { To = [ { Email = email.To.Unwrap } ] } ]
           From = { Email = email.From.Unwrap }
           Subject = email.Subject
           Content =

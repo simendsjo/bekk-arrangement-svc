@@ -15,13 +15,13 @@ module CalendarInvite =
           sprintf "DTSTART:%s" (toUtcString event.StartDate)
           sprintf "DTSTAMP:%s" (System.DateTimeOffset.UtcNow.ToString())
           sprintf "DTEND:%s" (toUtcString event.EndDate)
-          sprintf "LOCATION:%s" (event.Location.ToString())
+          sprintf "LOCATION:%s" event.Location.Unwrap
           sprintf "UID:%O" event.Id
-          sprintf "DESCRIPTION:%s" (event.Description.ToString())
+          sprintf "DESCRIPTION:%s" event.Description.Unwrap
           sprintf "X-ALT-DESC;FMTTYPE=text/html:%s"
-              (event.Description.ToString())
-          sprintf "SUMMARY:%s" (event.Title.ToString())
-          sprintf "ORGANIZER:MAILTO:%s" (event.OrganizerEmail.ToString())
+              event.Description.Unwrap
+          sprintf "SUMMARY:%s" event.Title.Unwrap
+          sprintf "ORGANIZER:MAILTO:%s" event.OrganizerEmail.Unwrap
           sprintf "ATTENDEE;CN=\"%s\";RSVP=TRUE:mailto:%s" participantEmail
               participantEmail
           "BEGIN:VALARM"
