@@ -11,6 +11,12 @@ module Http =
 
     type Handler<'t> = HttpContext -> Result<'t, UserMessage list>
 
+    let check (condition: Handler<Unit>) (next: HttpFunc) (context: HttpContext) =
+        match condition context with
+        | Ok() -> earlyReturn context
+        | Error errorMessage ->
+            convertUserMessagesToHttpError errorMessage next context
+
     let handle (endpoint: Handler<'t>) (next: HttpFunc) (context: HttpContext) =
         match endpoint context with
         | Ok result -> json result next context

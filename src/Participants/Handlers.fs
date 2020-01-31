@@ -59,5 +59,5 @@ module Handlers =
               POST
               >=> choose
                       [ routef "/events/%O/participants/%s" (fun (eventId: Guid, email) ->
-                            eventHasAvailableSpots eventId
+                            check (eventHasAvailableSpots eventId)
                             >=> (handle << registerForEvent) (eventId, email)) ] ]

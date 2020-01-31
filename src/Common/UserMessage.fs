@@ -8,32 +8,68 @@ module UserMessage =
     type HttpError = HttpFunc -> HttpContext -> HttpFuncResult
 
     type UserMessage =
-        | NotFound of string
         | BadInput of string
+        | AccessDenied of string
+        | NotFound of string
 
-    type ErrorCodes =
-        | ResourceNotFound
+    type private ErrorCodes =
         | BadRequest
+        | Forbidden
+        | ResourceNotFound
         | InternalError
 
+    type private LessThanGreaterOrSame =
+        | Same of string
+        | Greater of ErrorCodes * string
+        | Less
+
+    type private UserJsonMessage =
+        { userMessage: string }
+
+    let private errorMessagesToUserJson messages =
+        { userMessage =
+              messages
+              |> String.concat "\n" }
 
     let convertUserMessagesToHttpError (errors: UserMessage list): HttpError =
 
-        let reduceErrors (errorCode, errorMessages) =
-            function
-            | NotFound errorMessage ->
-                (ResourceNotFound, errorMessages @ [ errorMessage ])
-            | BadInput errorMessage ->
-                let messages = errorMessages @ [ errorMessage ]
-                match errorCode with
-                | ResourceNotFound -> (ResourceNotFound, messages)
-                | _ -> (BadRequest, messages)
+        let reduceErrors (errorCode, errorMessages) current =
+
+            let hasGreaterOrEqualSeverityThan prev next =
+                match prev with
+                | ResourceNotFound ->
+                    match next with
+                    | NotFound m -> Same m
+                    | _ -> Less
+                | Forbidden ->
+                    match next with
+                    | NotFound m -> Greater(ResourceNotFound, m)
+                    | AccessDenied m -> Same m
+                    | _ -> Less
+                | BadRequest ->
+                    match next with
+                    | NotFound m -> Greater(ResourceNotFound, m)
+                    | AccessDenied m -> Greater(Forbidden, m)
+                    | BadInput m -> Same m
+                | _ -> Less
+
+            match current |> hasGreaterOrEqualSeverityThan errorCode with
+            | Greater(greaterErrorCode, message) ->
+                (greaterErrorCode, [ message ])
+            | Same message -> (errorCode, errorMessages @ [ message ])
+            | Less ->
+                (errorCode, errorMessages)
 
         errors
         |> List.fold reduceErrors (InternalError, [])
         |> fun (errorCode, errorMessages) ->
+            (errorCode, errorMessagesToUserJson errorMessages)
+        |> fun (errorCode, userMessage) ->
             match errorCode with
-            | ResourceNotFound -> RequestErrors.NOT_FOUND errorMessages
-            | BadRequest -> RequestErrors.BAD_REQUEST errorMessages
+            | BadRequest -> RequestErrors.BAD_REQUEST userMessage
+            | Forbidden -> RequestErrors.FORBIDDEN userMessage
+            | ResourceNotFound -> RequestErrors.NOT_FOUND userMessage
             | InternalError ->
-                ServerErrors.INTERNAL_ERROR "Something has gone wrong"
+                [ "Something has gone wrong" ]
+                |> errorMessagesToUserJson
+                |> ServerErrors.INTERNAL_ERROR
