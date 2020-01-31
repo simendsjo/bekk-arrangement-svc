@@ -19,7 +19,6 @@ module Service =
           Message = createMessage redirectUrl event participant
           From = event.OrganizerEmail
           To = participant.Email
-          Cc = EmailAddress "ida.bosch@bekk.no" // Burde gjøre denne optional
           CalendarInvite = createCalendarAttachment event participant }
 
     let sendEventEmail redirectUrl (participant: Participant) =
