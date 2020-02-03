@@ -54,10 +54,10 @@ module Handlers =
               DELETE
               >=> choose
                       [ routef "/events/%O/participants/%s" (fun parameters ->
-                            userCanCancel parameters
+                            check (userCanCancel parameters)
                             >=> (handle << deleteParticipant) parameters) ]
               POST
               >=> choose
                       [ routef "/events/%O/participants/%s" (fun (eventId: Guid, email) ->
-                            eventHasAvailableSpots eventId
+                            check (eventHasAvailableSpots eventId)
                             >=> (handle << registerForEvent) (eventId, email)) ] ]

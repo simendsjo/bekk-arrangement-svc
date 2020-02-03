@@ -5,21 +5,18 @@ open Microsoft.AspNetCore.Http
 
 open ArrangementService
 open Auth
+open UserMessage
 
 module Authorization =
 
-    let userCreatedEvent eventId onFail =
-        fun next (ctx: HttpContext) ->
-            // Inntil videre feiler vi ubetinget her.
-            // Må implementere denne featuren,
-            // ellers er det berre admin som kan redigere events
-            onFail earlyReturn ctx
+    let userCreatedEvent eventId ctx =
+        // Denne trenger nok en ekte implementasjon etterhvert
+        [ AccessDenied
+            (sprintf
+                "You are trying to edit an event (id %O) which you did not create"
+                 eventId) ] |> Error
 
     let userCanEditEvent eventId =
         anyOf
             [ isAdmin
               userCreatedEvent eventId ]
-            (accessDenied
-                (sprintf
-                    "You are trying to edit an event (id %O) which you did not create"
-                     eventId))
