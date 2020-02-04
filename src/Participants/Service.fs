@@ -3,12 +3,12 @@ namespace ArrangementService.Participant
 open ArrangementService
 
 open ResultComputationExpression
+open ArrangementService.Email
 open CalendarInvite
 open Queries
 open UserMessages
 open Models
 open ArrangementService.DomainModels
-open ArrangementService.Email
 open DateTime
 
 module Service =
