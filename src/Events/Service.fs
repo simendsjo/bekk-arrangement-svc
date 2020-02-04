@@ -39,7 +39,7 @@ module Service =
                 return models.dbToDomain event
         }
 
-    let private createdMessage redirectUrl (event: Event) =
+    let private createdEventMessage redirectUrl (event: Event) =
         [ "Hei! 😄"
           sprintf "Du har nå opprettet %s." event.Title.Unwrap
           sprintf "Her er en unik lenke for å endre arrangementet: %s." redirectUrl
@@ -49,12 +49,12 @@ module Service =
     let private createEmail (event: Event) (context: HttpContext) =
         let config = context.GetService<AppConfig>()
         { Subject = sprintf "Du opprettet %s" event.Title.Unwrap
-          Message = createdMessage "unik-lenke" event
+          Message = createdEventMessage "unik-lenke" event
           From = EmailAddress config.noReplyEmail
           To = event.OrganizerEmail
           CalendarInvite = createCalendarAttachment event event.OrganizerEmail }
 
-    let sendNewlyCreatedEventMail (event: Event) =
+    let private sendNewlyCreatedEventMail (event: Event) =
         result {
             for mail in createEmail event >> Ok do
                 yield Service.sendMail mail

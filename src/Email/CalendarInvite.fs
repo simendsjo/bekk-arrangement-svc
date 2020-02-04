@@ -5,8 +5,8 @@ open ArrangementService.DateTime
 
 module CalendarInvite =
 
-    let createCalendarAttachment (event: Event) (participant: EmailAddress) =
-        let participant = participant.Unwrap
+    let createCalendarAttachment (event: Event) (email: EmailAddress) =
+        let email = email.Unwrap
         [ "BEGIN:VCALENDAR"
           "PRODID:-//Schedule a Meeting"
           "VERSION:2.0"
@@ -22,8 +22,8 @@ module CalendarInvite =
               event.Description.Unwrap
           sprintf "SUMMARY:%s" event.Title.Unwrap
           sprintf "ORGANIZER:MAILTO:%s" event.OrganizerEmail.Unwrap
-          sprintf "ATTENDEE;CN=\"%s\";RSVP=TRUE:mailto:%s" participant
-              participant
+          sprintf "ATTENDEE;CN=\"%s\";RSVP=TRUE:mailto:%s" email
+              email
           "BEGIN:VALARM"
           "TRIGGER:-PT15M"
           "ACTION:DISPLAY"
