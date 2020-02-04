@@ -61,6 +61,7 @@ let configureServices (services: IServiceCollection) =
           userIdClaimsKey = configuration.["Auth0:UserId_Claim"]
           adminPermissionClaim = configuration.["Auth0:Admin_Claim"]
           readPermissionClaim = configuration.["Auth0:Read_Claim"]
+          noReplyEmail = configuration.["App:NoReplyEmail"]
           sendMailInDevEnvWhiteList =
               configuration.["Sendgrid:Dev_White_List_Addresses"].Split(',')
               |> Seq.toList
