@@ -1,10 +1,15 @@
 namespace ArrangementService.Event
 
 open ArrangementService
-
+open ArrangementService.Email
+open CalendarInvite
 open ResultComputationExpression
 open Queries
 open UserMessages
+open ArrangementService.DomainModels
+open Microsoft.AspNetCore.Http
+open Giraffe
+open DateTime
 
 module Service =
 
@@ -34,16 +39,37 @@ module Service =
                 return models.dbToDomain event
         }
 
+    let private createdEventMessage redirectUrl (event: Event) =
+        [ "Hei! 😄"
+          sprintf "Du har nå opprettet %s." event.Title.Unwrap
+          sprintf "Her er en unik lenke for å endre arrangementet: %s." redirectUrl
+          "Ikke del denne med andre🕵️" ]
+        |> String.concat "\n"
+
+    let private createEmail (event: Event) (context: HttpContext) =
+        let config = context.GetService<AppConfig>()
+        { Subject = sprintf "Du opprettet %s" event.Title.Unwrap
+          Message = createdEventMessage "unik-lenke" event
+          From = EmailAddress config.noReplyEmail
+          To = event.OrganizerEmail
+          CalendarInvite = createCalendarAttachment event event.OrganizerEmail }
+
+    let private sendNewlyCreatedEventMail (event: Event) =
+        result {
+            for mail in createEmail event >> Ok do
+                yield Service.sendMail mail
+        }
+
     let createEvent event =
         result {
             for newEvent in repo.create event do
+                yield sendNewlyCreatedEventMail newEvent
                 return newEvent
         }
 
     let updateEvent id event =
         result {
             for events in repo.read do
-
                 let! oldEvent = events |> queryEventBy id
                 return repo.update event oldEvent
         }
