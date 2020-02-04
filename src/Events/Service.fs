@@ -9,6 +9,7 @@ open UserMessages
 open ArrangementService.DomainModels
 open Microsoft.AspNetCore.Http
 open Giraffe
+open DateTime
 
 module Service =
 
@@ -38,10 +39,17 @@ module Service =
                 return models.dbToDomain event
         }
 
+    let private createdMessage redirectUrl (event: Event) =
+        [ "Hei! 😄"
+          sprintf "Du har nå opprettet %s." event.Title.Unwrap
+          sprintf "Her er en unik lenke for å endre arrangementet: %s." redirectUrl
+          "Ikke del denne med andre🕵️" ]
+        |> String.concat "\n"
+
     let private createEmail (event: Event) (context: HttpContext) =
         let config = context.GetService<AppConfig>()
         { Subject = sprintf "Du opprettet %s" event.Title.Unwrap
-          Message = "Hei.."
+          Message = createdMessage "unik-lenke" event
           From = EmailAddress config.noReplyEmail
           To = event.OrganizerEmail
           CalendarInvite = createCalendarAttachment event event.OrganizerEmail }
