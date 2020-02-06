@@ -2,34 +2,65 @@ namespace ArrangementService.Participant
 
 open ArrangementService.DomainModels
 open ArrangementService.DateTime
+open System
 
+// ICS reference: https://tools.ietf.org/html/rfc5545
 module CalendarInvite =
-
-    let createCalendarAttachment (event: Event) (participant: Participant) =
-        let participantEmail = participant.Email.Unwrap
-        [ "BEGIN:VCALENDAR"
-          "PRODID:-//Schedule a Meeting"
-          "VERSION:2.0"
-          "METHOD:REQUEST"
-          "BEGIN:VEVENT"
-          sprintf "DTSTART:%s" (toUtcString event.StartDate)
-          sprintf "DTSTAMP:%s" (System.DateTimeOffset.UtcNow.ToString())
-          sprintf "DTEND:%s" (toUtcString event.EndDate)
-          sprintf "LOCATION:%s" event.Location.Unwrap
-          sprintf "UID:%O" event.Id
-          sprintf "DESCRIPTION:%s" event.Description.Unwrap
-          sprintf "X-ALT-DESC;FMTTYPE=text/html:%s"
-              event.Description.Unwrap
-          sprintf "SUMMARY:%s" event.Title.Unwrap
-          sprintf "ORGANIZER:MAILTO:%s" event.OrganizerEmail.Unwrap
-          sprintf "ATTENDEE;CN=\"%s\";RSVP=TRUE:mailto:%s" participantEmail
-              participantEmail
-          "BEGIN:VALARM"
+    let reminderObject =
+        [ "BEGIN:VALARM"
           "TRIGGER:-PT15M"
           "ACTION:DISPLAY"
           "DESCRIPTION:Reminder"
-          "END:VALARM"
-          "END:VEVENT"
+          "END:VALARM" ] 
+        |> String.concat "\n"
+
+    let recurringObject =
+        [ "RRULE:FREQ=WEEKLY"
+          "RECURID:TEST" ] 
+        |> String.concat "\n"
+
+    let timezoneObject =
+        ["BEGIN:VTIMEZONE"
+         "TZID:Greenwich Standard Time"
+         "BEGIN:STANDARD"
+         "DTSTART:16010101T000000"
+         "TZOFFSETFROM:+0000"
+         "TZOFFSETTO:+0000"
+         "END:STANDARD"
+         "BEGIN:DAYLIGHT"
+         "DTSTART:16010101T000000"
+         "TZOFFSETFROM:+0000"
+         "TZOFFSETTO:+0000"
+         "END:DAYLIGHT"
+         "END:VTIMEZONE" ]
+        |> String.concat "\n" 
+
+    let eventObject (event: Event) (participant: Participant) =
+        let participantEmail = participant.Email.Unwrap
+        [ "BEGIN:VEVENT"
+          sprintf "ORGANIZER;CN=%s:mailto:%s" event.OrganizerEmail.Unwrap event.OrganizerEmail.Unwrap
+          sprintf "ATTENDEE;CN=%s;RSVP=TRUE:mailto:%s" participantEmail participantEmail
+          sprintf "DESCRIPTION;LANGUAGE=nb-NO:%s" "Beskrivelsen her" //event.Description.Unwrap
+          sprintf "UID:%O" event.Id.Unwrap
+          sprintf "SUMMARY;LANGUAGE=nb-NO:%s" "Oppsummeringen" //event.Title.Unwrap
+          sprintf "DTSTART:%s" (toUtcString event.StartDate)
+          sprintf "DTEND:%s" (toUtcString event.EndDate)
+          sprintf "DTSTAMP:%s" (toUtcString (toCustomDateTime DateTime.UtcNow (TimeSpan())))
+          sprintf "LOCATION;LANGUAGE=nb-NO:%s" event.Location.Unwrap
+          "COMMENT:Heisann test test - - Ida"
+          reminderObject
+          // if recurring, insert recurringObject
+          "END:VEVENT" ] 
+        |> String.concat "\n" 
+ 
+    let createCalendarAttachment (event: Event) (participant: Participant) =
+        [ "BEGIN:VCALENDAR"
+          "CALSCALE:GREGORIAN"
+          "METHOD:REQUEST"
+          "PRODID:-//Bekk//arrangement-svc//NO"
+          "VERSION:2.0"
+          timezoneObject
+          eventObject event participant
           "END:VCALENDAR" ]
         |> String.concat "\n"
 
