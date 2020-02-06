@@ -26,8 +26,5 @@ module Utils =
           fun (openDate, _, endDate) ->
               validateBefore
                   (BadInput "Registreringsdato må være før sluttdato")
-                  (openDate, endDate)
-          fun (openDate, _, _) ->
-              validateBefore (BadInput "Åpningsdato må være i fremtiden")
-                  (now(), openDate) ]
+                  (openDate, endDate) ]
         |> validateAll id (openDate, startDate, endDate)
