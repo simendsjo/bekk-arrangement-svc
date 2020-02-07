@@ -15,11 +15,12 @@ module Service =
     let repo = Repo.from models
 
     let createEmail redirectUrl (participant: Participant) (event: Event) =
+        let message = createMessage redirectUrl event participant
         { Subject = sprintf "Du ble påmeldt %s" event.Title.Unwrap
-          Message = createMessage redirectUrl event participant
+          Message = message
           From = event.OrganizerEmail
           To = participant.Email
-          CalendarInvite = createCalendarAttachment event participant }
+          CalendarInvite = createCalendarAttachment event participant message }
 
     let sendEventEmail redirectUrl (participant: Participant) =
         result {
