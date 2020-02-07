@@ -30,6 +30,14 @@ An F# service for collecting and maintaining data about events.
 - The service runs at  `http://localhost:5000/` (currently no Swagger docs)
 - If everything works, `http://localhost:5000/health` should return 200 OK.
 
+#### 🔥Hot tip🔥
+
+Brew yourself some `tmux`, navigate to the root folder and run
+
+```
+./tmux.sh
+```
+
 ## Deploy app
 
 ### Deploy to development
