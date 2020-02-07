@@ -1,7 +1,6 @@
 namespace ArrangementService.Event
 
 open Giraffe
-open Microsoft.AspNetCore.Http
 
 open ArrangementService
 open Auth

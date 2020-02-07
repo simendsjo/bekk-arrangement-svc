@@ -20,7 +20,6 @@ type TableModel = ArrangementDbContext.dboSchema.``dbo.Events``
 
 type DbModel = ArrangementDbContext.``dbo.EventsEntity``
 
-
 type ViewModel =
     { Id: Guid
       Title: string
@@ -31,7 +30,7 @@ type ViewModel =
       MaxParticipants: int
       StartDate: DateTimeCustom
       EndDate: DateTimeCustom
-      OpenForRegistrationDate: DateTimeCustom }
+      OpenForRegistrationTime: int64 }
 
 type WriteModel =
     { Title: string
@@ -42,7 +41,7 @@ type WriteModel =
       MaxParticipants: int
       StartDate: DateTimeCustom
       EndDate: DateTimeCustom
-      OpenForRegistrationDate: DateTimeCustom }
+      OpenForRegistrationTime: int64 }
 
 module Models =
 
@@ -56,8 +55,8 @@ module Models =
         <*> OrganizerName.Parse writeModel.OrganizerName
         <*> EmailAddress.Parse writeModel.OrganizerEmail
         <*> MaxParticipants.Parse writeModel.MaxParticipants
-        <*> validateDateRange writeModel.OpenForRegistrationDate
-                writeModel.StartDate writeModel.EndDate
+        <*> validateDateRange writeModel.StartDate writeModel.EndDate
+        <*> OpenForRegistrationTime.Parse writeModel.OpenForRegistrationTime
 
 
     let dbToDomain (dbRecord: DbModel): Event =
@@ -70,9 +69,8 @@ module Models =
           MaxParticipants = MaxParticipants dbRecord.MaxParticipants
           StartDate = toCustomDateTime dbRecord.StartDate dbRecord.StartTime
           EndDate = toCustomDateTime dbRecord.EndDate dbRecord.EndTime
-          OpenForRegistrationDate =
-              toCustomDateTime dbRecord.OpenForRegistrationDate
-                  dbRecord.OpenForRegistrationTime }
+          OpenForRegistrationTime =
+              OpenForRegistrationTime dbRecord.OpenForRegistrationTime }
 
     let updateDbWithDomain (db: DbModel) (event: Event) =
         db.Title <- event.Title.Unwrap
@@ -85,10 +83,7 @@ module Models =
         db.StartTime <- customToTimeSpan event.StartDate.Time
         db.EndDate <- customToDateTime event.EndDate.Date
         db.EndTime <- customToTimeSpan event.EndDate.Time
-        db.OpenForRegistrationDate <-
-            customToDateTime event.OpenForRegistrationDate.Date
-        db.OpenForRegistrationTime <-
-            customToTimeSpan event.OpenForRegistrationDate.Time
+        db.OpenForRegistrationTime <- event.OpenForRegistrationTime.Unwrap
         db
 
     let domainToView (domainModel: Event): ViewModel =
@@ -101,7 +96,7 @@ module Models =
           MaxParticipants = domainModel.MaxParticipants.Unwrap
           StartDate = domainModel.StartDate
           EndDate = domainModel.EndDate
-          OpenForRegistrationDate = domainModel.OpenForRegistrationDate }
+          OpenForRegistrationTime = domainModel.OpenForRegistrationTime.Unwrap }
 
     let models: Models<DbModel, Event, ViewModel, WriteModel, Key, IQueryable<DbModel>> =
         { key = fun record -> record.Id
