@@ -18,13 +18,6 @@ module Utils =
     let validateNotNegative errorMessage number =
         validate (fun x -> x >= 0) errorMessage number
 
-    let validateDateRange openDate startDate endDate =
-        [ fun (openDate, startDate, _) ->
-            validateBefore
-                (BadInput "Registreringsdato må være før åpningsdato")
-                (openDate, startDate)
-          fun (openDate, _, endDate) ->
-              validateBefore
-                  (BadInput "Registreringsdato må være før sluttdato")
-                  (openDate, endDate) ]
-        |> validateAll id (openDate, startDate, endDate)
+    let validateDateRange startDate endDate =
+        [ validateBefore (BadInput "Registreringsdato må være før sluttdato") ]
+        |> validateAll id (startDate, endDate)
