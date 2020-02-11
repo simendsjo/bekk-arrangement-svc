@@ -12,6 +12,6 @@ tmux send-keys -t $session 'cd src' C-m
 tmux send-keys -t $session 'dotnet watch run' C-m
 
 tmux select-pane -L -t $session
-tmux send-keys -t $session 'nvim' C-m
+tmux send-keys -t $session 'code src' C-m
 
 tmux attach -t $session

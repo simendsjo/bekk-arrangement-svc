@@ -1,6 +1,5 @@
 namespace ArrangementService.Event
 
-open Models
 open UserMessages
 open System.Linq
 

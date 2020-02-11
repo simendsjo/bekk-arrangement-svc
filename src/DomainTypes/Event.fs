@@ -74,3 +74,12 @@ type MaxParticipants =
     static member Parse(maxParticipants: int) =
         [ validateNotNegative (BadInput "Antall kan ikke være negativt") ]
         |> validateAll MaxParticipants maxParticipants
+
+type OpenForRegistrationTime =
+    | OpenForRegistrationTime of int64
+
+    member this.Unwrap =
+        match this with
+        | OpenForRegistrationTime time -> time
+
+    static member Parse(time: int64) = OpenForRegistrationTime time |> Ok

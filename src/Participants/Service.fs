@@ -3,26 +3,40 @@ namespace ArrangementService.Participant
 open ArrangementService
 
 open ResultComputationExpression
+open ArrangementService.Email
 open CalendarInvite
 open Queries
 open UserMessages
 open Models
 open ArrangementService.DomainModels
-open ArrangementService.Email
+open DateTime
 
 module Service =
 
     let repo = Repo.from models
 
-    let createEmail redirectUrl (participant: Participant) (event: Event) =
-        let message = createMessage redirectUrl event participant
+    let private inviteMessage redirectUrl (event: Event) =
+        [ "Hei! 😄"
+          sprintf "Du er nå påmeldt %s." event.Title.Unwrap
+          sprintf "Vi gleder oss til å se deg på %s den %s 🎉"
+              event.Location.Unwrap (toReadableString event.StartDate)
+          "Siden det er begrenset med plasser, setter vi pris på om du melder deg av hvis du ikke lenger"
+          "kan delta. Da blir det plass til andre på ventelisten 😊"
+          sprintf "Meld deg av her: %s." redirectUrl
+          "Bare spør meg om det er noe du lurer på."
+          "Vi sees!"
+          sprintf "Hilsen %s i Bekk" event.OrganizerEmail.Unwrap ]
+        |> String.concat "<br>" // Sendgrid formats to HTML, \n does not work
+
+    let private createEmail redirectUrl (participant: Participant) (event: Event) =
+        let message = inviteMessage redirectUrl event
         { Subject = sprintf "%s" event.Title.Unwrap
           Message = message
           From = event.OrganizerEmail
           To = participant.Email
-          CalendarInvite = createCalendarAttachment event participant message }
+          CalendarInvite = createCalendarAttachment event participant.Email message }
 
-    let sendEventEmail redirectUrl (participant: Participant) =
+    let private sendEventEmail redirectUrl (participant: Participant) =
         result {
             for event in Event.Service.getEvent participant.EventId do
                 let mail = createEmail redirectUrl participant event
