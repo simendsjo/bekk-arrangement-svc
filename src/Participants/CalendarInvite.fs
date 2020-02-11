@@ -22,14 +22,13 @@ module CalendarInvite =
 
     let reminderObject =
         [ "BEGIN:VALARM"
-          "TRIGGER:-PT15M"
+          "TRIGGER;RELATED=START:-PT30M"
           "ACTION:DISPLAY"
-          "DESCRIPTION:Reminder"
+          "DESCRIPTION:REMINDER"
           "END:VALARM" ]
         |> String.concat "\n"
 
-    let recurringObject = "RRULE:FREQ=WEEKLY\n"
-        // RRULE:FREQ=WEEKLY;UNTIL=20200731T220000Z;INTERVAL=1;BYDAY=SA;WKST=MO
+    let recurringObject = "RRULE:FREQ=WEEKLY;COUNT=3;INTERVAL=1;WKST=MO\n" // Eksempel
 
     let timezoneObject =
         [ "BEGIN:VTIMEZONE"
@@ -54,17 +53,16 @@ module CalendarInvite =
         let utcNow = toUtcString (toCustomDateTime DateTime.UtcNow (TimeSpan()))
         [ "BEGIN:VEVENT"
           sprintf "ORGANIZER;CN=%s:mailto:%s" event.OrganizerEmail.Unwrap event.OrganizerEmail.Unwrap
-          sprintf "ATTENDEE;ROLE=REQ-PARTICIPANT;CN=%s;RSVP=TRUE:mailto:%s" participantEmail participantEmail
+          sprintf "ATTENDEE;PARTSTAT=ACCEPTED;RSVP=FALSE;CN=%s:mailto:%s" participantEmail participantEmail
           sprintf "DESCRIPTION;LANGUAGE=nb-NO:%s" (message.Replace("<br>","\\n "))
           sprintf "UID:%O" event.Id.Unwrap
           sprintf "SUMMARY;LANGUAGE=nb-NO:%s" event.Title.Unwrap
           sprintf "DTSTART;TZID=W. Europe Standard Time:%s" (toDateString event.StartDate)
           sprintf "DTEND;TZID=W. Europe Standard Time:%s" (toDateString event.EndDate)
           sprintf "DTSTAMP:%s" utcNow
-          //sprintf "CREATED:%s" utcNow
           sprintf "LOCATION;LANGUAGE=nb-NO:%s" event.Location.Unwrap
           "STATUS:CONFIRMED"
-          //"SEQUENCE:0"
+          "SEQUENCE:0"
           reminderObject
           // if recurring, insert recurringObject. TODO: implement frontend.
           "END:VEVENT" ]
