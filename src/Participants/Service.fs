@@ -30,7 +30,7 @@ module Service =
 
     let private createEmail redirectUrl (participant: Participant) (event: Event) =
         let message = inviteMessage redirectUrl event
-        { Subject = sprintf "%s" event.Title.Unwrap
+        { Subject = event.Title.Unwrap
           Message = message
           From = event.OrganizerEmail
           To = participant.Email
