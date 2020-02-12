@@ -19,4 +19,4 @@ module Models =
                       |> System.Text.Encoding.UTF8.GetBytes
                       |> System.Convert.ToBase64String
                   Type = "text/calendar; method=REQUEST"
-                  Filename = sprintf "%s.ics" email.Subject } ] }
+                  Filename = "invite.ics" } ] }

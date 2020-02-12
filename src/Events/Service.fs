@@ -48,11 +48,12 @@ module Service =
 
     let private createEmail (event: Event) (context: HttpContext) =
         let config = context.GetService<AppConfig>()
+        let message = createdEventMessage "unik-lenke" event
         { Subject = sprintf "Du opprettet %s" event.Title.Unwrap
-          Message = createdEventMessage "unik-lenke" event
+          Message = message
           From = EmailAddress config.noReplyEmail
           To = event.OrganizerEmail
-          CalendarInvite = createCalendarAttachment event event.OrganizerEmail }
+          CalendarInvite = createCalendarAttachment event event.OrganizerEmail message }
 
     let private sendNewlyCreatedEventMail (event: Event) =
         result {

@@ -22,18 +22,19 @@ module Service =
               event.Location.Unwrap (toReadableString event.StartDate)
           "Siden det er begrenset med plasser, setter vi pris på om du melder deg av hvis du ikke lenger"
           "kan delta. Da blir det plass til andre på ventelisten 😊"
-          sprintf "Klikk her for å melde deg av: %s." redirectUrl
+          sprintf "Meld deg av her: %s." redirectUrl
           "Bare spør meg om det er noe du lurer på."
           "Vi sees!"
           sprintf "Hilsen %s i Bekk" event.OrganizerEmail.Unwrap ]
-        |> String.concat "\n"
+        |> String.concat "<br>" // Sendgrid formats to HTML, \n does not work
 
     let private createEmail redirectUrl (participant: Participant) (event: Event) =
-        { Subject = sprintf "Du ble påmeldt %s" event.Title.Unwrap
-          Message = inviteMessage redirectUrl event
+        let message = inviteMessage redirectUrl event
+        { Subject = event.Title.Unwrap
+          Message = message
           From = event.OrganizerEmail
           To = participant.Email
-          CalendarInvite = createCalendarAttachment event participant.Email }
+          CalendarInvite = createCalendarAttachment event participant.Email message }
 
     let private sendEventEmail redirectUrl (participant: Participant) =
         result {
