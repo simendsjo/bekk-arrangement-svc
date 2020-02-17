@@ -28,13 +28,15 @@ module Service =
           sprintf "Hilsen %s i Bekk" event.OrganizerEmail.Unwrap ]
         |> String.concat "<br>" // Sendgrid formats to HTML, \n does not work
 
-    let private createEmail redirectUrl (participant: Participant) (event: Event) =
+    let private createEmail redirectUrl (participant: Participant)
+        (event: Event) =
         let message = inviteMessage redirectUrl event
         { Subject = event.Title.Unwrap
           Message = message
           From = event.OrganizerEmail
           To = participant.Email
-          CalendarInvite = createCalendarAttachment event participant.Email message }
+          CalendarInvite =
+              createCalendarAttachment event participant.Email message }
 
     let private sendEventEmail redirectUrl (participant: Participant) =
         result {
@@ -69,9 +71,9 @@ module Service =
         result {
             for participants in repo.read do
 
-                let attendies = participants |> queryParticipantsBy eventId
+                let attendees = participants |> queryParticipantsBy eventId
 
-                return attendies
+                return Seq.map models.dbToDomain attendees
         }
 
     let getParticipationsForParticipant email =
@@ -79,6 +81,7 @@ module Service =
             for participants in repo.read do
                 let participantsByMail =
                     participants |> queryParticipantionByParticipant email
+
                 return Seq.map models.dbToDomain participantsByMail
         }
 

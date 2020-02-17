@@ -45,11 +45,19 @@ module Handlers =
                 return deleteResult
         }
 
+    let getParticipantsForEvent id =
+        result {
+            for participants in Service.getParticipantsForEvent (Event.Id id) do
+                return Seq.map domainToView participants |> Seq.toList
+        }
+
     let routes: HttpHandler =
         choose
             [ GET
               >=> choose
-                      [ routef "/participants/%s/events"
+                      [ routef "/events/%O/participants"
+                            (handle << getParticipantsForEvent)
+                        routef "/participants/%s/events"
                             (handle << getParticipationsForParticipant) ]
               DELETE
               >=> choose
