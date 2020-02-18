@@ -1,0 +1,5 @@
+USE [arrangement-db];
+
+ALTER TABLE [Events]
+ADD
+  EditToken UNIQUEIDENTIFIER DEFAULT NEWID() NOT NULL;

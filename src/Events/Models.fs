@@ -32,6 +32,10 @@ type ViewModel =
       EndDate: DateTimeCustom
       OpenForRegistrationTime: int64 }
 
+type NewlyCreatedEventViewModel =
+    { Event: ViewModel
+      EditToken: string }
+
 type WriteModel =
     { Title: string
       Description: string
@@ -57,7 +61,7 @@ module Models =
         <*> MaxParticipants.Parse writeModel.MaxParticipants
         <*> validateDateRange writeModel.StartDate writeModel.EndDate
         <*> OpenForRegistrationTime.Parse writeModel.OpenForRegistrationTime
-
+        <*> (Guid.NewGuid() |> Ok)
 
     let dbToDomain (dbRecord: DbModel): Event =
         { Id = Id dbRecord.Id
@@ -70,7 +74,8 @@ module Models =
           StartDate = toCustomDateTime dbRecord.StartDate dbRecord.StartTime
           EndDate = toCustomDateTime dbRecord.EndDate dbRecord.EndTime
           OpenForRegistrationTime =
-              OpenForRegistrationTime dbRecord.OpenForRegistrationTime }
+              OpenForRegistrationTime dbRecord.OpenForRegistrationTime
+          EditToken = dbRecord.EditToken }
 
     let updateDbWithDomain (db: DbModel) (event: Event) =
         db.Title <- event.Title.Unwrap
@@ -97,6 +102,10 @@ module Models =
           StartDate = domainModel.StartDate
           EndDate = domainModel.EndDate
           OpenForRegistrationTime = domainModel.OpenForRegistrationTime.Unwrap }
+
+    let domainToViewWithEditInfo (event: Event): NewlyCreatedEventViewModel =
+        { Event = domainToView event
+          EditToken = event.EditToken.ToString() }
 
     let models: Models<DbModel, Event, ViewModel, WriteModel, Key, IQueryable<DbModel>> =
         { key = fun record -> record.Id

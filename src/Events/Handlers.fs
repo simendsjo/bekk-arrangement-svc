@@ -53,7 +53,7 @@ module Handlers =
                 for newEvent in Service.createEvent
                                     (fun id -> writeToDomain id writeModel) do
 
-                    return domainToView newEvent
+                    return domainToViewWithEditInfo newEvent
         }
 
     let routes: HttpHandler =
