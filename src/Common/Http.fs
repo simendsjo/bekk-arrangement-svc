@@ -28,3 +28,9 @@ module Http =
         try
             Ok(context.BindJsonAsync<'WriteModel>().Result)
         with _ -> Error [ "Feilformatert writemodel" |> BadInput ]
+
+    let queryParam param (ctx: HttpContext) =
+        ctx.GetQueryStringValue param
+        |> Result.mapError
+            (fun _ ->
+                [ BadInput(sprintf "Missing query parameter '%s'" param) ])

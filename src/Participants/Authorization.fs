@@ -7,14 +7,9 @@ open ArrangementService
 open Auth
 open ResultComputationExpression
 open UserMessage
+open Http
 
 module Authorization =
-
-    let queryParam param (ctx: HttpContext) =
-        ctx.GetQueryStringValue param
-        |> Result.mapError
-            (fun _ ->
-                [ BadInput(sprintf "Missing query parameter '%s'" param) ])
 
     let userHasCancellationToken (eventId, email) =
         result {
@@ -38,8 +33,8 @@ module Authorization =
 
     let userCanCancel eventIdAndEmail =
         anyOf
-            [ isAdmin
-              userHasCancellationToken eventIdAndEmail ]
+            [ userHasCancellationToken eventIdAndEmail
+              isAdmin ]
 
     let eventHasAvailableSpots eventId =
         result {
