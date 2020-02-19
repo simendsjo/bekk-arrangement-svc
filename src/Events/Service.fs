@@ -9,11 +9,10 @@ open UserMessages
 open ArrangementService.DomainModels
 open Microsoft.AspNetCore.Http
 open Giraffe
-open DateTime
 
 module Service =
 
-    let models = ArrangementService.Event.Models.models
+    let models = Models.models
     let repo = Repo.from models
 
     let getEvents =
@@ -39,32 +38,37 @@ module Service =
                 return models.dbToDomain event
         }
 
-    let private createdEventMessage redirectUrl (event: Event) =
+    let private createdEventMessage createRedirectUrl (event: Event) =
         [ "Hei! 😄"
           sprintf "Du har nå opprettet %s." event.Title.Unwrap
-          sprintf "Her er en unik lenke for å endre arrangementet: %s." redirectUrl
+          sprintf "Her er en unik lenke for å endre arrangementet: %s."
+              (createRedirectUrl event)
           "Ikke del denne med andre🕵️" ]
         |> String.concat "\n"
 
-    let private createEmail (event: Event) (context: HttpContext) =
+    let private createEmail createRedirectUrl (event: Event)
+        (context: HttpContext) =
         let config = context.GetService<AppConfig>()
-        let message = createdEventMessage "unik-lenke" event
+        let message = createdEventMessage createRedirectUrl event
         { Subject = sprintf "Du opprettet %s" event.Title.Unwrap
           Message = message
           From = EmailAddress config.noReplyEmail
           To = event.OrganizerEmail
-          CalendarInvite = createCalendarAttachment event event.OrganizerEmail message }
+          CalendarInvite =
+              createCalendarAttachment event event.OrganizerEmail message }
 
-    let private sendNewlyCreatedEventMail (event: Event) =
+    let private sendNewlyCreatedEventMail createRedirectUrl (event: Event) =
         result {
-            for mail in createEmail event >> Ok do
+            for mail in createEmail createRedirectUrl event >> Ok do
                 yield Service.sendMail mail
         }
 
-    let createEvent event =
+    let createEvent createRedirectUrl event =
         result {
             for newEvent in repo.create event do
-                yield sendNewlyCreatedEventMail newEvent
+
+                yield sendNewlyCreatedEventMail createRedirectUrl newEvent
+
                 return newEvent
         }
 

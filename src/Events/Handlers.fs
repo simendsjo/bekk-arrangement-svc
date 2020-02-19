@@ -6,9 +6,11 @@ open Http
 open ResultComputationExpression
 open Repo
 open Models
+open ArrangementService.DomainModels
 open Authorization
 
 open Giraffe
+open System.Web
 
 module Handlers =
 
@@ -50,7 +52,17 @@ module Handlers =
     let createEvent =
         result {
             for writeModel in getBody<WriteModel> do
-                for newEvent in Service.createEvent
+
+                let redirectUrlTemplate =
+                    HttpUtility.UrlDecode writeModel.redirectUrlTemplate
+
+                let createRedirectUrl (event: Event) =
+                    redirectUrlTemplate.Replace("{eventId}",
+                                                event.Id.Unwrap.ToString())
+                                       .Replace("{editToken}",
+                                                event.EditToken.ToString())
+
+                for newEvent in Service.createEvent createRedirectUrl
                                     (fun id -> writeToDomain id writeModel) do
 
                     return domainToViewWithEditInfo newEvent

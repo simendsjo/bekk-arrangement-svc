@@ -45,7 +45,8 @@ type WriteModel =
       MaxParticipants: int
       StartDate: DateTimeCustom
       EndDate: DateTimeCustom
-      OpenForRegistrationTime: int64 }
+      OpenForRegistrationTime: int64
+      redirectUrlTemplate: string }
 
 module Models =
 
