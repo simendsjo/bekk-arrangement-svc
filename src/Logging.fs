@@ -10,21 +10,6 @@ open Microsoft.Extensions.Logging
 open Serilog.Events
 
 module Logging =
-    type ExceptionType =
-        { LogEventId: string
-          LogLevel: LogLevel
-          ExceptionType: Type
-          ExceptionMessage: string
-          Name: string
-          UserId: string
-          UserMessage: string
-          RequestUrl: string
-          RequestMethod: string
-          RequestConsumerName: string
-          RequestTraceId: string
-          StackTrace: string
-          StatusCode: int
-          InnerException: exn }
 
     let getEmployeeName (ctx: HttpContext) =
         let nameClaim = ctx.User.FindFirst "name"
@@ -46,32 +31,42 @@ module Logging =
         else
             "Consumer name is not set. Make sure to set the X-ConsumerName header"
 
-    let createExceptionMessage (ex: Exception) (ctx: HttpContext) =
+    let createExceptionMessage (ctx: HttpContext) =
         let logEventId =
             Guid.NewGuid().ToString().Split(Convert.ToChar("-")).[0]
         let userMessage =
             sprintf
                 "Beklager det skjedde en feil! Den er logget med id %s Ta kontakt med Forvaltning om du ønsker videre oppfølging."
-        { LogEventId = logEventId
-          LogLevel = LogLevel.Error
-          ExceptionType = ex.GetType()
-          ExceptionMessage = ex.Message
-          Name = getEmployeeName ctx
-          UserId = getEmployeeId ctx
-          UserMessage = userMessage logEventId
-          RequestUrl = ctx.GetRequestUrl()
-          RequestMethod = ctx.Request.Method
-          RequestConsumerName = getConsumerName ctx
-          RequestTraceId = ctx.TraceIdentifier
-          StackTrace = ex.StackTrace
-          StatusCode = StatusCodes.Status500InternalServerError
-          InnerException = ex.InnerException }
+
+        let a =
+            {| LogEventId = logEventId
+               LogLevel = LogLevel.Error
+               Name = getEmployeeName ctx
+               UserId = getEmployeeId ctx
+               UserMessage = userMessage logEventId
+               RequestUrl = ctx.GetRequestUrl()
+               RequestMethod = ctx.Request.Method
+               RequestConsumerName = getConsumerName ctx
+               RequestTraceId = ctx.TraceIdentifier
+               StatusCode = StatusCodes.Status500InternalServerError |}
+
+        fun (ex: Exception) ->
+            {| a with
+                   ExceptionType = ex.GetType()
+                   ExceptionMessage = ex.Message
+                   StackTrace = ex.StackTrace
+                   InnerException = ex.InnerException |}
+
+    let log (ctx: HttpContext) =
+        let logger = ctx.Logger()
+        fun (ex: Exception) ->
+            let exceptionMessage = createExceptionMessage ctx ex
+            logger.Error("{@Logmessage}", exceptionMessage)
 
     let errorHandler (ex: Exception): HttpHandler =
         fun (next: HttpFunc) (ctx: HttpContext) ->
-            let exceptionMessage = createExceptionMessage ex ctx
-            let logger = ctx.Logger()
-            logger.Error("{@Logmessage}", exceptionMessage)
+            log ctx ex
+            let exceptionMessage = createExceptionMessage ctx ex
             json exceptionMessage next ctx
 
     let config =
