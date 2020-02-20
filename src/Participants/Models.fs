@@ -25,7 +25,7 @@ type NewlyCreatedParticipationViewModel =
       CancellationToken: string }
 
 type WriteModel =
-    { redirectUrlTemplate: string }
+    { cancelUrlTemplate: string }
 
 type Key = Guid * string
 
@@ -34,14 +34,6 @@ type DbModel = ArrangementDbContext.``dbo.ParticipantsEntity``
 type TableModel = ArrangementDbContext.dboSchema.``dbo.Participants``
 
 module Models =
-
-    let createRedirectUrl (redirectUrlTemplate: string)
-        (participant: Participant) =
-        redirectUrlTemplate.Replace("{eventId}",
-                                    participant.EventId.Unwrap.ToString())
-                           .Replace("{email}", participant.Email.Unwrap)
-                           .Replace("{cancellationToken}",
-                                    participant.CancellationToken.ToString())
 
     let getParticipants (ctx: HttpContext): TableModel =
         ctx.GetService<ArrangementDbContext>().Dbo.Participants

@@ -2,6 +2,7 @@ namespace ArrangementService.Event
 
 open ArrangementService
 open ArrangementService.Email
+open Models
 open CalendarInvite
 open ResultComputationExpression
 open Queries
@@ -9,11 +10,9 @@ open UserMessages
 open ArrangementService.DomainModels
 open Microsoft.AspNetCore.Http
 open Giraffe
-open DateTime
 
 module Service =
 
-    let models = ArrangementService.Event.Models.models
     let repo = Repo.from models
 
     let getEvents =
@@ -39,32 +38,36 @@ module Service =
                 return models.dbToDomain event
         }
 
-    let private createdEventMessage redirectUrl (event: Event) =
+    let private createdEventMessage createEditUrl (event: Event) =
         [ "Hei! 😄"
           sprintf "Du har nå opprettet %s." event.Title.Unwrap
-          sprintf "Her er en unik lenke for å endre arrangementet: %s." redirectUrl
+          sprintf "Her er en unik lenke for å endre arrangementet: %s."
+              (createEditUrl event)
           "Ikke del denne med andre🕵️" ]
         |> String.concat "\n"
 
-    let private createEmail (event: Event) (context: HttpContext) =
+    let private createEmail createEditUrl (event: Event) (context: HttpContext) =
         let config = context.GetService<AppConfig>()
-        let message = createdEventMessage "unik-lenke" event
+        let message = createdEventMessage createEditUrl event
         { Subject = sprintf "Du opprettet %s" event.Title.Unwrap
           Message = message
           From = EmailAddress config.noReplyEmail
           To = event.OrganizerEmail
-          CalendarInvite = createCalendarAttachment event event.OrganizerEmail message }
+          CalendarInvite =
+              createCalendarAttachment event event.OrganizerEmail message }
 
-    let private sendNewlyCreatedEventMail (event: Event) =
+    let private sendNewlyCreatedEventMail createEditUrl (event: Event) =
         result {
-            for mail in createEmail event >> Ok do
+            for mail in createEmail createEditUrl event >> Ok do
                 yield Service.sendMail mail
         }
 
-    let createEvent event =
+    let createEvent createEditUrl event =
         result {
             for newEvent in repo.create event do
-                yield sendNewlyCreatedEventMail newEvent
+
+                yield sendNewlyCreatedEventMail createEditUrl newEvent
+
                 return newEvent
         }
 

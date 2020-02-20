@@ -11,6 +11,7 @@ open ArrangementService.Email
 open Authorization
 open System.Web
 open System
+open ArrangementService.DomainModels
 
 module Handlers =
 
@@ -18,10 +19,19 @@ module Handlers =
         result {
             for writeModel in getBody<WriteModel> do
                 let redirectUrlTemplate =
-                    HttpUtility.UrlDecode writeModel.redirectUrlTemplate
+                    HttpUtility.UrlDecode writeModel.cancelUrlTemplate
 
-                for participant in Service.registerParticipant
-                                       redirectUrlTemplate
+                let createCancelUrl (participant: Participant) =
+                    redirectUrlTemplate.Replace("{eventId}",
+                                                participant.EventId.Unwrap.ToString
+                                                    ())
+                                       .Replace("{email}",
+                                                participant.Email.Unwrap)
+                                       .Replace("{cancellationToken}",
+                                                participant.CancellationToken.ToString
+                                                    ())
+
+                for participant in Service.registerParticipant createCancelUrl
                                        (fun _ ->
                                            writeToDomain (eventId, email)
                                                writeModel) do

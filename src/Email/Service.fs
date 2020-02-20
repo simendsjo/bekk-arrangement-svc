@@ -17,14 +17,18 @@ module Service =
     let private sendMailProd (options: SendgridOptions) (jsonBody: string) =
         let byteBody = UTF8Encoding().GetBytes(jsonBody)
         async {
-            let! _ = Http.AsyncRequestString
-                         (options.SendgridUrl, httpMethod = "POST",
-                          headers =
-                              [ "Authorization",
-                                (sprintf "Bearer %s" options.ApiKey)
-                                "Content-Type", "application/json" ],
-                          body = BinaryUpload byteBody)
-            ()
+            try
+                let! _ = Http.AsyncRequestString
+                             (options.SendgridUrl, httpMethod = "POST",
+                              headers =
+                                  [ "Authorization",
+                                    (sprintf "Bearer %s" options.ApiKey)
+                                    "Content-Type", "application/json" ],
+                              body = BinaryUpload byteBody)
+                ()
+            with e ->
+                printfn "%A" e
+                ()
         }
         |> Async.Start
 
@@ -48,6 +52,6 @@ module Service =
         if appConfig.isProd then
             actuallySendMail()
         else
-            printf "%A" serializedEmail
+            printfn "%A" serializedEmail
             if appConfig.sendMailInDevEnvWhiteList
                |> List.contains email.To.Unwrap then actuallySendMail()
