@@ -32,7 +32,7 @@ type ViewModel =
       EndDate: DateTimeCustom
       OpenForRegistrationTime: int64 }
 
-type NewlyCreatedEventViewModel =
+type ViewModelWithEditToken =
     { Event: ViewModel
       EditToken: string }
 
@@ -104,7 +104,7 @@ module Models =
           EndDate = domainModel.EndDate
           OpenForRegistrationTime = domainModel.OpenForRegistrationTime.Unwrap }
 
-    let domainToViewWithEditInfo (event: Event): NewlyCreatedEventViewModel =
+    let domainToViewWithEditInfo (event: Event): ViewModelWithEditToken =
         { Event = domainToView event
           EditToken = event.EditToken.ToString() }
 

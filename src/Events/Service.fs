@@ -2,6 +2,7 @@ namespace ArrangementService.Event
 
 open ArrangementService
 open ArrangementService.Email
+open Models
 open CalendarInvite
 open ResultComputationExpression
 open Queries
@@ -12,7 +13,6 @@ open Giraffe
 
 module Service =
 
-    let models = Models.models
     let repo = Repo.from models
 
     let getEvents =
