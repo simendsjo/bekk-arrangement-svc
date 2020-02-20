@@ -46,7 +46,7 @@ type WriteModel =
       StartDate: DateTimeCustom
       EndDate: DateTimeCustom
       OpenForRegistrationTime: int64
-      redirectUrlTemplate: string }
+      editUrlTemplate: string }
 
 module Models =
 

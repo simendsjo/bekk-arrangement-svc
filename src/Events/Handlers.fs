@@ -54,7 +54,7 @@ module Handlers =
             for writeModel in getBody<WriteModel> do
 
                 let redirectUrlTemplate =
-                    HttpUtility.UrlDecode writeModel.redirectUrlTemplate
+                    HttpUtility.UrlDecode writeModel.editUrlTemplate
 
                 let createRedirectUrl (event: Event) =
                     redirectUrlTemplate.Replace("{eventId}",

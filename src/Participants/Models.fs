@@ -25,7 +25,7 @@ type NewlyCreatedParticipationViewModel =
       CancellationToken: string }
 
 type WriteModel =
-    { redirectUrlTemplate: string }
+    { cancelUrlTemplate: string }
 
 type Key = Guid * string
 

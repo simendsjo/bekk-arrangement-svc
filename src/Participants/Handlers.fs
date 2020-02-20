@@ -19,7 +19,7 @@ module Handlers =
         result {
             for writeModel in getBody<WriteModel> do
                 let redirectUrlTemplate =
-                    HttpUtility.UrlDecode writeModel.redirectUrlTemplate
+                    HttpUtility.UrlDecode writeModel.cancelUrlTemplate
 
                 let createRedirectUrl (participant: Participant) =
                     redirectUrlTemplate.Replace("{eventId}",
