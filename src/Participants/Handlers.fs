@@ -21,7 +21,7 @@ module Handlers =
                 let redirectUrlTemplate =
                     HttpUtility.UrlDecode writeModel.cancelUrlTemplate
 
-                let createRedirectUrl (participant: Participant) =
+                let createCancelUrl (participant: Participant) =
                     redirectUrlTemplate.Replace("{eventId}",
                                                 participant.EventId.Unwrap.ToString
                                                     ())
@@ -31,8 +31,7 @@ module Handlers =
                                                 participant.CancellationToken.ToString
                                                     ())
 
-                for participant in Service.registerParticipant
-                                       createRedirectUrl
+                for participant in Service.registerParticipant createCancelUrl
                                        (fun _ ->
                                            writeToDomain (eventId, email)
                                                writeModel) do

@@ -56,13 +56,13 @@ module Handlers =
                 let redirectUrlTemplate =
                     HttpUtility.UrlDecode writeModel.editUrlTemplate
 
-                let createRedirectUrl (event: Event) =
+                let createEditUrl (event: Event) =
                     redirectUrlTemplate.Replace("{eventId}",
                                                 event.Id.Unwrap.ToString())
                                        .Replace("{editToken}",
                                                 event.EditToken.ToString())
 
-                for newEvent in Service.createEvent createRedirectUrl
+                for newEvent in Service.createEvent createEditUrl
                                     (fun id -> writeToDomain id writeModel) do
 
                     return domainToViewWithEditInfo newEvent

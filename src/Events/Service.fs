@@ -38,18 +38,17 @@ module Service =
                 return models.dbToDomain event
         }
 
-    let private createdEventMessage createRedirectUrl (event: Event) =
+    let private createdEventMessage createEditUrl (event: Event) =
         [ "Hei! 😄"
           sprintf "Du har nå opprettet %s." event.Title.Unwrap
           sprintf "Her er en unik lenke for å endre arrangementet: %s."
-              (createRedirectUrl event)
+              (createEditUrl event)
           "Ikke del denne med andre🕵️" ]
         |> String.concat "\n"
 
-    let private createEmail createRedirectUrl (event: Event)
-        (context: HttpContext) =
+    let private createEmail createEditUrl (event: Event) (context: HttpContext) =
         let config = context.GetService<AppConfig>()
-        let message = createdEventMessage createRedirectUrl event
+        let message = createdEventMessage createEditUrl event
         { Subject = sprintf "Du opprettet %s" event.Title.Unwrap
           Message = message
           From = EmailAddress config.noReplyEmail
@@ -57,17 +56,17 @@ module Service =
           CalendarInvite =
               createCalendarAttachment event event.OrganizerEmail message }
 
-    let private sendNewlyCreatedEventMail createRedirectUrl (event: Event) =
+    let private sendNewlyCreatedEventMail createEditUrl (event: Event) =
         result {
-            for mail in createEmail createRedirectUrl event >> Ok do
+            for mail in createEmail createEditUrl event >> Ok do
                 yield Service.sendMail mail
         }
 
-    let createEvent createRedirectUrl event =
+    let createEvent createEditUrl event =
         result {
             for newEvent in repo.create event do
 
-                yield sendNewlyCreatedEventMail createRedirectUrl newEvent
+                yield sendNewlyCreatedEventMail createEditUrl newEvent
 
                 return newEvent
         }
