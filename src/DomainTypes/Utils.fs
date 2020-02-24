@@ -19,5 +19,5 @@ module Utils =
         validate (fun x -> x >= 0) errorMessage number
 
     let validateDateRange startDate endDate =
-        [ validateBefore (BadInput "Registreringsdato må være før sluttdato") ]
+        [ validateBefore (BadInput "Startdato må være før sluttdato") ]
         |> validateAll id (startDate, endDate)
