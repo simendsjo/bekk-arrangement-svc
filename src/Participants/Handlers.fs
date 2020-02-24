@@ -78,4 +78,7 @@ module Handlers =
               >=> choose
                       [ routef "/events/%O/participants/%s" (fun (eventId: Guid, email) ->
                             check (eventHasAvailableSpots eventId)
+                            >=> check
+                                    (Event.Authorization.eventHasNotPassed
+                                        eventId)
                             >=> (handle << registerForEvent) (eventId, email)) ] ]

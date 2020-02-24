@@ -7,6 +7,7 @@ open Auth
 open ResultComputationExpression
 open UserMessage
 open Http
+open DateTime
 
 module Authorization =
 
@@ -32,3 +33,14 @@ module Authorization =
         anyOf
             [ userCreatedEvent eventId
               isAdmin ]
+
+    let eventHasNotPassed eventId =
+        result {
+            for event in Service.getEvent (Id eventId) do
+                if (event.EndDate > now()) then
+                    return ()
+                else
+                    return! [ AccessDenied
+                                  "Arrangementet har allerede funnet sted" ]
+                            |> Error
+        }
