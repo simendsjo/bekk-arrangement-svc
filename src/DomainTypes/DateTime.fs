@@ -99,7 +99,7 @@ module DateTime =
                 Minute = time.Minutes } }
 
     let now(): DateTimeCustom =
-        toCustomDateTime DateTime.Now (TimeSpan(0, 0, 0))
+        toCustomDateTime DateTime.Now (TimeSpan())
 
     let toUtcString (dt: DateTimeCustom) =
         sprintf "%s%s%sT%s%s%sZ" (dt.Date.Year.ToString())

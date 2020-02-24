@@ -37,9 +37,7 @@ module Authorization =
     let eventHasNotPassed eventId =
         result {
             for event in Service.getEvent (Id eventId) do
-                let endDate = event.EndDate
-                let now = now()
-                if (endDate > now) then
+                if (event.EndDate > now()) then
                     return ()
                 else
                     return! [ AccessDenied
