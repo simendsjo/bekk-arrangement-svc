@@ -7,10 +7,10 @@ open UserMessage
 module Utils =
 
     let validateMinLength length errorMessage text =
-        validate (fun x -> String.length x > length) errorMessage text
+        validate (fun x -> String.length x >= length) errorMessage text
 
     let validateMaxLength length errorMessage text =
-        validate (fun x -> String.length x < length) errorMessage text
+        validate (fun x -> String.length x <= length) errorMessage text
 
     let validateBefore errorMessage (before, after) =
         validate (fun (x, y) -> x < y) errorMessage (before, after)

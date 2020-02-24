@@ -24,7 +24,7 @@ type Title =
 
     static member Parse(title: string) =
         [ validateMinLength 3 (BadInput "Tittel må ha minst 3 tegn")
-          validateMaxLength 60 (BadInput "Tittel må være mindre enn 60 tegn") ]
+          validateMaxLength 60 (BadInput "Tittel må ha maks 60 tegn") ]
         |> validateAll Title title
 
 type Description =
@@ -36,8 +36,7 @@ type Description =
 
     static member Parse(description: string) =
         [ validateMinLength 3 (BadInput "Beskrivelse må ha minst 3 tegn")
-          validateMaxLength 255
-              (BadInput "Beskrivelse må være mindre enn 255 tegn") ]
+          validateMaxLength 255 (BadInput "Beskrivelse må ha maks 255 tegn") ]
         |> validateAll Description description
 
 type Location =
@@ -49,7 +48,7 @@ type Location =
 
     static member Parse(location: string) =
         [ validateMinLength 3 (BadInput "Sted må ha minst 3 tegn")
-          validateMaxLength 30 (BadInput "Sted må være mindre enn 30 tegn") ]
+          validateMaxLength 60 (BadInput "Sted må ha maks 60 tegn") ]
         |> validateAll Location location
 
 type OrganizerName =
@@ -61,7 +60,7 @@ type OrganizerName =
 
     static member Parse(organizerName: string) =
         [ validateMinLength 3 (BadInput "Navn må ha minst 3 tegn")
-          validateMaxLength 50 (BadInput "Navn må være mindre enn 50 tegn") ]
+          validateMaxLength 50 (BadInput "Navn må ha maks 50 tegn") ]
         |> validateAll OrganizerName organizerName
 
 type MaxParticipants =

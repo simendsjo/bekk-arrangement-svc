@@ -18,6 +18,13 @@ type EmailAddress =
             | '@' -> true
             | _ -> false
 
+        let isDotSign =
+            function
+            | '.' -> true
+            | _ -> false
+
         [ validate (String.exists isAtSign)
-              (BadInput "Email address must include an at sign (@)") ]
+              (BadInput "E-post må inneholde en alfakrøll (@)")
+          validate (String.exists isDotSign)
+              (BadInput "E-post må inneholde et punktum (.)") ]
         |> validateAll EmailAddress address
