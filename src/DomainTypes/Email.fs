@@ -13,15 +13,9 @@ type EmailAddress =
 
     static member Parse(address: string) =
 
-        let isAtSign =
-            function
-            | '@' -> true
-            | _ -> false
+        let isAtSign char = char = '@'
 
-        let isDotSign =
-            function
-            | '.' -> true
-            | _ -> false
+        let isDotSign char = char = '.'
 
         [ validate (String.exists isAtSign)
               (BadInput "E-post må inneholde en alfakrøll (@)")
