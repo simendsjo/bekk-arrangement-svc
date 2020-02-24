@@ -39,7 +39,7 @@ module Authorization =
             for event in Service.getEvent (Id eventId) do
                 let endDate = event.EndDate
                 let now = now()
-                if (endDate < now) then
+                if (endDate > now) then
                     return ()
                 else
                     return! [ AccessDenied
