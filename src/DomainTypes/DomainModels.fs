@@ -21,9 +21,10 @@ type Event =
       OrganizerEmail: Email.EmailAddress
       OpenForRegistrationTime: Event.OpenForRegistrationTime
       MaxParticipants: Event.MaxParticipants
-      EditToken: Guid }
+      EditToken: Guid
+      ParticipantQuestion: Event.ParticipantQuestion }
     static member Create =
-        fun id title description location organizerName organizerEmail maxParticipants (startDate, endDate) openForRegistrationTime editToken ->
+        fun id title description location organizerName organizerEmail maxParticipants (startDate, endDate) openForRegistrationTime editToken participantQuestion ->
             { Id = id
               Title = title
               Description = description
@@ -34,7 +35,8 @@ type Event =
               StartDate = startDate
               EndDate = endDate
               OpenForRegistrationTime = openForRegistrationTime
-              EditToken = editToken }
+              EditToken = editToken
+              ParticipantQuestion = participantQuestion }
 
 type Participant =
     { Name: Participant.Name
