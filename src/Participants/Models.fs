@@ -16,7 +16,9 @@ open ArrangementService.DomainModels
 open Microsoft.AspNetCore.Http
 
 type ViewModel =
-    { Email: string
+    { Name: string
+      Email: string
+      Comment: string
       EventId: string
       RegistrationTime: int64 }
 
@@ -25,7 +27,9 @@ type NewlyCreatedParticipationViewModel =
       CancellationToken: string }
 
 type WriteModel =
-    { cancelUrlTemplate: string }
+    { name: string
+      comment: string
+      cancelUrlTemplate: string }
 
 type Key = Guid * string
 
@@ -39,24 +43,30 @@ module Models =
         ctx.GetService<ArrangementDbContext>().Dbo.Participants
 
     let dbToDomain (dbRecord: DbModel): Participant =
-        { Email = EmailAddress dbRecord.Email
+        { Name = Name dbRecord.Name
+          Email = EmailAddress dbRecord.Email
+          Comment = Comment dbRecord.Comment
           EventId = Event.Id dbRecord.EventId
           RegistrationTime = TimeStamp dbRecord.RegistrationTime
           CancellationToken = dbRecord.CancellationToken }
 
-    let writeToDomain ((id, email): Key) (_: WriteModel): Result<Participant, UserMessage list> =
-        Ok Participant.Create <*> EmailAddress.Parse email
+    let writeToDomain ((id, email): Key) (writeModel: WriteModel): Result<Participant, UserMessage list> =
+        Ok Participant.Create <*> Name.Parse writeModel.name
+        <*> EmailAddress.Parse email <*> Comment.Parse writeModel.comment
         <*> (Event.Id id |> Ok) <*> (now() |> Ok) <*> (Guid.NewGuid() |> Ok)
 
     let updateDbWithDomain (db: DbModel) (participant: Participant) =
+        db.Name <- participant.Name.Unwrap
         db.Email <- participant.Email.Unwrap
+        db.Comment <- participant.Comment.Unwrap
         db.EventId <- participant.EventId.Unwrap
         db.RegistrationTime <- participant.RegistrationTime.Unwrap
         db
 
     let domainToView (participant: Participant): ViewModel =
-
-        { Email = participant.Email.Unwrap
+        { Name = participant.Name.Unwrap
+          Email = participant.Email.Unwrap
+          Comment = participant.Comment.Unwrap
           EventId = participant.EventId.Unwrap.ToString()
           RegistrationTime = participant.RegistrationTime.Unwrap }
 

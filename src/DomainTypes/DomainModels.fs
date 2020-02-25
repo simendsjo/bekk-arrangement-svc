@@ -37,13 +37,17 @@ type Event =
               EditToken = editToken }
 
 type Participant =
-    { Email: Email.EmailAddress
+    { Name: Participant.Name
+      Email: Email.EmailAddress
+      Comment: Participant.Comment
       EventId: Event.Id
       RegistrationTime: TimeStamp
       CancellationToken: Guid }
     static member Create =
-        fun email eventId registrationTime cancellationToken ->
-            { Email = email
+        fun name email comment eventId registrationTime cancellationToken ->
+            { Name = name
+              Email = email
+              Comment = comment
               EventId = eventId
               RegistrationTime = registrationTime
               CancellationToken = cancellationToken }

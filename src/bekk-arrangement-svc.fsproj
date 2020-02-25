@@ -70,6 +70,7 @@
     <Compile Include="DomainTypes\Utils.fs" />
     <Compile Include="DomainTypes\Email.fs" />
     <Compile Include="DomainTypes\Event.fs" />
+    <Compile Include="DomainTypes\Participant.fs" /> 
     <Compile Include="DomainTypes\DomainModels.fs" />
     <Compile Include="Email\SendgridApiModels.fs" />
     <Compile Include="Email\Models.fs" />
