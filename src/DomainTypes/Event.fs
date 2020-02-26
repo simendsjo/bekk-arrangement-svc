@@ -35,8 +35,7 @@ type Description =
         | Description description -> description
 
     static member Parse(description: string) =
-        [ validateMinLength 3 (BadInput "Beskrivelse må ha minst 3 tegn")
-          validateMaxLength 255 (BadInput "Beskrivelse kan ha maks 255 tegn") ]
+        [ validateMinLength 3 (BadInput "Beskrivelse må ha minst 3 tegn") ]
         |> validateAll Description description
 
 type Location =
