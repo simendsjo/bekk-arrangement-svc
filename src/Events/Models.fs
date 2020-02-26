@@ -30,7 +30,8 @@ type ViewModel =
       MaxParticipants: int
       StartDate: DateTimeCustom
       EndDate: DateTimeCustom
-      OpenForRegistrationTime: int64 }
+      OpenForRegistrationTime: int64
+      ParticipantQuestion: string }
 
 type ViewModelWithEditToken =
     { Event: ViewModel
@@ -46,7 +47,8 @@ type WriteModel =
       StartDate: DateTimeCustom
       EndDate: DateTimeCustom
       OpenForRegistrationTime: int64
-      editUrlTemplate: string }
+      editUrlTemplate: string
+      ParticipantQuestion: string }
 
 module Models =
 
@@ -63,6 +65,7 @@ module Models =
         <*> validateDateRange writeModel.StartDate writeModel.EndDate
         <*> OpenForRegistrationTime.Parse writeModel.OpenForRegistrationTime
         <*> (Guid.NewGuid() |> Ok)
+        <*> ParticipantQuestion.Parse writeModel.ParticipantQuestion
 
     let dbToDomain (dbRecord: DbModel): Event =
         { Id = Id dbRecord.Id
@@ -76,7 +79,8 @@ module Models =
           EndDate = toCustomDateTime dbRecord.EndDate dbRecord.EndTime
           OpenForRegistrationTime =
               OpenForRegistrationTime dbRecord.OpenForRegistrationTime
-          EditToken = dbRecord.EditToken }
+          EditToken = dbRecord.EditToken
+          ParticipantQuestion = ParticipantQuestion dbRecord.ParticipantQuestion }
 
     let updateDbWithDomain (db: DbModel) (event: Event) =
         db.Title <- event.Title.Unwrap
@@ -90,6 +94,7 @@ module Models =
         db.EndDate <- customToDateTime event.EndDate.Date
         db.EndTime <- customToTimeSpan event.EndDate.Time
         db.OpenForRegistrationTime <- event.OpenForRegistrationTime.Unwrap
+        db.ParticipantQuestion <- event.ParticipantQuestion.Unwrap
         db
 
     let domainToView (domainModel: Event): ViewModel =
@@ -102,7 +107,8 @@ module Models =
           MaxParticipants = domainModel.MaxParticipants.Unwrap
           StartDate = domainModel.StartDate
           EndDate = domainModel.EndDate
-          OpenForRegistrationTime = domainModel.OpenForRegistrationTime.Unwrap }
+          OpenForRegistrationTime = domainModel.OpenForRegistrationTime.Unwrap
+          ParticipantQuestion = domainModel.ParticipantQuestion.Unwrap }
 
     let domainToViewWithEditInfo (event: Event): ViewModelWithEditToken =
         { Event = domainToView event

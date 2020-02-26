@@ -35,8 +35,7 @@ type Description =
         | Description description -> description
 
     static member Parse(description: string) =
-        [ validateMinLength 3 (BadInput "Beskrivelse må ha minst 3 tegn")
-          validateMaxLength 255 (BadInput "Beskrivelse kan ha maks 255 tegn") ]
+        [ validateMinLength 3 (BadInput "Beskrivelse må ha minst 3 tegn") ]
         |> validateAll Description description
 
 type Location =
@@ -82,3 +81,15 @@ type OpenForRegistrationTime =
         | OpenForRegistrationTime time -> time
 
     static member Parse(time: int64) = OpenForRegistrationTime time |> Ok
+
+type ParticipantQuestion =
+    | ParticipantQuestion of string
+
+    member this.Unwrap =
+        match this with
+        | ParticipantQuestion participantQuestion -> participantQuestion
+
+    static member Parse(participantQuestion: string) =
+        [ validateMaxLength 500
+              (BadInput "Spørsmål til deltaker kan ha maks 500 tegn") ]
+        |> validateAll ParticipantQuestion participantQuestion
