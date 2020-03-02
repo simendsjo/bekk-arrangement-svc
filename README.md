@@ -9,6 +9,7 @@ An F# service for collecting and maintaining data about events.
 
 - .NET Core SDK 3.0
 - SQL server
+- Latest version of Mono
 
 ### Recommended tools
 
@@ -17,6 +18,10 @@ An F# service for collecting and maintaining data about events.
 - Docker
 
 ## Start local
+
+### Your first Fsharp project?
+
+- Take a look at https://fsharp.org/use/mac/ to setup your develop environment.
 
 ### First time setup
 
