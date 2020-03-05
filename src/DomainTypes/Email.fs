@@ -15,10 +15,6 @@ type EmailAddress =
 
         let isAtSign char = char = '@'
 
-        let isDotSign char = char = '.'
-
         [ validate (String.exists isAtSign)
-              (BadInput "E-post må inneholde en alfakrøll (@)")
-          validate (String.exists isDotSign)
-              (BadInput "E-post må inneholde et punktum (.)") ]
+              (BadInput "E-post må inneholde en alfakrøll (@)") ]
         |> validateAll EmailAddress address
