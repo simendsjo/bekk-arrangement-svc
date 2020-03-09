@@ -84,5 +84,6 @@ module Service =
 
                 let! event = events |> queryEventBy id
                 repo.del event
+
                 return eventSuccessfullyDeleted id
         }

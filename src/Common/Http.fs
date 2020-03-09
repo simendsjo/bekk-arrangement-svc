@@ -19,12 +19,15 @@ module Http =
 
     let handle (endpoint: Handler<'t>) (next: HttpFunc) (context: HttpContext) =
         match endpoint context with
-        | Ok result -> json result next context
+        | Ok result ->
+            commitTransaction context |> ignore
+            json result next context
         | Error errorMessage ->
             rollbackTransaction context |> ignore
             convertUserMessagesToHttpError errorMessage next context
 
-    let getBody<'WriteModel> (context: HttpContext): Result<'WriteModel, UserMessage list> =
+    let getBody<'WriteModel> (context: HttpContext): Result<'WriteModel, UserMessage list>
+        =
         try
             Ok(context.BindJsonAsync<'WriteModel>().Result)
         with _ -> Error [ "Feilformatert writemodel" |> BadInput ]
