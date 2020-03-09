@@ -41,6 +41,18 @@ module Service =
           CalendarInvite =
               createCalendarAttachment event participant.Email message }
 
+    let private createCancelledEventMail
+        message
+        (event: Event)
+        (participant: Participant)
+        =
+        { Subject = "CANCELLED"
+          Message = message
+          From = event.OrganizerEmail
+          To = participant.Email
+          CalendarInvite =
+              createCalendarAttachment event participant.Email message }
+
     let registerParticipant createMail registration =
         result {
 
@@ -86,3 +98,16 @@ module Service =
 
                 return participationSuccessfullyDeleted (eventId, email)
         }
+
+    let sendCancellationMailToParticipants
+        messageToParticipants
+        participants
+        event
+        ctx
+        =
+        let sendMailToParticipant participant =
+            Service.sendMail
+                (createCancelledEventMail messageToParticipants event
+                     participant) ctx
+        participants |> Seq.iter sendMailToParticipant
+        Ok()
