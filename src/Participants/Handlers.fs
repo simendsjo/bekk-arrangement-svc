@@ -81,4 +81,7 @@ module Handlers =
                             >=> check
                                     (Event.Authorization.eventHasNotPassed
                                         eventId)
+                            >=> check
+                                    (Event.Authorization.eventHasOpenedForRegistration
+                                        eventId)
                             >=> (handle << registerForEvent) (eventId, email)) ] ]

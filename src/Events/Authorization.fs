@@ -8,6 +8,7 @@ open ResultComputationExpression
 open UserMessage
 open Http
 open DateTime
+open System
 
 module Authorization =
 
@@ -33,6 +34,22 @@ module Authorization =
         anyOf
             [ userCreatedEvent eventId
               isAdmin ]
+
+    let eventHasOpenedForRegistration eventId =
+        result {
+            for event in Service.getEvent (Id eventId) do
+                let openDateTime =
+                    DateTimeOffset.FromUnixTimeMilliseconds
+                        event.OpenForRegistrationTime.Unwrap
+
+                if openDateTime <= DateTimeOffset.Now then
+                    return ()
+                else
+                    return! [ AccessDenied
+                                  (sprintf
+                                      "Arrangementet åpner for påmelding %A"
+                                       openDateTime) ] |> Error
+        }
 
     let eventHasNotPassed eventId =
         result {
