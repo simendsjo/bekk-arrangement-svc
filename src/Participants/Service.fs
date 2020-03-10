@@ -12,6 +12,7 @@ open ArrangementService.DomainModels
 open DateTime
 open Microsoft.AspNetCore.Http
 open Giraffe
+open ArrangementService.Config
 
 module Service =
 
@@ -47,14 +48,13 @@ module Service =
     let private createCancelledParticipationMail
         (event: Event)
         (participant: Participant)
-        (context: HttpContext)
+        fromMail
         =
-        let config = context.GetService<AppConfig>()
         { Subject = "Avmelding"
           Message =
               sprintf "%s har meldt seg av %s" participant.Name.Unwrap
                   event.Title.Unwrap
-          From = EmailAddress config.noReplyEmail
+          From = fromMail
           To = event.OrganizerEmail
           CalendarInvite = None }
 
@@ -114,8 +114,11 @@ module Service =
 
                 repo.del participant
 
-                for mail in createCancelledParticipationMail event
-                                (models.dbToDomain participant) >> Ok do
+                for config in getConfig >> Ok do
+                    let mail =
+                        createCancelledParticipationMail event
+                            (models.dbToDomain participant)
+                            (EmailAddress config.noReplyEmail)
                     yield Service.sendMail mail
 
                     return participationSuccessfullyDeleted (event.Id, email)

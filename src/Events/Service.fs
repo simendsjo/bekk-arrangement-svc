@@ -8,8 +8,7 @@ open ResultComputationExpression
 open Queries
 open UserMessages
 open ArrangementService.DomainModels
-open Microsoft.AspNetCore.Http
-open Giraffe
+open ArrangementService.Config
 
 module Service =
 
@@ -46,12 +45,11 @@ module Service =
           "Ikke del denne med andre🕵️" ]
         |> String.concat "\n"
 
-    let private createEmail createEditUrl (event: Event) (context: HttpContext) =
-        let config = context.GetService<AppConfig>()
+    let private createEmail createEditUrl fromMail (event: Event) =
         let message = createdEventMessage createEditUrl event
         { Subject = sprintf "Du opprettet %s" event.Title.Unwrap
           Message = message
-          From = EmailAddress config.noReplyEmail
+          From = fromMail
           To = event.OrganizerEmail
           CalendarInvite =
               createCalendarAttachment
@@ -59,7 +57,10 @@ module Service =
 
     let private sendNewlyCreatedEventMail createEditUrl (event: Event) =
         result {
-            for mail in createEmail createEditUrl event >> Ok do
+            for config in getConfig >> Ok do
+                let mail =
+                    createEmail createEditUrl
+                        (EmailAddress config.noReplyEmail) event
                 yield Service.sendMail mail
         }
 
