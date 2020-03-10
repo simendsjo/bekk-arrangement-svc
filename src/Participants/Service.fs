@@ -39,19 +39,21 @@ module Service =
           From = event.OrganizerEmail
           To = participant.Email
           CalendarInvite =
-              createCalendarAttachment event participant.Email message }
+              createCalendarAttachment
+                  (event, participant.Email, message, Create) }
 
     let private createCancelledEventMail
         message
         (event: Event)
         (participant: Participant)
         =
-        { Subject = "CANCELLED"
+        { Subject = sprintf "Avlyst: %s" event.Title.Unwrap
           Message = message
           From = event.OrganizerEmail
           To = participant.Email
           CalendarInvite =
-              createCalendarAttachment event participant.Email message }
+              createCalendarAttachment
+                  (event, participant.Email, message, Cancel) }
 
     let registerParticipant createMail registration =
         result {

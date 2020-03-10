@@ -54,7 +54,8 @@ module Service =
           From = EmailAddress config.noReplyEmail
           To = event.OrganizerEmail
           CalendarInvite =
-              createCalendarAttachment event event.OrganizerEmail message }
+              createCalendarAttachment
+                  (event, event.OrganizerEmail, message, Create) }
 
     let private sendNewlyCreatedEventMail createEditUrl (event: Event) =
         result {

@@ -35,34 +35,47 @@ module CalendarInvite =
           "END:VTIMEZONE" ]
         |> String.concat "\n"
 
-    let eventObject (event: Event) (participantEmail: EmailAddress) (message: string) =
-        let utcNow = toUtcString (toCustomDateTime DateTime.UtcNow (TimeSpan()))
+    type CalendarInviteStatus =
+        | Create
+        | Cancel
+
+    let eventObject ((event: Event), (participantEmail: EmailAddress),
+                     (message: string), (status: CalendarInviteStatus))
+        =
+        let utcNow =
+            toUtcString (toCustomDateTime DateTime.UtcNow (TimeSpan()))
         [ "BEGIN:VEVENT"
           sprintf "UID:%O" event.Id.Unwrap
-          sprintf "DTSTART;TZID=W. Europe Standard Time:%s" (toDateString event.StartDate)
-          sprintf "DTEND;TZID=W. Europe Standard Time:%s" (toDateString event.EndDate)
+          sprintf "DTSTART;TZID=W. Europe Standard Time:%s"
+              (toDateString event.StartDate)
+          sprintf "DTEND;TZID=W. Europe Standard Time:%s"
+              (toDateString event.EndDate)
           sprintf "DTSTAMP:%s" utcNow
-          sprintf "ORGANIZER;CN=%s:mailto:%s" event.OrganizerEmail.Unwrap event.OrganizerEmail.Unwrap
-          sprintf "ATTENDEE;PARTSTAT=ACCEPTED;RSVP=FALSE;CN=%s:mailto:%s" participantEmail.Unwrap participantEmail.Unwrap
+          sprintf "ORGANIZER;CN=%s:mailto:%s" event.OrganizerEmail.Unwrap
+              event.OrganizerEmail.Unwrap
+          sprintf "ATTENDEE;PARTSTAT=ACCEPTED;RSVP=FALSE;CN=%s:mailto:%s"
+              participantEmail.Unwrap participantEmail.Unwrap
           sprintf "SUMMARY;LANGUAGE=nb-NO:%s" event.Title.Unwrap
-          sprintf "DESCRIPTION;LANGUAGE=nb-NO:%s" (message.Replace("<br>","\\n "))
-          sprintf "X-ALT-DESC;FMTTYPE=text/html:%s"
-              event.Description.Unwrap
+          sprintf "DESCRIPTION;LANGUAGE=nb-NO:%s"
+              (message.Replace("<br>", "\\n "))
+          sprintf "X-ALT-DESC;FMTTYPE=text/html:%s" event.Description.Unwrap
           sprintf "LOCATION;LANGUAGE=nb-NO:%s" event.Location.Unwrap
-          "STATUS:CONFIRMED"
-          "SEQUENCE:0"
+
+          (if status = Create then "STATUS:CONFIRMED" else "STATUS:CANCELLED")
+          (if status = Create then "SEQUENCE:0" else "SEQUENCE:1")
+
           reminderObject
           // if recurring, insert recurringObject. TODO: implement frontend.
           "END:VEVENT" ]
         |> String.concat "\n"
 
-    let createCalendarAttachment (event: Event) (email: EmailAddress) message =
+    let createCalendarAttachment eventDetails =
         [ "BEGIN:VCALENDAR"
           "CALSCALE:GREGORIAN"
           "METHOD:REQUEST"
           "PRODID:-//Bekk//arrangement-svc//NO"
           "VERSION:2.0"
           timezoneObject
-          eventObject event email message
+          eventObject eventDetails
           "END:VCALENDAR" ]
         |> String.concat "\n"
