@@ -57,7 +57,7 @@ module CalendarInvite =
               participantEmail.Unwrap participantEmail.Unwrap
           sprintf "SUMMARY;LANGUAGE=nb-NO:%s" event.Title.Unwrap
           sprintf "DESCRIPTION;LANGUAGE=nb-NO:%s"
-              (message.Replace("<br>", "\\n "))
+              (message.Replace("<br>", "\n"))
           sprintf "X-ALT-DESC;FMTTYPE=text/html:%s" event.Description.Unwrap
           sprintf "LOCATION;LANGUAGE=nb-NO:%s" event.Location.Unwrap
 
