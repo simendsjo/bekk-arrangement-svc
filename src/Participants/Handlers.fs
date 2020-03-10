@@ -5,7 +5,6 @@ open Giraffe
 open ArrangementService
 open Http
 open ResultComputationExpression
-open Repo
 open Models
 open ArrangementService.Email
 open Authorization
@@ -31,11 +30,16 @@ module Handlers =
                                                 participant.CancellationToken.ToString
                                                     ())
 
-                for participant in Service.registerParticipant createCancelUrl
-                                       (fun _ ->
-                                           writeToDomain (eventId, email)
-                                               writeModel) do
-                    return domainToViewWithCancelInfo participant
+                for event in Event.Service.getEvent (Event.Id eventId) do
+                    let createMailForParticipant =
+                        Service.createNewParticipantMail createCancelUrl event
+
+                    for participant in Service.registerParticipant
+                                           createMailForParticipant
+                                           (fun _ ->
+                                               writeToDomain (eventId, email)
+                                                   writeModel) do
+                        return domainToViewWithCancelInfo participant
         }
 
     let getParticipationsForParticipant email =
@@ -51,7 +55,6 @@ module Handlers =
             let! emailAddress = EmailAddress.Parse email
             for deleteResult in Service.deleteParticipant
                                     (Event.Id id, emailAddress) do
-                yield commitTransaction
                 return deleteResult
         }
 

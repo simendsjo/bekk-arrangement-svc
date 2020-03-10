@@ -34,9 +34,16 @@ module Handlers =
 
     let deleteEvent id =
         result {
-            for result in Service.deleteEvent (Id id) do
-                yield commitTransaction
-                return result
+            for messageToParticipants in getBody<string> do
+                for participants in Participant.Service.getParticipantsForEvent
+                                        (Id id) do
+                    for event in Service.getEvent (Id id) do
+
+                        yield Participant.Service.sendCancellationMailToParticipants
+                                  messageToParticipants participants event
+
+                        for result in Service.deleteEvent (Id id) do
+                            return result
         }
 
     let updateEvent id =
@@ -45,7 +52,6 @@ module Handlers =
                 let! domainModel = writeToDomain id writeModel
 
                 for updatedEvent in Service.updateEvent (Id id) domainModel do
-                    yield commitTransaction
                     return domainToView updatedEvent
         }
 

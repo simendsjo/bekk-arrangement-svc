@@ -28,30 +28,39 @@ module Service =
           sprintf "Hilsen %s i Bekk" event.OrganizerEmail.Unwrap ]
         |> String.concat "<br>" // Sendgrid formats to HTML, \n does not work
 
-    let private createEmail createCancelUrl (participant: Participant)
-        (event: Event) =
+    let createNewParticipantMail
+        createCancelUrl
+        (event: Event)
+        (participant: Participant)
+        =
         let message = inviteMessage (createCancelUrl participant) event
         { Subject = event.Title.Unwrap
           Message = message
           From = event.OrganizerEmail
           To = participant.Email
           CalendarInvite =
-              createCalendarAttachment event participant.Email message }
+              createCalendarAttachment
+                  (event, participant.Email, message, Create) }
 
-    let private sendEventEmail createCancelUrl (participant: Participant) =
-        result {
-            for event in Event.Service.getEvent participant.EventId do
-                let mail = createEmail createCancelUrl participant event
-                yield Service.sendMail mail
-        }
+    let private createCancelledEventMail
+        (message: string)
+        (event: Event)
+        (participant: Participant)
+        =
+        { Subject = sprintf "Avlyst: %s" event.Title.Unwrap
+          Message = message.Replace("\n", "<br>")
+          From = event.OrganizerEmail
+          To = participant.Email
+          CalendarInvite =
+              createCalendarAttachment
+                  (event, participant.Email, message, Cancel) }
 
-    let registerParticipant createCancelUrl registration =
+    let registerParticipant createMail registration =
         result {
 
             for participant in repo.create registration do
 
-                yield sendEventEmail createCancelUrl participant
-
+                yield Service.sendMail (createMail participant)
                 return participant
         }
 
@@ -91,3 +100,16 @@ module Service =
 
                 return participationSuccessfullyDeleted (eventId, email)
         }
+
+    let sendCancellationMailToParticipants
+        messageToParticipants
+        participants
+        event
+        ctx
+        =
+        let sendMailToParticipant participant =
+            Service.sendMail
+                (createCancelledEventMail messageToParticipants event
+                     participant) ctx
+        participants |> Seq.iter sendMailToParticipant
+        Ok()
