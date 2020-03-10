@@ -6,17 +6,18 @@ open ArrangementService.DomainModels
 
 module Models =
     let emailToSendgridFormat (email: Email): SendGridFormat =
-        { Personalizations =
-              [ { To = [ { Email = email.To.Unwrap } ] } ]
+        { Personalizations = [ { To = [ { Email = email.To.Unwrap } ] } ]
           From = { Email = email.From.Unwrap }
           Subject = email.Subject
           Content =
               [ { Value = email.Message
                   Type = "text/html" } ]
           Attachments =
-              [ { Content =
-                      email.CalendarInvite
-                      |> System.Text.Encoding.UTF8.GetBytes
-                      |> System.Convert.ToBase64String
-                  Type = "text/calendar; method=REQUEST"
-                  Filename = "invite.ics" } ] }
+              email.CalendarInvite
+              |> Option.map (fun calendarInvite ->
+                  [ { Content =
+                          calendarInvite
+                          |> System.Text.Encoding.UTF8.GetBytes
+                          |> System.Convert.ToBase64String
+                      Type = "text/calendar; method=REQUEST"
+                      Filename = "invite.ics" } ]) }

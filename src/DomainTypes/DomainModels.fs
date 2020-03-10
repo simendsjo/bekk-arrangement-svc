@@ -8,7 +8,7 @@ type Email =
       Message: string
       From: Email.EmailAddress
       To: Email.EmailAddress
-      CalendarInvite: string }
+      CalendarInvite: string option }
 
 type Event =
     { Id: Event.Id

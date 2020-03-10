@@ -55,7 +55,7 @@ module Service =
           To = event.OrganizerEmail
           CalendarInvite =
               createCalendarAttachment
-                  (event, event.OrganizerEmail, message, Create) }
+                  (event, event.OrganizerEmail, message, Create) |> Some }
 
     let private sendNewlyCreatedEventMail createEditUrl (event: Event) =
         result {
