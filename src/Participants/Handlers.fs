@@ -31,6 +31,9 @@ module Handlers =
                                                     ())
 
                 for event in Event.Service.getEvent (Event.Id eventId) do
+                    let isWaitlisted =
+                        if event.HasWaitlist.Unwrap then 1 else 0 // Hent deltakere og sjekk lengden
+
                     let createMailForParticipant =
                         Service.createNewParticipantMail createCancelUrl event
 

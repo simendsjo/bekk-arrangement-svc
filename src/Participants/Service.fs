@@ -28,6 +28,20 @@ module Service =
           sprintf "Hilsen %s i Bekk" event.OrganizerEmail.Unwrap ]
         |> String.concat "<br>" // Sendgrid formats to HTML, \n does not work
 
+    let private waitlistedMessage redirectUrl (event: Event) =
+        [ "Hei! 😄"
+          sprintf "Du er nå på venteliste for %s." event.Title.Unwrap
+          "Du vil få en e-post om du rykker opp fra ventelisten."
+          sprintf "Vi håper vi får se deg på %s den %s 🎉"
+              event.Location.Unwrap (toReadableString event.StartDate)
+          "Siden det er begrenset med plasser, setter vi pris på om du melder deg av hvis du ikke lenger"
+          "kan delta. Da blir det plass til andre på ventelisten 😊"
+          sprintf "Meld deg av her: %s." redirectUrl
+          "Bare spør meg om det er noe du lurer på."
+          "Vi sees!"
+          sprintf "Hilsen %s i Bekk" event.OrganizerEmail.Unwrap ]
+        |> String.concat "<br>"
+
     let createNewParticipantMail
         createCancelUrl
         (event: Event)
