@@ -22,9 +22,10 @@ type Event =
       OpenForRegistrationTime: Event.OpenForRegistrationTime
       MaxParticipants: Event.MaxParticipants
       EditToken: Guid
-      ParticipantQuestion: Event.ParticipantQuestion }
+      ParticipantQuestion: Event.ParticipantQuestion
+      HasWaitlist: Event.HasWaitlist }
     static member Create =
-        fun id title description location organizerName organizerEmail maxParticipants (startDate, endDate) openForRegistrationTime editToken participantQuestion ->
+        fun id title description location organizerName organizerEmail maxParticipants (startDate, endDate) openForRegistrationTime editToken participantQuestion hasWaitlist ->
             { Id = id
               Title = title
               Description = description
@@ -36,7 +37,8 @@ type Event =
               EndDate = endDate
               OpenForRegistrationTime = openForRegistrationTime
               EditToken = editToken
-              ParticipantQuestion = participantQuestion }
+              ParticipantQuestion = participantQuestion
+              HasWaitlist = hasWaitlist }
 
 type Participant =
     { Name: Participant.Name
