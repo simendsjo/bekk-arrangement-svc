@@ -58,6 +58,17 @@ module Service =
           To = event.OrganizerEmail
           CalendarInvite = None }
 
+    let private createFreeSpotAvailableMail
+        (event: Event)
+        (participant: Participant)
+        =
+        { Subject = sprintf "Ledig plass på %s" event.Title.Unwrap
+          Message =
+              "Du har automatisk fått plass, blabla, gå til link for å melde deg av"
+          From = event.OrganizerEmail // kanskje noreply?
+          To = participant.Email
+          CalendarInvite = None }
+
     let private createCancelledEventMail
         (message: string)
         (event: Event)
@@ -108,20 +119,49 @@ module Service =
                 return Seq.map models.dbToDomain participantsByMail
         }
 
+    let private sendMailToParticipantOnWaitingList (event: Event) =
+        result {
+            for participants in getParticipantsForEvent event.Id do
+
+                // if event.hasWaitingList then
+                let waitingList =
+                    participants
+                    |> Seq.sortBy
+                        (fun participant -> participant.RegistrationTime)
+                    |> Seq.skip event.MaxParticipants.Unwrap
+
+                let personWhoGotIt = Seq.tryHead waitingList
+
+                let sendMailIfSomeoneGotIt =
+                    personWhoGotIt
+                    |> function
+                    | Some participant ->
+                        Service.sendMail
+                            (createFreeSpotAvailableMail event participant)
+                    | None -> ignore
+
+                yield sendMailIfSomeoneGotIt
+        }
+
+    let private sendMailToOrganizerAboutCancellation event participant =
+        result {
+            for config in getConfig >> Ok do
+                let mail =
+                    createCancelledParticipationMail event
+                        (models.dbToDomain participant)
+                        (EmailAddress config.noReplyEmail)
+                yield Service.sendMail mail
+        }
+
     let deleteParticipant (event, email) =
         result {
+            yield sendMailToParticipantOnWaitingList event
             for participant in getParticipant (event.Id, email) do
+                yield sendMailToOrganizerAboutCancellation event participant
 
                 repo.del participant
 
-                for config in getConfig >> Ok do
-                    let mail =
-                        createCancelledParticipationMail event
-                            (models.dbToDomain participant)
-                            (EmailAddress config.noReplyEmail)
-                    yield Service.sendMail mail
-
-                    return participationSuccessfullyDeleted (event.Id, email)
+                return participationSuccessfullyDeleted (event.Id, email)
         }
 
     let sendCancellationMailToParticipants
