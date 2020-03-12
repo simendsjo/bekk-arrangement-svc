@@ -110,14 +110,29 @@ module Service =
                 return Seq.map models.dbToDomain participantsByMail
         }
 
-    let deleteParticipant (eventId, email) =
+    let deleteParticipant (eventId, email, event) =
         result {
-            for participant in getParticipant (eventId, email) do
+            for participants in getParticipantsForEvent eventId do
+                (if event.hasWaitlist then
+                    let participantToNotify =
+                        participants
+                        |> Seq.filter
+                            (fun (i, participant) -> i > maxParticipants)
+                        |> Seq.tryHead
+                    yield participantToNotify
+                          |> function
+                          | Some x -> Service.sendMail x
+                          | None -> ignore
+                 else
+                     ())
+                |> ignore
 
+            for participant in getParticipant (eventId, email) do
                 repo.del participant
 
                 return participationSuccessfullyDeleted (eventId, email)
         }
+
 
     let sendCancellationMailToParticipants
         messageToParticipants

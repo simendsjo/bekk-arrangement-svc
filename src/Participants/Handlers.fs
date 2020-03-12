@@ -61,10 +61,11 @@ module Handlers =
 
     let deleteParticipant (id, email) =
         result {
-            let! emailAddress = EmailAddress.Parse email
-            for deleteResult in Service.deleteParticipant
-                                    (Event.Id id, emailAddress) do
-                return deleteResult
+            for event in Event.Service.getEvent (Event.Id id) do
+                let! emailAddress = EmailAddress.Parse email
+                for deleteResult in Service.deleteParticipant
+                                        (Event.Id id, emailAddress, event) do
+                    return deleteResult
         }
 
     let getParticipantsForEvent id =
