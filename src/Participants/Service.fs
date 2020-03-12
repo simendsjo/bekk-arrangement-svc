@@ -10,6 +10,9 @@ open UserMessages
 open Models
 open ArrangementService.DomainModels
 open DateTime
+open Microsoft.AspNetCore.Http
+open Giraffe
+open ArrangementService.Config
 
 module Service =
 
@@ -40,7 +43,20 @@ module Service =
           To = participant.Email
           CalendarInvite =
               createCalendarAttachment
-                  (event, participant.Email, message, Create) }
+                  (event, participant.Email, message, Create) |> Some }
+
+    let private createCancelledParticipationMail
+        (event: Event)
+        (participant: Participant)
+        fromMail
+        =
+        { Subject = "Avmelding"
+          Message =
+              sprintf "%s har meldt seg av %s" participant.Name.Unwrap
+                  event.Title.Unwrap
+          From = fromMail
+          To = event.OrganizerEmail
+          CalendarInvite = None }
 
     let private createCancelledEventMail
         (message: string)
@@ -53,7 +69,7 @@ module Service =
           To = participant.Email
           CalendarInvite =
               createCalendarAttachment
-                  (event, participant.Email, message, Cancel) }
+                  (event, participant.Email, message, Cancel) |> Some }
 
     let registerParticipant createMail registration =
         result {
@@ -92,13 +108,20 @@ module Service =
                 return Seq.map models.dbToDomain participantsByMail
         }
 
-    let deleteParticipant (eventId, email) =
+    let deleteParticipant (event, email) =
         result {
-            for participant in getParticipant (eventId, email) do
+            for participant in getParticipant (event.Id, email) do
 
                 repo.del participant
 
-                return participationSuccessfullyDeleted (eventId, email)
+                for config in getConfig >> Ok do
+                    let mail =
+                        createCancelledParticipationMail event
+                            (models.dbToDomain participant)
+                            (EmailAddress config.noReplyEmail)
+                    yield Service.sendMail mail
+
+                    return participationSuccessfullyDeleted (event.Id, email)
         }
 
     let sendCancellationMailToParticipants

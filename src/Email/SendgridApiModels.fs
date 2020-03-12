@@ -22,7 +22,7 @@ module SendgridApiModels =
           From: SendGridEmailAddress
           Subject: string
           Content: Content list
-          Attachments: Attachment list }
+          Attachments: Attachment list option }
 
     type SendgridOptions =
         { ApiKey: string
