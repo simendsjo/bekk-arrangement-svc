@@ -30,10 +30,10 @@ module Service =
 
     let private waitlistedMessage redirectUrl (event: Event) =
         [ "Hei! 😄"
-          sprintf "Du er nå på venteliste for %s." event.Title.Unwrap
-          "Du vil få en e-post om du rykker opp fra ventelisten."
-          sprintf "Vi håper vi får se deg på %s den %s 🎉"
-              event.Location.Unwrap (toReadableString event.StartDate)
+          sprintf "Du er nå på venteliste for %s på %s den %s."
+              event.Title.Unwrap event.Location.Unwrap
+              (toReadableString event.StartDate)
+          "Du vil få beskjed på e-post om du rykker opp fra ventelisten."
           "Siden det er begrenset med plasser, setter vi pris på om du melder deg av hvis du ikke lenger"
           "kan delta. Da blir det plass til andre på ventelisten 😊"
           sprintf "Meld deg av her: %s." redirectUrl
@@ -45,9 +45,13 @@ module Service =
     let createNewParticipantMail
         createCancelUrl
         (event: Event)
+        isWaitlisted
         (participant: Participant)
         =
-        let message = inviteMessage (createCancelUrl participant) event
+        let message =
+            if isWaitlisted
+            then waitlistedMessage (createCancelUrl participant) event
+            else inviteMessage (createCancelUrl participant) event
         { Subject = event.Title.Unwrap
           Message = message
           From = event.OrganizerEmail
