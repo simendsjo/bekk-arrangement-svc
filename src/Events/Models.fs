@@ -32,7 +32,7 @@ type ViewModel =
       EndDate: DateTimeCustom
       OpenForRegistrationTime: int64
       ParticipantQuestion: string
-      HasWaitlist: bool }
+      HasWaitingList: bool }
 
 type ViewModelWithEditToken =
     { Event: ViewModel
@@ -50,7 +50,7 @@ type WriteModel =
       OpenForRegistrationTime: int64
       editUrlTemplate: string
       ParticipantQuestion: string
-      HasWaitlist: bool }
+      HasWaitingList: bool }
 
 module Models =
 
@@ -72,7 +72,7 @@ module Models =
         <*> OpenForRegistrationTime.Parse writeModel.OpenForRegistrationTime
         <*> (Guid.NewGuid() |> Ok)
         <*> ParticipantQuestion.Parse writeModel.ParticipantQuestion
-        <*> HasWaitlist.Parse writeModel.HasWaitlist
+        <*> HasWaitingList.Parse writeModel.HasWaitingList
 
     let dbToDomain (dbRecord: DbModel): Event =
         { Id = Id dbRecord.Id
@@ -88,7 +88,7 @@ module Models =
               OpenForRegistrationTime dbRecord.OpenForRegistrationTime
           EditToken = dbRecord.EditToken
           ParticipantQuestion = ParticipantQuestion dbRecord.ParticipantQuestion
-          HasWaitlist = HasWaitlist dbRecord.HasWaitlist }
+          HasWaitingList = HasWaitingList dbRecord.HasWaitingList }
 
     let updateDbWithDomain (db: DbModel) (event: Event) =
         db.Title <- event.Title.Unwrap
@@ -103,7 +103,7 @@ module Models =
         db.EndTime <- customToTimeSpan event.EndDate.Time
         db.OpenForRegistrationTime <- event.OpenForRegistrationTime.Unwrap
         db.ParticipantQuestion <- event.ParticipantQuestion.Unwrap
-        db.HasWaitlist <- event.HasWaitlist.Unwrap
+        db.HasWaitingList <- event.HasWaitingList.Unwrap
         db
 
     let domainToView (domainModel: Event): ViewModel =
@@ -118,7 +118,7 @@ module Models =
           EndDate = domainModel.EndDate
           OpenForRegistrationTime = domainModel.OpenForRegistrationTime.Unwrap
           ParticipantQuestion = domainModel.ParticipantQuestion.Unwrap
-          HasWaitlist = domainModel.HasWaitlist.Unwrap }
+          HasWaitingList = domainModel.HasWaitingList.Unwrap }
 
     let domainToViewWithEditInfo (event: Event): ViewModelWithEditToken =
         { Event = domainToView event

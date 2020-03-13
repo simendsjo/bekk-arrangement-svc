@@ -128,7 +128,7 @@ module Service =
 
     let bumpWaitlist (event, participants) (context: HttpContext) =
         let maxParticipants = event.MaxParticipants.Unwrap
-        if event.HasWaitlist.Unwrap then
+        if event.HasWaitingList.Unwrap then
             let participantToNotify =
                 participants
                 |> Seq.mapi (fun i p -> p, i)

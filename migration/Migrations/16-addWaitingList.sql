@@ -1,4 +1,4 @@
 USE [arrangement-db];
 
 ALTER TABLE [Events]
-ADD HasWaitlist BIT NOT NULL DEFAULT 0;
+ADD HasWaitingList BIT NOT NULL DEFAULT 0;

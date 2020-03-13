@@ -94,13 +94,13 @@ type ParticipantQuestion =
               (BadInput "Spørsmål til deltaker kan ha maks 500 tegn") ]
         |> validateAll ParticipantQuestion participantQuestion
 
-type HasWaitlist =
-    | HasWaitlist of bool
+type HasWaitingList =
+    | HasWaitingList of bool
 
     member this.Unwrap =
         match this with
-        | HasWaitlist hasWaitlist -> hasWaitlist
+        | HasWaitingList hasWaitingList -> hasWaitingList
 
-    static member Parse(hasWaitlist: bool) =
+    static member Parse(hasWaitingList: bool) =
         // Trenger vi å validere noe egentlig?
-        [] |> validateAll HasWaitlist hasWaitlist
+        [] |> validateAll HasWaitingList hasWaitingList

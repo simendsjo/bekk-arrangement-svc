@@ -34,7 +34,7 @@ module Handlers =
                     for participants in Service.getParticipantsForEvent
                                             (Event.Id eventId) do
                         let isWaitlisted =
-                            event.HasWaitlist.Unwrap
+                            event.HasWaitingList.Unwrap
                             && participants
                                |> Seq.length > event.MaxParticipants.Unwrap
 
