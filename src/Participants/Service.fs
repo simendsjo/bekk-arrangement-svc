@@ -119,49 +119,56 @@ module Service =
                 return Seq.map models.dbToDomain participantsByMail
         }
 
-    let private sendMailToParticipantOnWaitingList (event: Event) =
-        result {
-            for participants in getParticipantsForEvent event.Id do
+    let private sendMailToFirstPersonOnWaitingList
+        (event: Event)
+        (participants: Participant seq)
+        (context: HttpContext)
+        =
+        // let hasWaitingList = event.hasWaitingList
+        let hasWaitingList = true // ^ Must implement
 
-                // if event.hasWaitingList then
-                let waitingList =
-                    participants
-                    |> Seq.sortBy
-                        (fun participant -> participant.RegistrationTime)
-                    |> Seq.skip event.MaxParticipants.Unwrap
+        if hasWaitingList then
 
-                let personWhoGotIt = Seq.tryHead waitingList
+            let waitingList =
+                participants
+                |> Seq.sortBy (fun participant -> participant.RegistrationTime)
+                |> Seq.skip event.MaxParticipants.Unwrap
 
-                let sendMailIfSomeoneGotIt =
-                    personWhoGotIt
-                    |> function
-                    | Some participant ->
-                        Service.sendMail
-                            (createFreeSpotAvailableMail event participant)
-                    | None -> ignore
+            let personWhoGotIt = Seq.tryHead waitingList
 
-                yield sendMailIfSomeoneGotIt
-        }
+            personWhoGotIt
+            |> function
+            | Some participant ->
+                Service.sendMail
+                    (createFreeSpotAvailableMail event participant) context
+            | None -> ()
 
-    let private sendMailToOrganizerAboutCancellation event participant =
-        result {
-            for config in getConfig >> Ok do
-                let mail =
-                    createCancelledParticipationMail event
-                        (models.dbToDomain participant)
-                        (EmailAddress config.noReplyEmail)
-                yield Service.sendMail mail
-        }
+    let private sendMailToOrganizerAboutCancellation event participant context =
+        let config = getConfig context
+        let mail =
+            createCancelledParticipationMail event
+                (models.dbToDomain participant)
+                (EmailAddress config.noReplyEmail)
+        Service.sendMail mail context
 
     let deleteParticipant (event, email) =
         result {
-            yield sendMailToParticipantOnWaitingList event
             for participant in getParticipant (event.Id, email) do
-                yield sendMailToOrganizerAboutCancellation event participant
+                for participants in getParticipantsForEvent (event.Id) do
 
-                repo.del participant
+                    let guyHadASpotAndWasNotOnWaitingList = true
 
-                return participationSuccessfullyDeleted (event.Id, email)
+                    if guyHadASpotAndWasNotOnWaitingList then
+                        yield sendMailToOrganizerAboutCancellation event
+                                  participant
+                        let eventHasWaitingList = true // event.hasWitingList
+                        if eventHasWaitingList then
+                            yield sendMailToFirstPersonOnWaitingList event
+                                      participants
+
+                    repo.del participant
+
+                    return participationSuccessfullyDeleted (event.Id, email)
         }
 
     let sendCancellationMailToParticipants
@@ -174,5 +181,7 @@ module Service =
             Service.sendMail
                 (createCancelledEventMail messageToParticipants event
                      participant) ctx
+
         participants |> Seq.iter sendMailToParticipant
+
         Ok()

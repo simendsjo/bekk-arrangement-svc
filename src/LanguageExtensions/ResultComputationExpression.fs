@@ -43,6 +43,7 @@ module ResultComputationExpression =
         member this.YieldFrom(f) = f
         member this.Delay(f) = f
         member this.Run(f) = f()
+        member this.Zero() = this.Return()
 
         member this.Combine(lhs, rhs) =
             fun ctx ->
