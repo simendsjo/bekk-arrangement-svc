@@ -10,6 +10,9 @@ open UserMessages
 open Models
 open ArrangementService.DomainModels
 open DateTime
+open Microsoft.AspNetCore.Http
+open Giraffe
+open ArrangementService.Config
 
 module Service =
 
@@ -58,7 +61,20 @@ module Service =
           To = participant.Email
           CalendarInvite =
               createCalendarAttachment
-                  (event, participant.Email, message, Create) }
+                  (event, participant.Email, message, Create) |> Some }
+
+    let private createCancelledParticipationMail
+        (event: Event)
+        (participant: Participant)
+        fromMail
+        =
+        { Subject = "Avmelding"
+          Message =
+              sprintf "%s har meldt seg av %s" participant.Name.Unwrap
+                  event.Title.Unwrap
+          From = fromMail
+          To = event.OrganizerEmail
+          CalendarInvite = None }
 
     let private createCancelledEventMail
         (message: string)
@@ -71,7 +87,7 @@ module Service =
           To = participant.Email
           CalendarInvite =
               createCalendarAttachment
-                  (event, participant.Email, message, Cancel) }
+                  (event, participant.Email, message, Cancel) |> Some }
 
     let registerParticipant createMail registration =
         result {
@@ -110,27 +126,40 @@ module Service =
                 return Seq.map models.dbToDomain participantsByMail
         }
 
-    let deleteParticipant (eventId, email, event) =
+    let bumpWaitlist (event, participants) (context: HttpContext) =
+        let maxParticipants = event.MaxParticipants.Unwrap
+        if event.HasWaitlist.Unwrap then
+            let participantToNotify =
+                participants
+                |> Seq.mapi (fun i p -> p, i)
+                |> Seq.filter (fun (_, i) -> i > maxParticipants)
+                |> Seq.tryHead
+            printfn "%A" participantToNotify
+        // yield participantToNotify
+        //       |> function
+        //       | Some x -> Service.sendMail x
+        //       | None -> ignore
+        else
+            ()
+        |> ignore
+
+    let deleteParticipant (event, email) =
         result {
-            for participants in getParticipantsForEvent eventId do
-                (if event.hasWaitlist then
-                    let participantToNotify =
-                        participants
-                        |> Seq.filter
-                            (fun (i, participant) -> i > maxParticipants)
-                        |> Seq.tryHead
-                    yield participantToNotify
-                          |> function
-                          | Some x -> Service.sendMail x
-                          | None -> ignore
-                 else
-                     ())
-                |> ignore
+            for participants in getParticipantsForEvent event.Id do
+                yield bumpWaitlist (event, participants)
 
-            for participant in getParticipant (eventId, email) do
-                repo.del participant
+                for participant in getParticipant (event.Id, email) do
+                    repo.del participant
 
-                return participationSuccessfullyDeleted (eventId, email)
+                    for config in getConfig >> Ok do
+                        let mail =
+                            createCancelledParticipationMail event
+                                (models.dbToDomain participant)
+                                (EmailAddress config.noReplyEmail)
+                        yield Service.sendMail mail
+
+                        return participationSuccessfullyDeleted
+                                   (event.Id, email)
         }
 
 

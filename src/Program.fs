@@ -66,8 +66,7 @@ let configureServices (services: IServiceCollection) =
               configuration.["Sendgrid:Dev_White_List_Addresses"].Split(',')
               |> Seq.toList
               |> List.map (fun s -> s.Trim()) }
-    services.AddSingleton<AppConfig> config
-    |> ignore // For å sende mail: bytt ut = med <>
+    services.AddSingleton<AppConfig> config |> ignore // For å sende mail: bytt ut = med <>
     dbContext.SaveContextSchema() |> ignore
     services.AddAuthentication(fun options ->
             options.DefaultAuthenticateScheme <-

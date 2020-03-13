@@ -4,7 +4,6 @@ open ArrangementService
 
 open Http
 open ResultComputationExpression
-open Repo
 open Models
 open ArrangementService.DomainModels
 open Authorization

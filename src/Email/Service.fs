@@ -11,6 +11,9 @@ open ArrangementService
 open SendgridApiModels
 open Models
 open ArrangementService.DomainModels
+open ArrangementService.Config
+open FifteenBelow.Json
+open System.Collections.Generic
 
 module Service =
 
@@ -34,12 +37,23 @@ module Service =
 
     let sendMail (email: Email) (context: HttpContext) =
         let sendgridConfig = context.GetService<SendgridOptions>()
-        let appConfig = context.GetService<AppConfig>()
+        let appConfig = getConfig context
 
         let serializerSettings =
+            let converters =
+                [ OptionConverter() :> JsonConverter
+                  TupleConverter() :> JsonConverter
+                  ListConverter() :> JsonConverter
+                  MapConverter() :> JsonConverter
+                  BoxedMapConverter() :> JsonConverter
+                  UnionConverter() :> JsonConverter ]
+                |> List.toArray :> IList<JsonConverter>
+
             let settings = JsonSerializerSettings()
             settings.ContractResolver <-
                 CamelCasePropertyNamesContractResolver()
+            settings.NullValueHandling <- NullValueHandling.Ignore
+            settings.Converters <- converters
             settings
 
         let serializedEmail =
