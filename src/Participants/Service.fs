@@ -124,51 +124,63 @@ module Service =
         (participants: Participant seq)
         (context: HttpContext)
         =
-        // let hasWaitingList = event.hasWaitingList
-        let hasWaitingList = true // ^ Must implement
+        let waitingList =
+            participants
+            |> Seq.sortBy (fun participant -> participant.RegistrationTime)
+            |> Seq.skip event.MaxParticipants.Unwrap
 
-        if hasWaitingList then
+        let personWhoGotIt = Seq.tryHead waitingList
 
-            let waitingList =
-                participants
-                |> Seq.sortBy (fun participant -> participant.RegistrationTime)
-                |> Seq.skip event.MaxParticipants.Unwrap
-
-            let personWhoGotIt = Seq.tryHead waitingList
-
-            personWhoGotIt
-            |> function
-            | Some participant ->
-                Service.sendMail
-                    (createFreeSpotAvailableMail event participant) context
-            | None -> ()
+        personWhoGotIt
+        |> function
+        | Some participant ->
+            Service.sendMail (createFreeSpotAvailableMail event participant)
+                context
+        | None -> ()
 
     let private sendMailToOrganizerAboutCancellation event participant context =
         let config = getConfig context
         let mail =
-            createCancelledParticipationMail event
-                (models.dbToDomain participant)
+            createCancelledParticipationMail event participant
                 (EmailAddress config.noReplyEmail)
         Service.sendMail mail context
 
+    let private sendParticipantCancelMails event email =
+        result {
+            for participants in getParticipantsForEvent event.Id do
+
+                let participants =
+                    participants
+                    |> Seq.sortBy
+                        (fun participant -> participant.RegistrationTime)
+
+                let (attendees, waitingList) =
+                    (Seq.take event.MaxParticipants.Unwrap participants,
+                     Seq.skip event.MaxParticipants.Unwrap participants)
+
+                let attendingParticipant =
+                    attendees
+                    |> Seq.tryFind (fun attendee -> attendee.Email = email)
+
+                match attendingParticipant with
+                | None -> return ()
+                | Some participant ->
+                    yield sendMailToOrganizerAboutCancellation event
+                              participant
+                    let eventHasWaitingList = true // event.hasWitingList
+                    if eventHasWaitingList then
+                        yield sendMailToFirstPersonOnWaitingList event
+                                  waitingList
+        }
+
     let deleteParticipant (event, email) =
         result {
+            yield sendParticipantCancelMails event email
             for participant in getParticipant (event.Id, email) do
-                for participants in getParticipantsForEvent (event.Id) do
 
-                    let guyHadASpotAndWasNotOnWaitingList = true
+                repo.del participant
 
-                    if guyHadASpotAndWasNotOnWaitingList then
-                        yield sendMailToOrganizerAboutCancellation event
-                                  participant
-                        let eventHasWaitingList = true // event.hasWitingList
-                        if eventHasWaitingList then
-                            yield sendMailToFirstPersonOnWaitingList event
-                                      participants
-
-                    repo.del participant
-
-                    return participationSuccessfullyDeleted (event.Id, email)
+                return participationSuccessfullyDeleted (event.Id, email)
         }
 
     let sendCancellationMailToParticipants
