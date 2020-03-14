@@ -39,11 +39,13 @@ module Authorization =
     let eventHasAvailableSpots eventId =
         result {
             for event in Event.Service.getEvent (Event.Id eventId) do
+                let hasWaitingList = event.HasWaitingList.Unwrap
                 let maxParticipants = event.MaxParticipants.Unwrap
                 for participants in Service.getParticipantsForEvent
                                         (Event.Id eventId) do
-                    if maxParticipants = 0 || participants
-                                              |> Seq.length < maxParticipants then
+                    if hasWaitingList || maxParticipants = 0
+                       || participants
+                          |> Seq.length < maxParticipants then
                         return ()
                     else
                         return! [ AccessDenied "The event is full" ] |> Error

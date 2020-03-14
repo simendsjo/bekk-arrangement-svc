@@ -31,15 +31,24 @@ module Handlers =
                                                     ())
 
                 for event in Event.Service.getEvent (Event.Id eventId) do
-                    let createMailForParticipant =
-                        Service.createNewParticipantMail createCancelUrl event
+                    for participants in Service.getParticipantsForEvent
+                                            (Event.Id eventId) do
+                        let isWaitlisted =
+                            event.HasWaitingList.Unwrap
+                            && participants
+                               |> Seq.length > event.MaxParticipants.Unwrap
 
-                    for participant in Service.registerParticipant
-                                           createMailForParticipant
-                                           (fun _ ->
-                                               writeToDomain (eventId, email)
-                                                   writeModel) do
-                        return domainToViewWithCancelInfo participant
+                        let createMailForParticipant =
+                            Service.createNewParticipantMail createCancelUrl
+                                event isWaitlisted
+
+                        for participant in Service.registerParticipant
+                                               createMailForParticipant
+                                               (fun _ ->
+                                                   writeToDomain
+                                                       (eventId, email)
+                                                       writeModel) do
+                            return domainToViewWithCancelInfo participant
         }
 
     let getParticipationsForParticipant email =

@@ -10,8 +10,6 @@ open UserMessages
 open Models
 open ArrangementService.DomainModels
 open DateTime
-open Microsoft.AspNetCore.Http
-open Giraffe
 open ArrangementService.Config
 
 module Service =
@@ -31,12 +29,30 @@ module Service =
           sprintf "Hilsen %s i Bekk" event.OrganizerEmail.Unwrap ]
         |> String.concat "<br>" // Sendgrid formats to HTML, \n does not work
 
+    let private waitlistedMessage redirectUrl (event: Event) =
+        [ "Hei! 😄"
+          sprintf "Du er nå på venteliste for %s på %s den %s."
+              event.Title.Unwrap event.Location.Unwrap
+              (toReadableString event.StartDate)
+          "Du vil få beskjed på e-post om du rykker opp fra ventelisten."
+          "Siden det er begrenset med plasser, setter vi pris på om du melder deg av hvis du ikke lenger"
+          "kan delta. Da blir det plass til andre på ventelisten 😊"
+          sprintf "Meld deg av her: %s." redirectUrl
+          "Bare spør meg om det er noe du lurer på."
+          "Vi sees!"
+          sprintf "Hilsen %s i Bekk" event.OrganizerEmail.Unwrap ]
+        |> String.concat "<br>"
+
     let createNewParticipantMail
         createCancelUrl
         (event: Event)
+        isWaitlisted
         (participant: Participant)
         =
-        let message = inviteMessage (createCancelUrl participant) event
+        let message =
+            if isWaitlisted
+            then waitlistedMessage (createCancelUrl participant) event
+            else inviteMessage (createCancelUrl participant) event
         { Subject = event.Title.Unwrap
           Message = message
           From = event.OrganizerEmail
@@ -164,7 +180,7 @@ module Service =
                 | Some participant ->
                     yield sendMailToOrganizerAboutCancellation event
                               participant
-                    let eventHasWaitingList = true // event.hasWitingList
+                    let eventHasWaitingList = event.HasWaitingList.Unwrap
                     if eventHasWaitingList then
                         yield sendMailToFirstPersonOnWaitingList event
                                   waitingList
@@ -180,6 +196,7 @@ module Service =
 
                 return participationSuccessfullyDeleted (event.Id, email)
         }
+
 
     let sendCancellationMailToParticipants
         messageToParticipants
