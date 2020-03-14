@@ -121,29 +121,26 @@ module Service =
 
     let private sendMailToFirstPersonOnWaitingList
         (event: Event)
-        (participants: Participant seq)
-        (context: HttpContext)
+        (waitingList: Participant seq)
         =
-        let waitingList =
-            participants
-            |> Seq.sortBy (fun participant -> participant.RegistrationTime)
-            |> Seq.skip event.MaxParticipants.Unwrap
+        result {
+            let personWhoGotIt = Seq.tryHead waitingList
 
-        let personWhoGotIt = Seq.tryHead waitingList
+            match personWhoGotIt with
+            | None -> return ()
+            | Some participant ->
+                yield Service.sendMail
+                          (createFreeSpotAvailableMail event participant)
+        }
 
-        personWhoGotIt
-        |> function
-        | Some participant ->
-            Service.sendMail (createFreeSpotAvailableMail event participant)
-                context
-        | None -> ()
-
-    let private sendMailToOrganizerAboutCancellation event participant context =
-        let config = getConfig context
-        let mail =
-            createCancelledParticipationMail event participant
-                (EmailAddress config.noReplyEmail)
-        Service.sendMail mail context
+    let private sendMailToOrganizerAboutCancellation event participant =
+        result {
+            for config in getConfig >> Ok do
+                let mail =
+                    createCancelledParticipationMail event participant
+                        (EmailAddress config.noReplyEmail)
+                yield Service.sendMail mail
+        }
 
     let private sendParticipantCancelMails event email =
         result {
@@ -171,6 +168,7 @@ module Service =
                     if eventHasWaitingList then
                         yield sendMailToFirstPersonOnWaitingList event
                                   waitingList
+                        return ()
         }
 
     let deleteParticipant (event, email) =
