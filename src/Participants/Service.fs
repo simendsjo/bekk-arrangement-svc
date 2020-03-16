@@ -55,7 +55,7 @@ module Service =
             else inviteMessage (createCancelUrl participant) event
         { Subject = event.Title.Unwrap
           Message = message
-          From = event.OrganizerEmail
+          From = event.OrganizerEmail // noreply
           To = participant.Email
           CalendarInvite =
               createCalendarAttachment
@@ -77,11 +77,14 @@ module Service =
     let private createFreeSpotAvailableMail
         (event: Event)
         (participant: Participant)
+        fromMail
         =
-        { Subject = sprintf "Ledig plass på %s" event.Title.Unwrap
+        { Subject = sprintf "Du har fått plass på %s!" event.Title.Unwrap
           Message =
-              "Du har automatisk fått plass, blabla, gå til link for å melde deg av"
-          From = event.OrganizerEmail // kanskje noreply?
+              sprintf
+                  "Du har rykket opp fra ventelisten for %s! Hvis du ikke lenger kan delta, meld deg av her: %s"
+                  event.Title.Unwrap "url todo"
+          From = fromMail
           To = participant.Email
           CalendarInvite = None }
 
@@ -141,12 +144,14 @@ module Service =
         =
         result {
             let personWhoGotIt = Seq.tryHead waitingList
+            for config in getConfig >> Ok do
 
-            match personWhoGotIt with
-            | None -> return ()
-            | Some participant ->
-                yield Service.sendMail
-                          (createFreeSpotAvailableMail event participant)
+                match personWhoGotIt with
+                | None -> return ()
+                | Some participant ->
+                    yield Service.sendMail
+                              (createFreeSpotAvailableMail event participant
+                                   (EmailAddress config.noReplyEmail))
         }
 
     let private sendMailToOrganizerAboutCancellation event participant =

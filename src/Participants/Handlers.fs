@@ -36,11 +36,12 @@ module Handlers =
                         let isWaitlisted =
                             event.HasWaitingList.Unwrap
                             && participants
-                               |> Seq.length > event.MaxParticipants.Unwrap
+                               |> Seq.length
+                               >= event.MaxParticipants.Unwrap
 
                         let createMailForParticipant =
                             Service.createNewParticipantMail createCancelUrl
-                                event isWaitlisted
+                                event isWaitlisted // Hvordan kan vi få på config.noreplyemail her?
 
                         for participant in Service.registerParticipant
                                                createMailForParticipant
