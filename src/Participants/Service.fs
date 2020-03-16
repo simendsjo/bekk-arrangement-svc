@@ -10,8 +10,6 @@ open UserMessages
 open Models
 open ArrangementService.DomainModels
 open DateTime
-open Microsoft.AspNetCore.Http
-open Giraffe
 open ArrangementService.Config
 
 module Service =
@@ -76,6 +74,17 @@ module Service =
           To = event.OrganizerEmail
           CalendarInvite = None }
 
+    let private createFreeSpotAvailableMail
+        (event: Event)
+        (participant: Participant)
+        =
+        { Subject = sprintf "Ledig plass på %s" event.Title.Unwrap
+          Message =
+              "Du har automatisk fått plass, blabla, gå til link for å melde deg av"
+          From = event.OrganizerEmail // kanskje noreply?
+          To = participant.Email
+          CalendarInvite = None }
+
     let private createCancelledEventMail
         (message: string)
         (event: Event)
@@ -126,40 +135,66 @@ module Service =
                 return Seq.map models.dbToDomain participantsByMail
         }
 
-    let bumpWaitlist (event, participants) (context: HttpContext) =
-        let maxParticipants = event.MaxParticipants.Unwrap
-        if event.HasWaitingList.Unwrap then
-            let participantToNotify =
-                participants
-                |> Seq.mapi (fun i p -> p, i)
-                |> Seq.filter (fun (_, i) -> i > maxParticipants)
-                |> Seq.tryHead
-            printfn "%A" participantToNotify
-        // yield participantToNotify
-        //       |> function
-        //       | Some x -> Service.sendMail x
-        //       | None -> ignore
-        else
-            ()
-        |> ignore
+    let private sendMailToFirstPersonOnWaitingList
+        (event: Event)
+        (waitingList: Participant seq)
+        =
+        result {
+            let personWhoGotIt = Seq.tryHead waitingList
+
+            match personWhoGotIt with
+            | None -> return ()
+            | Some participant ->
+                yield Service.sendMail
+                          (createFreeSpotAvailableMail event participant)
+        }
+
+    let private sendMailToOrganizerAboutCancellation event participant =
+        result {
+            for config in getConfig >> Ok do
+                let mail =
+                    createCancelledParticipationMail event participant
+                        (EmailAddress config.noReplyEmail)
+                yield Service.sendMail mail
+        }
+
+    let private sendParticipantCancelMails event email =
+        result {
+            for participants in getParticipantsForEvent event.Id do
+
+                let participants =
+                    participants
+                    |> Seq.sortBy
+                        (fun participant -> participant.RegistrationTime)
+
+                let (attendees, waitingList) =
+                    (Seq.take event.MaxParticipants.Unwrap participants,
+                     Seq.skip event.MaxParticipants.Unwrap participants)
+
+                let attendingParticipant =
+                    attendees
+                    |> Seq.tryFind (fun attendee -> attendee.Email = email)
+
+                match attendingParticipant with
+                | None -> return ()
+                | Some participant ->
+                    yield sendMailToOrganizerAboutCancellation event
+                              participant
+                    let eventHasWaitingList = event.HasWaitingList.Unwrap
+                    if eventHasWaitingList then
+                        yield sendMailToFirstPersonOnWaitingList event
+                                  waitingList
+                        return ()
+        }
 
     let deleteParticipant (event, email) =
         result {
-            for participants in getParticipantsForEvent event.Id do
-                yield bumpWaitlist (event, participants)
+            yield sendParticipantCancelMails event email
+            for participant in getParticipant (event.Id, email) do
 
-                for participant in getParticipant (event.Id, email) do
-                    repo.del participant
+                repo.del participant
 
-                    for config in getConfig >> Ok do
-                        let mail =
-                            createCancelledParticipationMail event
-                                (models.dbToDomain participant)
-                                (EmailAddress config.noReplyEmail)
-                        yield Service.sendMail mail
-
-                        return participationSuccessfullyDeleted
-                                   (event.Id, email)
+                return participationSuccessfullyDeleted (event.Id, email)
         }
 
 
@@ -173,5 +208,7 @@ module Service =
             Service.sendMail
                 (createCancelledEventMail messageToParticipants event
                      participant) ctx
+
         participants |> Seq.iter sendMailToParticipant
+
         Ok()
