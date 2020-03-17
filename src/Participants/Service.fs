@@ -11,6 +11,7 @@ open Models
 open ArrangementService.DomainModels
 open DateTime
 open ArrangementService.Config
+open Http
 
 module Service =
 
@@ -122,23 +123,24 @@ module Service =
                 return participant
         }
 
-    let getParticipantsForEvent (event: Event) =
+    let getParticipantsForEvent (event: Event): Handler<ParticipantsWithWaitingList> =
         result {
             for participants in repo.read do
 
                 let participantsForEvent =
                     participants
                     |> queryParticipantsBy event.Id
+                    |> Seq.map models.dbToDomain
                     |> Seq.sortBy
                         (fun participant -> participant.RegistrationTime)
-                    |> Seq.map models.dbToDomain
 
-                return {| attendees =
-                              Seq.take event.MaxParticipants.Unwrap
-                                  participantsForEvent
-                          waitingList =
-                              Seq.skip event.MaxParticipants.Unwrap
-                                  participantsForEvent |}
+                return { attendees =
+                             Seq.truncate event.MaxParticipants.Unwrap
+                                 participantsForEvent
+
+                         waitingList =
+                             Seq.safeSkip event.MaxParticipants.Unwrap
+                                 participantsForEvent }
         }
 
     let getParticipationsForParticipant email =

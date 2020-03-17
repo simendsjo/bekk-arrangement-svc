@@ -58,6 +58,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="Utils\Seq.fs" />
     <Compile Include="Config.fs" />
 
     <Compile Include="LanguageExtensions\Validation.fs" />

@@ -76,14 +76,17 @@ module Handlers =
             for event in Event.Service.getEvent (Event.Id id) do
                 for participants in Service.getParticipantsForEvent event do
                     let hasWaitingList = event.HasWaitingList
-                    return {| attendees =
-                                  Seq.map domainToView participants.attendees
-                              waitingList =
-                                  if hasWaitingList then
-                                      Seq.map domainToView
-                                          participants.waitingList |> Some
-                                  else
-                                      None |}
+                    return { attendees =
+                                 Seq.map domainToView participants.attendees
+                                 |> Seq.toList
+                             waitingList =
+                                 if hasWaitingList then
+                                     Seq.map domainToView
+                                         participants.waitingList
+                                     |> Seq.toList
+                                     |> Some
+                                 else
+                                     None }
         }
 
     let routes: HttpHandler =
