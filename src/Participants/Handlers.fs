@@ -11,6 +11,7 @@ open Authorization
 open System.Web
 open System
 open ArrangementService.DomainModels
+open ArrangementService.Config
 
 module Handlers =
 
@@ -31,25 +32,26 @@ module Handlers =
                                                     ())
 
                 for event in Event.Service.getEvent (Event.Id eventId) do
-                    for participants in Service.getParticipantsForEvent
-                                            (Event.Id eventId) do
+                    for participants in Service.getParticipantsForEvent event do
                         let isWaitlisted =
                             event.HasWaitingList.Unwrap
-                            && participants
+                            && participants.attendees
                                |> Seq.length
                                >= event.MaxParticipants.Unwrap
 
-                        let createMailForParticipant =
-                            Service.createNewParticipantMail createCancelUrl
-                                event isWaitlisted // Hvordan kan vi få på config.noreplyemail her?
+                        for config in getConfig >> Ok do
+                            let createMailForParticipant =
+                                Service.createNewParticipantMail
+                                    createCancelUrl event isWaitlisted
+                                    (EmailAddress config.noReplyEmail)
 
-                        for participant in Service.registerParticipant
-                                               createMailForParticipant
-                                               (fun _ ->
-                                                   writeToDomain
-                                                       (eventId, email)
-                                                       writeModel) do
-                            return domainToViewWithCancelInfo participant
+                            for participant in Service.registerParticipant
+                                                   createMailForParticipant
+                                                   (fun _ ->
+                                                       writeToDomain
+                                                           (eventId, email)
+                                                           writeModel) do
+                                return domainToViewWithCancelInfo participant
         }
 
     let getParticipationsForParticipant email =
@@ -71,8 +73,17 @@ module Handlers =
 
     let getParticipantsForEvent id =
         result {
-            for participants in Service.getParticipantsForEvent (Event.Id id) do
-                return Seq.map domainToView participants |> Seq.toList
+            for event in Event.Service.getEvent (Event.Id id) do
+                for participants in Service.getParticipantsForEvent event do
+                    let hasWaitingList = event.HasWaitingList.Unwrap
+                    return {| attendees =
+                                  Seq.map domainToView participants.attendees
+                              waitingList =
+                                  if hasWaitingList then
+                                      Seq.map domainToView
+                                          participants.waitingList |> Some
+                                  else
+                                      None |}
         }
 
     let routes: HttpHandler =

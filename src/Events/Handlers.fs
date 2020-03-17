@@ -34,12 +34,13 @@ module Handlers =
     let deleteEvent id =
         result {
             for messageToParticipants in getBody<string> do
-                for participants in Participant.Service.getParticipantsForEvent
-                                        (Id id) do
-                    for event in Service.getEvent (Id id) do
+                for event in Service.getEvent (Id id) do
+                    for participants in Participant.Service.getParticipantsForEvent
+                                            event do
 
                         yield Participant.Service.sendCancellationMailToParticipants
-                                  messageToParticipants participants event
+                                  messageToParticipants participants.attendees
+                                  event
 
                         for result in Service.deleteEvent (Id id) do
                             return result

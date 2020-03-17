@@ -122,13 +122,23 @@ module Service =
                 return participant
         }
 
-    let getParticipantsForEvent (eventId: Event.Id) =
+    let getParticipantsForEvent (event: Event) =
         result {
             for participants in repo.read do
 
-                let attendees = participants |> queryParticipantsBy eventId
+                let participantsForEvent =
+                    participants
+                    |> queryParticipantsBy event.Id
+                    |> Seq.sortBy
+                        (fun participant -> participant.RegistrationTime)
+                    |> Seq.map models.dbToDomain
 
-                return Seq.map models.dbToDomain attendees
+                return {| attendees =
+                              Seq.take event.MaxParticipants.Unwrap
+                                  participantsForEvent
+                          waitingList =
+                              Seq.skip event.MaxParticipants.Unwrap
+                                  participantsForEvent |}
         }
 
     let getParticipationsForParticipant email =
@@ -167,19 +177,10 @@ module Service =
 
     let private sendParticipantCancelMails event email =
         result {
-            for participants in getParticipantsForEvent event.Id do
-
-                let participants =
-                    participants
-                    |> Seq.sortBy
-                        (fun participant -> participant.RegistrationTime)
-
-                let (attendees, waitingList) =
-                    (Seq.take event.MaxParticipants.Unwrap participants,
-                     Seq.skip event.MaxParticipants.Unwrap participants)
+            for participants in getParticipantsForEvent event do
 
                 let attendingParticipant =
-                    attendees
+                    participants.attendees
                     |> Seq.tryFind (fun attendee -> attendee.Email = email)
 
                 match attendingParticipant with
@@ -190,7 +191,7 @@ module Service =
                     let eventHasWaitingList = event.HasWaitingList.Unwrap
                     if eventHasWaitingList then
                         yield sendMailToFirstPersonOnWaitingList event
-                                  waitingList
+                                  participants.waitingList
                         return ()
         }
 

@@ -41,10 +41,9 @@ module Authorization =
             for event in Event.Service.getEvent (Event.Id eventId) do
                 let hasWaitingList = event.HasWaitingList.Unwrap
                 let maxParticipants = event.MaxParticipants.Unwrap
-                for participants in Service.getParticipantsForEvent
-                                        (Event.Id eventId) do
+                for participants in Service.getParticipantsForEvent event do
                     if hasWaitingList || maxParticipants = 0
-                       || participants
+                       || participants.attendees
                           |> Seq.length < maxParticipants then
                         return ()
                     else
