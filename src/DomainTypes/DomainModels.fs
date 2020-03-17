@@ -23,7 +23,7 @@ type Event =
       MaxParticipants: Event.MaxParticipants
       EditToken: Guid
       ParticipantQuestion: Event.ParticipantQuestion
-      HasWaitingList: Event.HasWaitingList }
+      HasWaitingList: bool }
     static member Create =
         fun id title description location organizerName organizerEmail maxParticipants (startDate, endDate) openForRegistrationTime editToken participantQuestion hasWaitingList ->
             { Id = id

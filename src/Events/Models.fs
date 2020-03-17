@@ -72,7 +72,7 @@ module Models =
         <*> OpenForRegistrationTime.Parse writeModel.OpenForRegistrationTime
         <*> (Guid.NewGuid() |> Ok)
         <*> ParticipantQuestion.Parse writeModel.ParticipantQuestion
-        <*> HasWaitingList.Parse writeModel.HasWaitingList
+        <*> (writeModel.HasWaitingList |> Ok)
 
     let dbToDomain (dbRecord: DbModel): Event =
         { Id = Id dbRecord.Id
@@ -88,7 +88,7 @@ module Models =
               OpenForRegistrationTime dbRecord.OpenForRegistrationTime
           EditToken = dbRecord.EditToken
           ParticipantQuestion = ParticipantQuestion dbRecord.ParticipantQuestion
-          HasWaitingList = HasWaitingList dbRecord.HasWaitingList }
+          HasWaitingList = dbRecord.HasWaitingList }
 
     let updateDbWithDomain (db: DbModel) (event: Event) =
         db.Title <- event.Title.Unwrap
@@ -103,7 +103,7 @@ module Models =
         db.EndTime <- customToTimeSpan event.EndDate.Time
         db.OpenForRegistrationTime <- event.OpenForRegistrationTime.Unwrap
         db.ParticipantQuestion <- event.ParticipantQuestion.Unwrap
-        db.HasWaitingList <- event.HasWaitingList.Unwrap
+        db.HasWaitingList <- event.HasWaitingList
         db
 
     let domainToView (domainModel: Event): ViewModel =
@@ -118,7 +118,7 @@ module Models =
           EndDate = domainModel.EndDate
           OpenForRegistrationTime = domainModel.OpenForRegistrationTime.Unwrap
           ParticipantQuestion = domainModel.ParticipantQuestion.Unwrap
-          HasWaitingList = domainModel.HasWaitingList.Unwrap }
+          HasWaitingList = domainModel.HasWaitingList }
 
     let domainToViewWithEditInfo (event: Event): ViewModelWithEditToken =
         { Event = domainToView event

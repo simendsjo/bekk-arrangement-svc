@@ -34,7 +34,7 @@ module Handlers =
                 for event in Event.Service.getEvent (Event.Id eventId) do
                     for participants in Service.getParticipantsForEvent event do
                         let isWaitlisted =
-                            event.HasWaitingList.Unwrap
+                            event.HasWaitingList
                             && participants.attendees
                                |> Seq.length
                                >= event.MaxParticipants.Unwrap
@@ -75,7 +75,7 @@ module Handlers =
         result {
             for event in Event.Service.getEvent (Event.Id id) do
                 for participants in Service.getParticipantsForEvent event do
-                    let hasWaitingList = event.HasWaitingList.Unwrap
+                    let hasWaitingList = event.HasWaitingList
                     return {| attendees =
                                   Seq.map domainToView participants.attendees
                               waitingList =

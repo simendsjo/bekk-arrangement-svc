@@ -188,7 +188,7 @@ module Service =
                 | Some participant ->
                     yield sendMailToOrganizerAboutCancellation event
                               participant
-                    let eventHasWaitingList = event.HasWaitingList.Unwrap
+                    let eventHasWaitingList = event.HasWaitingList
                     if eventHasWaitingList then
                         yield sendMailToFirstPersonOnWaitingList event
                                   participants.waitingList

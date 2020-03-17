@@ -39,7 +39,7 @@ module Authorization =
     let eventHasAvailableSpots eventId =
         result {
             for event in Event.Service.getEvent (Event.Id eventId) do
-                let hasWaitingList = event.HasWaitingList.Unwrap
+                let hasWaitingList = event.HasWaitingList
                 let maxParticipants = event.MaxParticipants.Unwrap
                 for participants in Service.getParticipantsForEvent event do
                     if hasWaitingList || maxParticipants = 0
