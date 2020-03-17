@@ -75,8 +75,6 @@ module Service =
         result {
             for events in repo.read do
                 let! oldEvent = events |> queryEventBy id
-                if (oldEvent.MaxParticipants < event.MaxParticipants.Unwrap) then
-                    yield () |> ignore // Send mail til deltakere om fått plass
                 return repo.update event oldEvent
         }
 

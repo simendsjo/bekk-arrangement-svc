@@ -38,6 +38,7 @@ module Service =
           "Siden det er begrenset med plasser, setter vi pris på om du melder deg av hvis du ikke lenger"
           "kan delta. Da blir det plass til andre på ventelisten 😊"
           sprintf "Meld deg av her: %s." redirectUrl
+          "NB! Ta vare på lenken til senere - om du rykker opp fra ventelisten bruker du fortsatt denne til å melde deg av."
           "Bare spør meg om det er noe du lurer på."
           "Vi sees!"
           sprintf "Hilsen %s i Bekk" event.OrganizerEmail.Unwrap ]
@@ -47,6 +48,7 @@ module Service =
         createCancelUrl
         (event: Event)
         isWaitlisted
+        fromMail
         (participant: Participant)
         =
         let message =
@@ -55,7 +57,7 @@ module Service =
             else inviteMessage (createCancelUrl participant) event
         { Subject = event.Title.Unwrap
           Message = message
-          From = event.OrganizerEmail // noreply
+          From = fromMail
           To = participant.Email
           CalendarInvite =
               createCalendarAttachment
@@ -82,8 +84,8 @@ module Service =
         { Subject = sprintf "Du har fått plass på %s!" event.Title.Unwrap
           Message =
               sprintf
-                  "Du har rykket opp fra ventelisten for %s! Hvis du ikke lenger kan delta, meld deg av her: %s"
-                  event.Title.Unwrap "url todo"
+                  "Du har rykket opp fra ventelisten for %s! Hvis du ikke lenger kan delta, meld deg av med lenken fra forrige e-post."
+                  event.Title.Unwrap
           From = fromMail
           To = participant.Email
           CalendarInvite = None }
