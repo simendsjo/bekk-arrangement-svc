@@ -10,7 +10,6 @@ open UserMessages
 open Models
 open ArrangementService.DomainModels
 open DateTime
-open ArrangementService.Config
 open Http
 
 module Service =
@@ -19,36 +18,51 @@ module Service =
 
     let private inviteMessage redirectUrl (event: Event) =
         [ "Hei! 😄"
+          ""
           sprintf "Du er nå påmeldt %s." event.Title.Unwrap
           sprintf "Vi gleder oss til å se deg på %s den %s 🎉"
               event.Location.Unwrap (toReadableString event.StartDate)
+          ""
           "Siden det er begrenset med plasser, setter vi pris på om du melder deg av hvis du ikke lenger"
           "kan delta. Da blir det plass til andre på ventelisten 😊"
-          sprintf "Meld deg av her: %s." redirectUrl
-          "Bare spør meg om det er noe du lurer på."
+          sprintf "Du kan melde deg av <a href=\"%s\">via denne lenken</a>."
+              redirectUrl
+          ""
+          sprintf
+              "Bare send meg en mail på <a href=\"mailto:%s\">%s</a> om det er noe du lurer på."
+              event.OrganizerEmail.Unwrap event.OrganizerEmail.Unwrap
           "Vi sees!"
-          sprintf "Hilsen %s i Bekk" event.OrganizerEmail.Unwrap ]
+          ""
+          sprintf "Hilsen %s i Bekk" event.OrganizerName.Unwrap ]
         |> String.concat "<br>" // Sendgrid formats to HTML, \n does not work
 
     let private waitlistedMessage redirectUrl (event: Event) =
         [ "Hei! 😄"
+          ""
           sprintf "Du er nå på venteliste for %s på %s den %s."
               event.Title.Unwrap event.Location.Unwrap
               (toReadableString event.StartDate)
           "Du vil få beskjed på e-post om du rykker opp fra ventelisten."
+          ""
           "Siden det er begrenset med plasser, setter vi pris på om du melder deg av hvis du ikke lenger"
           "kan delta. Da blir det plass til andre på ventelisten 😊"
-          sprintf "Meld deg av her: %s." redirectUrl
+          sprintf "Du kan melde deg av <a href=\"%s\">via denne lenken</a>."
+              redirectUrl
           "NB! Ta vare på lenken til senere - om du rykker opp fra ventelisten bruker du fortsatt denne til å melde deg av."
-          "Bare spør meg om det er noe du lurer på."
+          ""
+          sprintf
+              "Bare send meg en mail på <a href=\"mailto:%s\">%s</a> om det er noe du lurer på."
+              event.OrganizerEmail.Unwrap event.OrganizerEmail.Unwrap
           "Vi sees!"
-          sprintf "Hilsen %s i Bekk" event.OrganizerEmail.Unwrap ]
+          ""
+          sprintf "Hilsen %s i Bekk" event.OrganizerName.Unwrap ]
         |> String.concat "<br>"
 
     let createNewParticipantMail
         createCancelUrl
         (event: Event)
         isWaitlisted
+        noReplyMail
         (participant: Participant)
         =
         let message =
@@ -61,7 +75,7 @@ module Service =
           To = participant.Email
           CalendarInvite =
               createCalendarAttachment
-                  (event, participant.Email, message, Create) |> Some }
+                  (event, participant, noReplyMail, message, Create) |> Some }
 
     let private createCancelledParticipationMail
         (event: Event)
@@ -89,6 +103,7 @@ module Service =
     let private createCancelledEventMail
         (message: string)
         (event: Event)
+        noReplyMail
         (participant: Participant)
         =
         { Subject = sprintf "Avlyst: %s" event.Title.Unwrap
@@ -96,7 +111,7 @@ module Service =
           To = participant.Email
           CalendarInvite =
               createCalendarAttachment
-                  (event, participant.Email, message, Cancel) |> Some }
+                  (event, participant, noReplyMail, message, Cancel) |> Some }
 
     let registerParticipant createMail registration =
         result {
@@ -199,6 +214,7 @@ module Service =
 
     let sendCancellationMailToParticipants
         messageToParticipants
+        noReplyMail
         participants
         event
         ctx
@@ -206,7 +222,7 @@ module Service =
         let sendMailToParticipant participant =
             Service.sendMail
                 (createCancelledEventMail messageToParticipants event
-                     participant) ctx
+                     noReplyMail participant) ctx
 
         participants |> Seq.iter sendMailToParticipant
 

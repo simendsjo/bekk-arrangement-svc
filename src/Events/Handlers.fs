@@ -6,6 +6,8 @@ open Http
 open ResultComputationExpression
 open Models
 open ArrangementService.DomainModels
+open ArrangementService.Config
+open ArrangementService.Email
 open Authorization
 
 open Giraffe
@@ -37,13 +39,15 @@ module Handlers =
                 for event in Service.getEvent (Id id) do
                     for participants in Participant.Service.getParticipantsForEvent
                                             event do
+                        for config in getConfig >> Ok do
 
-                        yield Participant.Service.sendCancellationMailToParticipants
-                                  messageToParticipants participants.attendees
-                                  event
+                            yield Participant.Service.sendCancellationMailToParticipants
+                                      messageToParticipants
+                                      (EmailAddress config.noReplyEmail)
+                                      participants.attendees event
 
-                        for result in Service.deleteEvent (Id id) do
-                            return result
+                            for result in Service.deleteEvent (Id id) do
+                                return result
         }
 
     let updateEvent id =

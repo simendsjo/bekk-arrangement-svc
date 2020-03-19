@@ -2,6 +2,7 @@ namespace ArrangementService.Email
 
 open ArrangementService.DomainModels
 open ArrangementService.DateTime
+open ArrangementService.Config
 open System
 
 // ICS reference: https://tools.ietf.org/html/rfc5545
@@ -39,8 +40,9 @@ module CalendarInvite =
         | Create
         | Cancel
 
-    let eventObject ((event: Event), (participantEmail: EmailAddress),
-                     (message: string), (status: CalendarInviteStatus))
+    let eventObject ((event: Event), (participant: Participant),
+                     (noReplyMail: EmailAddress), (message: string),
+                     (status: CalendarInviteStatus))
         =
         let utcNow =
             toUtcString (toCustomDateTime DateTime.UtcNow (TimeSpan()))
@@ -51,10 +53,11 @@ module CalendarInvite =
           sprintf "DTEND;TZID=W. Europe Standard Time:%s"
               (toDateString event.EndDate)
           sprintf "DTSTAMP:%s" utcNow
-          sprintf "ORGANIZER;CN=%s:mailto:%s" event.OrganizerEmail.Unwrap
-              event.OrganizerEmail.Unwrap
+          sprintf "ORGANIZER:mailto:%s" noReplyMail.Unwrap
           sprintf "ATTENDEE;PARTSTAT=ACCEPTED;RSVP=FALSE;CN=%s:mailto:%s"
-              participantEmail.Unwrap participantEmail.Unwrap
+              event.OrganizerName.Unwrap event.OrganizerEmail.Unwrap
+          sprintf "ATTENDEE;PARTSTAT=ACCEPTED;RSVP=FALSE;CN=%s:mailto:%s"
+              participant.Name.Unwrap participant.Email.Unwrap
           sprintf "SUMMARY;LANGUAGE=nb-NO:%s" event.Title.Unwrap
           sprintf "DESCRIPTION;LANGUAGE=nb-NO:%s"
               (message.Replace("<br>", "\n"))
