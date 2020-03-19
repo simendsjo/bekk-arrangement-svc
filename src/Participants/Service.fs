@@ -49,16 +49,15 @@ module Service =
         createCancelUrl
         (event: Event)
         isWaitlisted
-        fromMail
         (participant: Participant)
         =
         let message =
             if isWaitlisted
             then waitlistedMessage (createCancelUrl participant) event
             else inviteMessage (createCancelUrl participant) event
+
         { Subject = event.Title.Unwrap
           Message = message
-          From = fromMail
           To = participant.Email
           CalendarInvite =
               createCalendarAttachment
@@ -67,27 +66,23 @@ module Service =
     let private createCancelledParticipationMail
         (event: Event)
         (participant: Participant)
-        fromMail
         =
         { Subject = "Avmelding"
           Message =
               sprintf "%s har meldt seg av %s" participant.Name.Unwrap
                   event.Title.Unwrap
-          From = fromMail
           To = event.OrganizerEmail
           CalendarInvite = None }
 
     let private createFreeSpotAvailableMail
         (event: Event)
         (participant: Participant)
-        fromMail
         =
         { Subject = sprintf "Du har fått plass på %s!" event.Title.Unwrap
           Message =
               sprintf
                   "Du har rykket opp fra ventelisten for %s! Hvis du ikke lenger kan delta, meld deg av med lenken fra forrige e-post."
                   event.Title.Unwrap
-          From = fromMail
           To = participant.Email
           CalendarInvite = None }
 
@@ -98,7 +93,6 @@ module Service =
         =
         { Subject = sprintf "Avlyst: %s" event.Title.Unwrap
           Message = message.Replace("\n", "<br>")
-          From = event.OrganizerEmail
           To = participant.Email
           CalendarInvite =
               createCalendarAttachment
@@ -158,23 +152,18 @@ module Service =
         =
         result {
             let personWhoGotIt = Seq.tryHead waitingList
-            for config in getConfig >> Ok do
-
-                match personWhoGotIt with
-                | None -> return ()
-                | Some participant ->
-                    yield Service.sendMail
-                              (createFreeSpotAvailableMail event participant
-                                   (EmailAddress config.noReplyEmail))
+            match personWhoGotIt with
+            | None -> return ()
+            | Some participant ->
+                yield Service.sendMail
+                          (createFreeSpotAvailableMail event participant)
         }
 
     let private sendMailToOrganizerAboutCancellation event participant =
         result {
-            for config in getConfig >> Ok do
-                let mail =
-                    createCancelledParticipationMail event participant
-                        (EmailAddress config.noReplyEmail)
-                yield Service.sendMail mail
+            let mail = createCancelledParticipationMail event participant
+
+            yield Service.sendMail mail
         }
 
     let private sendParticipantCancelMails event email =

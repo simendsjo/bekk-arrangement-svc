@@ -39,19 +39,17 @@ module Handlers =
                                |> Seq.length
                                >= event.MaxParticipants.Unwrap
 
-                        for config in getConfig >> Ok do
-                            let createMailForParticipant =
-                                Service.createNewParticipantMail
-                                    createCancelUrl event isWaitlisted
-                                    (EmailAddress config.noReplyEmail)
+                        let createMailForParticipant =
+                            Service.createNewParticipantMail createCancelUrl
+                                event isWaitlisted
 
-                            for participant in Service.registerParticipant
-                                                   createMailForParticipant
-                                                   (fun _ ->
-                                                       writeToDomain
-                                                           (eventId, email)
-                                                           writeModel) do
-                                return domainToViewWithCancelInfo participant
+                        for participant in Service.registerParticipant
+                                               createMailForParticipant
+                                               (fun _ ->
+                                                   writeToDomain
+                                                       (eventId, email)
+                                                       writeModel) do
+                            return domainToViewWithCancelInfo participant
         }
 
     let getParticipationsForParticipant email =

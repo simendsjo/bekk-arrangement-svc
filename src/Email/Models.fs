@@ -5,9 +5,12 @@ open SendgridApiModels
 open ArrangementService.DomainModels
 
 module Models =
-    let emailToSendgridFormat (email: Email): SendGridFormat =
+    let emailToSendgridFormat
+        (email: Email)
+        (fromMail: EmailAddress)
+        : SendGridFormat =
         { Personalizations = [ { To = [ { Email = email.To.Unwrap } ] } ]
-          From = { Email = email.From.Unwrap }
+          From = { Email = fromMail.Unwrap }
           Subject = email.Subject
           Content =
               [ { Value = email.Message

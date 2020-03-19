@@ -36,6 +36,7 @@ module Service =
         |> Async.Start
 
     let sendMail (email: Email) (context: HttpContext) =
+
         let sendgridConfig = context.GetService<SendgridOptions>()
         let appConfig = getConfig context
 
@@ -57,8 +58,8 @@ module Service =
             settings
 
         let serializedEmail =
-            (emailToSendgridFormat email, serializerSettings)
-            |> JsonConvert.SerializeObject
+            (emailToSendgridFormat email (EmailAddress appConfig.noReplyEmail),
+             serializerSettings) |> JsonConvert.SerializeObject
 
         let actuallySendMail() =
             serializedEmail |> sendMailProd sendgridConfig

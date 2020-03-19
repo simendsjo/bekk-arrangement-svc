@@ -6,7 +6,6 @@ open System
 type Email =
     { Subject: string
       Message: string
-      From: Email.EmailAddress
       To: Email.EmailAddress
       CalendarInvite: string option }
 
