@@ -38,7 +38,6 @@ module Handlers =
                             && participants.attendees
                                |> Seq.length
                                >= event.MaxParticipants.Unwrap
-
                         for config in getConfig >> Ok do
                             let createMailForParticipant =
                                 Service.createNewParticipantMail
