@@ -1,7 +1,6 @@
 namespace ArrangementService
 
 open Validation
-open DateTime
 open UserMessage
 
 module Utils =

@@ -6,7 +6,6 @@ open System
 type Email =
     { Subject: string
       Message: string
-      From: Email.EmailAddress
       To: Email.EmailAddress
       CalendarInvite: string option }
 
@@ -22,9 +21,10 @@ type Event =
       OpenForRegistrationTime: Event.OpenForRegistrationTime
       MaxParticipants: Event.MaxParticipants
       EditToken: Guid
-      ParticipantQuestion: Event.ParticipantQuestion }
+      ParticipantQuestion: Event.ParticipantQuestion
+      HasWaitingList: bool }
     static member Create =
-        fun id title description location organizerName organizerEmail maxParticipants (startDate, endDate) openForRegistrationTime editToken participantQuestion ->
+        fun id title description location organizerName organizerEmail maxParticipants (startDate, endDate) openForRegistrationTime editToken participantQuestion hasWaitingList ->
             { Id = id
               Title = title
               Description = description
@@ -36,7 +36,8 @@ type Event =
               EndDate = endDate
               OpenForRegistrationTime = openForRegistrationTime
               EditToken = editToken
-              ParticipantQuestion = participantQuestion }
+              ParticipantQuestion = participantQuestion
+              HasWaitingList = hasWaitingList }
 
 type Participant =
     { Name: Participant.Name

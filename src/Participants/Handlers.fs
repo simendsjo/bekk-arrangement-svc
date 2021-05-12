@@ -11,6 +11,7 @@ open Authorization
 open System.Web
 open System
 open ArrangementService.DomainModels
+open ArrangementService.Config
 
 module Handlers =
 
@@ -31,13 +32,23 @@ module Handlers =
                                                 ())
 
             let! event = Event.Service.getEvent (Event.Id eventId)
+            let! participants = Service.getParticipantsForEvent event
+            let isWaitlisted =
+                event.HasWaitingList
+                && participants.attendees
+                   |> Seq.length
+                   >= event.MaxParticipants.Unwrap
+            let! config = getConfig >> Ok
             let createMailForParticipant =
-                Service.createNewParticipantMail createCancelUrl event
+                Service.createNewParticipantMail
+                    createCancelUrl event isWaitlisted
+                    (EmailAddress config.noReplyEmail)
 
             let! participant = Service.registerParticipant
                                    createMailForParticipant
                                    (fun _ ->
-                                       writeToDomain (eventId, email)
+                                       writeToDomain
+                                           (eventId, email)
                                            writeModel)
             return domainToViewWithCancelInfo participant
         }
@@ -54,15 +65,27 @@ module Handlers =
             let! emailAddress = EmailAddress.Parse email |> ignoreContext
             
             let! event = Event.Service.getEvent (Event.Id id)
-            let! deleteResult = Service.deleteParticipant (event, emailAddress)
+            let! deleteResult = Service.deleteParticipant (event, emailAddress) 
             
             return deleteResult
         }
 
     let getParticipantsForEvent id =
         result {
-            let! participants = Service.getParticipantsForEvent (Event.Id id)
-            return Seq.map domainToView participants |> Seq.toList
+            let! event = Event.Service.getEvent (Event.Id id)
+            let! participants = Service.getParticipantsForEvent event
+            let hasWaitingList = event.HasWaitingList
+            return { attendees =
+                         Seq.map domainToView participants.attendees
+                         |> Seq.toList
+                     waitingList =
+                         if hasWaitingList then
+                             Seq.map domainToView
+                                 participants.waitingList
+                             |> Seq.toList
+                             |> Some
+                         else
+                             None }
         }
 
     let routes: HttpHandler =

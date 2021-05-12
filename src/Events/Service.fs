@@ -3,12 +3,11 @@ namespace ArrangementService.Event
 open ArrangementService
 open ArrangementService.Email
 open Models
-open CalendarInvite
 open ResultComputationExpression
 open Queries
 open UserMessages
 open ArrangementService.DomainModels
-open ArrangementService.Config
+open Config
 
 module Service =
 
@@ -49,22 +48,17 @@ module Service =
           "Ikke del denne med andre🕵️" ]
         |> String.concat "\n"
 
-    let private createEmail createEditUrl fromMail (event: Event) =
+    let private createEmail createEditUrl (event: Event) =
         let message = createdEventMessage createEditUrl event
         { Subject = sprintf "Du opprettet %s" event.Title.Unwrap
           Message = message
-          From = fromMail
           To = event.OrganizerEmail
-          CalendarInvite =
-              createCalendarAttachment
-                  (event, event.OrganizerEmail, message, Create) |> Some }
+          CalendarInvite = None }
 
     let private sendNewlyCreatedEventMail createEditUrl (event: Event) =
         result {
-            let! config = getConfig >> Ok
             let mail =
-                createEmail createEditUrl
-                    (EmailAddress config.noReplyEmail) event
+                createEmail createEditUrl event
             yield Service.sendMail mail
         }
 

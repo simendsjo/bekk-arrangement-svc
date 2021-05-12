@@ -31,7 +31,8 @@ type ViewModel =
       StartDate: DateTimeCustom
       EndDate: DateTimeCustom
       OpenForRegistrationTime: int64
-      ParticipantQuestion: string }
+      ParticipantQuestion: string
+      HasWaitingList: bool }
 
 type ViewModelWithEditToken =
     { Event: ViewModel
@@ -48,14 +49,19 @@ type WriteModel =
       EndDate: DateTimeCustom
       OpenForRegistrationTime: int64
       editUrlTemplate: string
-      ParticipantQuestion: string }
+      ParticipantQuestion: string
+      HasWaitingList: bool }
 
 module Models =
 
     let getEvents (ctx: HttpContext): TableModel =
         ctx.GetService<ArrangementDbContext>().Dbo.Events
 
-    let writeToDomain (id: Key) (writeModel: WriteModel): Result<Event, UserMessage list> =
+    let writeToDomain
+        (id: Key)
+        (writeModel: WriteModel)
+        : Result<Event, UserMessage list>
+        =
         Ok Event.Create <*> (Id id |> Ok) <*> Title.Parse writeModel.Title
         <*> Description.Parse writeModel.Description
         <*> Location.Parse writeModel.Location
@@ -66,6 +72,7 @@ module Models =
         <*> OpenForRegistrationTime.Parse writeModel.OpenForRegistrationTime
         <*> (Guid.NewGuid() |> Ok)
         <*> ParticipantQuestion.Parse writeModel.ParticipantQuestion
+        <*> (writeModel.HasWaitingList |> Ok)
 
     let dbToDomain (dbRecord: DbModel): Event =
         { Id = Id dbRecord.Id
@@ -80,7 +87,8 @@ module Models =
           OpenForRegistrationTime =
               OpenForRegistrationTime dbRecord.OpenForRegistrationTime
           EditToken = dbRecord.EditToken
-          ParticipantQuestion = ParticipantQuestion dbRecord.ParticipantQuestion }
+          ParticipantQuestion = ParticipantQuestion dbRecord.ParticipantQuestion
+          HasWaitingList = dbRecord.HasWaitingList }
 
     let updateDbWithDomain (db: DbModel) (event: Event) =
         db.Title <- event.Title.Unwrap
@@ -95,6 +103,7 @@ module Models =
         db.EndTime <- customToTimeSpan event.EndDate.Time
         db.OpenForRegistrationTime <- event.OpenForRegistrationTime.Unwrap
         db.ParticipantQuestion <- event.ParticipantQuestion.Unwrap
+        db.HasWaitingList <- event.HasWaitingList
         db
 
     let domainToView (domainModel: Event): ViewModel =
@@ -108,13 +117,15 @@ module Models =
           StartDate = domainModel.StartDate
           EndDate = domainModel.EndDate
           OpenForRegistrationTime = domainModel.OpenForRegistrationTime.Unwrap
-          ParticipantQuestion = domainModel.ParticipantQuestion.Unwrap }
+          ParticipantQuestion = domainModel.ParticipantQuestion.Unwrap
+          HasWaitingList = domainModel.HasWaitingList }
 
     let domainToViewWithEditInfo (event: Event): ViewModelWithEditToken =
         { Event = domainToView event
           EditToken = event.EditToken.ToString() }
 
-    let models: Models<DbModel, Event, ViewModel, WriteModel, Key, IQueryable<DbModel>> =
+    let models: Models<DbModel, Event, ViewModel, WriteModel, Key, IQueryable<DbModel>>
+        =
         { key = fun record -> record.Id
 
           table = fun ctx -> getEvents ctx :> IQueryable<DbModel>

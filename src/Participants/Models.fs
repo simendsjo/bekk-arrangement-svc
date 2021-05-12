@@ -31,6 +31,14 @@ type WriteModel =
       comment: string
       cancelUrlTemplate: string }
 
+type ParticipantsWithWaitingList =
+    { attendees: Participant seq
+      waitingList: Participant seq }
+
+type ParticipantViewModelsWithWaitingList =
+    { attendees: ViewModel list
+      waitingList: ViewModel list option }
+
 type Key = Guid * string
 
 type DbModel = ArrangementDbContext.``dbo.ParticipantsEntity``
@@ -50,7 +58,11 @@ module Models =
           RegistrationTime = TimeStamp dbRecord.RegistrationTime
           CancellationToken = dbRecord.CancellationToken }
 
-    let writeToDomain ((id, email): Key) (writeModel: WriteModel): Result<Participant, UserMessage list> =
+    let writeToDomain
+        ((id, email): Key)
+        (writeModel: WriteModel)
+        : Result<Participant, UserMessage list>
+        =
         Ok Participant.Create <*> Name.Parse writeModel.name
         <*> EmailAddress.Parse email <*> Comment.Parse writeModel.comment
         <*> (Event.Id id |> Ok) <*> (now() |> Ok) <*> (Guid.NewGuid() |> Ok)
@@ -70,11 +82,13 @@ module Models =
           EventId = participant.EventId.Unwrap.ToString()
           RegistrationTime = participant.RegistrationTime.Unwrap }
 
-    let domainToViewWithCancelInfo (participant: Participant): NewlyCreatedParticipationViewModel =
+    let domainToViewWithCancelInfo (participant: Participant): NewlyCreatedParticipationViewModel
+        =
         { Participant = domainToView participant
           CancellationToken = participant.CancellationToken.ToString() }
 
-    let models: Models<DbModel, Participant, ViewModel, WriteModel, Key, IQueryable<DbModel>> =
+    let models: Models<DbModel, Participant, ViewModel, WriteModel, Key, IQueryable<DbModel>>
+        =
         { key = fun record -> (record.EventId, record.Email)
 
           table = fun ctx -> getParticipants ctx :> IQueryable<DbModel>
