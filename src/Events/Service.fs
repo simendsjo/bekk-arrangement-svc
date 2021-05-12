@@ -16,25 +16,29 @@ module Service =
 
     let getEvents =
         result {
-            for events in repo.read do
-                return Seq.map models.dbToDomain events
+            let! events = repo.read
+            return Seq.map models.dbToDomain events
         }
 
     let getEventsOrganizedBy organizerEmail =
         result {
-            for events in repo.read do
+            let! events = repo.read
 
-                let eventsByOrganizer =
-                    queryEventsOrganizedBy organizerEmail events
-                return Seq.map models.dbToDomain eventsByOrganizer
+            let eventsByOrganizer =
+                queryEventsOrganizedBy organizerEmail events
+            return Seq.map models.dbToDomain eventsByOrganizer
         }
 
     let getEvent id =
         result {
-            for events in repo.read do
+            let! events = repo.read
 
-                let! event = events |> queryEventBy id
-                return models.dbToDomain event
+            let! event =
+                events
+                |> queryEventBy id
+                |> ignoreContext
+                
+            return models.dbToDomain event
         }
 
     let private createdEventMessage createEditUrl (event: Event) =
@@ -57,35 +61,44 @@ module Service =
 
     let private sendNewlyCreatedEventMail createEditUrl (event: Event) =
         result {
-            for config in getConfig >> Ok do
-                let mail =
-                    createEmail createEditUrl
-                        (EmailAddress config.noReplyEmail) event
-                yield Service.sendMail mail
+            let! config = getConfig >> Ok
+            let mail =
+                createEmail createEditUrl
+                    (EmailAddress config.noReplyEmail) event
+            yield Service.sendMail mail
         }
 
     let createEvent createEditUrl event =
         result {
-            for newEvent in repo.create event do
+            let! newEvent = repo.create event
 
-                yield sendNewlyCreatedEventMail createEditUrl newEvent
+            yield sendNewlyCreatedEventMail createEditUrl newEvent
 
-                return newEvent
+            return newEvent
         }
 
     let updateEvent id event =
         result {
-            for events in repo.read do
-                let! oldEvent = events |> queryEventBy id
-                return repo.update event oldEvent
+            let! events = repo.read
+            
+            let! oldEvent =
+                events
+                |> queryEventBy id
+                |> ignoreContext
+            
+            return repo.update event oldEvent
         }
 
     let deleteEvent id =
         result {
-            for events in repo.read do
+            let! events = repo.read
 
-                let! event = events |> queryEventBy id
-                repo.del event
+            let! event =
+                events
+                |> queryEventBy id
+                |> ignoreContext
+                
+            repo.del event
 
-                return eventSuccessfullyDeleted id
+            return eventSuccessfullyDeleted id
         }

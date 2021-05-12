@@ -13,22 +13,22 @@ module Authorization =
 
     let userHasCancellationToken (eventId, email) =
         result {
-            for cancellationToken in queryParam "cancellationToken" do
+            let! cancellationToken = queryParam "cancellationToken"
 
-                for participant in Service.getParticipant
-                                       (Event.Id eventId,
-                                        Email.EmailAddress email) do
+            let! participant = Service.getParticipant
+                                   (Event.Id eventId,
+                                    Email.EmailAddress email)
 
-                    let hasCorrectCancellationToken =
-                        cancellationToken =
-                            participant.CancellationToken.ToString()
+            let hasCorrectCancellationToken =
+                cancellationToken =
+                    participant.CancellationToken.ToString()
 
-                    if hasCorrectCancellationToken then
-                        return ()
-                    else
-                        return! [ AccessDenied
-                                      "You cannot delete your participation without your cancellation token" ]
-                                |> Error
+            if hasCorrectCancellationToken then
+                return ()
+            else
+                return! [ AccessDenied
+                              "You cannot delete your participation without your cancellation token" ]
+                        |> Error
         }
 
     let userCanCancel eventIdAndEmail =
@@ -38,13 +38,14 @@ module Authorization =
 
     let eventHasAvailableSpots eventId =
         result {
-            for event in Event.Service.getEvent (Event.Id eventId) do
-                let maxParticipants = event.MaxParticipants.Unwrap
-                for participants in Service.getParticipantsForEvent
-                                        (Event.Id eventId) do
-                    if maxParticipants = 0 || participants
-                                              |> Seq.length < maxParticipants then
-                        return ()
-                    else
-                        return! [ AccessDenied "The event is full" ] |> Error
+            let! event = Event.Service.getEvent (Event.Id eventId)
+            
+            let maxParticipants = event.MaxParticipants.Unwrap
+            let! participants = Service.getParticipantsForEvent (Event.Id eventId)
+            
+            if maxParticipants = 0 || participants |> Seq.length < maxParticipants
+            then
+                return ()
+            else
+                return! [ AccessDenied "The event is full" ] |> Error
         }

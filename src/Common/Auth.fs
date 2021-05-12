@@ -23,22 +23,20 @@ module Auth =
 
     let private isAuthorized permissionKey permission =
         result {
-            for user in (fun (ctx: HttpContext) -> ctx.User |> Ok) do
-                if user.HasClaim(permissionKey, permission) then
-                    return ()
-                else
-                    return! [ AccessDenied
-                                  (sprintf
-                                      "Missing permission <%s> in token at '%s'"
-                                       permission permissionKey) ] |> Error
+            let! user = (fun (ctx: HttpContext) -> ctx.User |> Ok)
+            if user.HasClaim(permissionKey, permission) then
+                return ()
+            else
+                return! [ AccessDenied
+                              (sprintf
+                                  "Missing permission <%s> in token at '%s'"
+                                   permission permissionKey) ] |> Error
         }
 
     let isAdmin =
         result {
-            for config in (fun (ctx: HttpContext) ->
-            ctx.GetService<AppConfig>() |> Ok) do
+            let! config = (fun (ctx: HttpContext) -> ctx.GetService<AppConfig>() |> Ok)
 
-                for isAdmin in isAuthorized config.permissionsAndClaimsKey
-                                   config.adminPermissionClaim do
-                    return isAdmin
+            let! isAdmin = isAuthorized config.permissionsAndClaimsKey config.adminPermissionClaim
+            return isAdmin
         }

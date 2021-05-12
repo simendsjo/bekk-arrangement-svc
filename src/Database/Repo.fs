@@ -58,14 +58,15 @@ module Repo =
         { create =
               fun createDomainModel ->
                   result {
-                      for row in models.create >> Ok do
-                          let! newThing = row
-                                          |> models.key
-                                          |> createDomainModel
-                          models.updateDbWithDomain row newThing |> ignore
-                          yield commitTransaction
-                          for newRow in getNewRow models.key row models.table do
-                              return models.dbToDomain newRow
+                      let! row = models.create >> Ok
+                      let! newThing = row
+                                      |> models.key
+                                      |> createDomainModel
+                                      |> ignoreContext
+                      models.updateDbWithDomain row newThing |> ignore
+                      yield commitTransaction
+                      let! newRow = getNewRow models.key row models.table
+                      return models.dbToDomain newRow
                   }
 
           read = models.table >> Ok

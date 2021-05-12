@@ -16,53 +16,53 @@ module Handlers =
 
     let registerForEvent (eventId, email) =
         result {
-            for writeModel in getBody<WriteModel> do
-                let redirectUrlTemplate =
-                    HttpUtility.UrlDecode writeModel.cancelUrlTemplate
+            let! writeModel = getBody<WriteModel>
+            let redirectUrlTemplate =
+                HttpUtility.UrlDecode writeModel.cancelUrlTemplate
 
-                let createCancelUrl (participant: Participant) =
-                    redirectUrlTemplate.Replace("{eventId}",
-                                                participant.EventId.Unwrap.ToString
-                                                    ())
-                                       .Replace("{email}",
-                                                participant.Email.Unwrap)
-                                       .Replace("{cancellationToken}",
-                                                participant.CancellationToken.ToString
-                                                    ())
+            let createCancelUrl (participant: Participant) =
+                redirectUrlTemplate.Replace("{eventId}",
+                                            participant.EventId.Unwrap.ToString
+                                                ())
+                                   .Replace("{email}",
+                                            participant.Email.Unwrap)
+                                   .Replace("{cancellationToken}",
+                                            participant.CancellationToken.ToString
+                                                ())
 
-                for event in Event.Service.getEvent (Event.Id eventId) do
-                    let createMailForParticipant =
-                        Service.createNewParticipantMail createCancelUrl event
+            let! event = Event.Service.getEvent (Event.Id eventId)
+            let createMailForParticipant =
+                Service.createNewParticipantMail createCancelUrl event
 
-                    for participant in Service.registerParticipant
-                                           createMailForParticipant
-                                           (fun _ ->
-                                               writeToDomain (eventId, email)
-                                                   writeModel) do
-                        return domainToViewWithCancelInfo participant
+            let! participant = Service.registerParticipant
+                                   createMailForParticipant
+                                   (fun _ ->
+                                       writeToDomain (eventId, email)
+                                           writeModel)
+            return domainToViewWithCancelInfo participant
         }
 
     let getParticipationsForParticipant email =
         result {
-            let! emailAddress = EmailAddress.Parse email
-            for participants in Service.getParticipationsForParticipant
-                                    emailAddress do
-                return Seq.map domainToView participants |> Seq.toList
+            let! emailAddress = EmailAddress.Parse email |> ignoreContext
+            let! participants = Service.getParticipationsForParticipant emailAddress
+            return Seq.map domainToView participants |> Seq.toList
         }
 
     let deleteParticipant (id, email) =
         result {
-            let! emailAddress = EmailAddress.Parse email
-            for event in Event.Service.getEvent (Event.Id id) do
-                for deleteResult in Service.deleteParticipant
-                                        (event, emailAddress) do
-                    return deleteResult
+            let! emailAddress = EmailAddress.Parse email |> ignoreContext
+            
+            let! event = Event.Service.getEvent (Event.Id id)
+            let! deleteResult = Service.deleteParticipant (event, emailAddress)
+            
+            return deleteResult
         }
 
     let getParticipantsForEvent id =
         result {
-            for participants in Service.getParticipantsForEvent (Event.Id id) do
-                return Seq.map domainToView participants |> Seq.toList
+            let! participants = Service.getParticipantsForEvent (Event.Id id)
+            return Seq.map domainToView participants |> Seq.toList
         }
 
     let routes: HttpHandler =

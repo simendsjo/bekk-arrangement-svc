@@ -74,54 +74,58 @@ module Service =
     let registerParticipant createMail registration =
         result {
 
-            for participant in repo.create registration do
+            let! participant = repo.create registration
 
-                yield Service.sendMail (createMail participant)
-                return participant
+            yield Service.sendMail (createMail participant)
+            return participant
         }
 
     let getParticipant (eventId, email) =
         result {
-            for participants in repo.read do
+            let! participants = repo.read
 
-                let! participant = participants
-                                   |> queryParticipantByKey (eventId, email)
+            let! participant =
+                participants
+                |> queryParticipantByKey (eventId, email)
+                |> ignoreContext
 
-                return participant
+            return participant
         }
 
     let getParticipantsForEvent (eventId: Event.Id) =
         result {
-            for participants in repo.read do
+            let! participants = repo.read
 
-                let attendees = participants |> queryParticipantsBy eventId
+            let attendees = participants |> queryParticipantsBy eventId
 
-                return Seq.map models.dbToDomain attendees
+            return Seq.map models.dbToDomain attendees
         }
 
     let getParticipationsForParticipant email =
         result {
-            for participants in repo.read do
-                let participantsByMail =
-                    participants |> queryParticipantionByParticipant email
+            let! participants = repo.read
+            
+            let participantsByMail =
+                participants |> queryParticipantionByParticipant email
 
-                return Seq.map models.dbToDomain participantsByMail
+            return Seq.map models.dbToDomain participantsByMail
         }
 
     let deleteParticipant (event, email) =
         result {
-            for participant in getParticipant (event.Id, email) do
+            let! participant = getParticipant (event.Id, email)
 
-                repo.del participant
+            repo.del participant
 
-                for config in getConfig >> Ok do
-                    let mail =
-                        createCancelledParticipationMail event
-                            (models.dbToDomain participant)
-                            (EmailAddress config.noReplyEmail)
-                    yield Service.sendMail mail
+            let! config = getConfig >> Ok
+            
+            let mail =
+                createCancelledParticipationMail event
+                    (models.dbToDomain participant)
+                    (EmailAddress config.noReplyEmail)
+            yield Service.sendMail mail
 
-                    return participationSuccessfullyDeleted (event.Id, email)
+            return participationSuccessfullyDeleted (event.Id, email)
         }
 
     let sendCancellationMailToParticipants
