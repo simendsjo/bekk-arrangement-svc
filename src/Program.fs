@@ -19,6 +19,8 @@ open Logging
 open SendgridApiModels
 open Giraffe.Serialization
 open Thoth.Json.Net
+open System.Data.SqlClient
+open System.Data
 
 let webApp =
     choose
@@ -46,8 +48,9 @@ let configureApp (app: IApplicationBuilder) =
 let configureServices (services: IServiceCollection) =
     services.AddCors() |> ignore
     services.AddGiraffe() |> ignore
-    let dbContext = createDbContext configuration.["ConnectionStrings:EventDb"]
-    services.AddSingleton<ArrangementDbContext>(dbContext) |> ignore
+    let connection: IDbConnection = 
+        new SqlConnection(configuration.["ConnectionStrings:EventDb"]) :> IDbConnection
+    services.AddSingleton<IDbConnection>(connection) |> ignore
     services.AddSingleton<SendgridOptions>
         ({ ApiKey = configuration.["Sendgrid:Apikey"]
            SendgridUrl = configuration.["Sendgrid:SendgridUrl"] })
@@ -67,7 +70,6 @@ let configureServices (services: IServiceCollection) =
               |> Seq.toList
               |> List.map (fun s -> s.Trim()) }
     services.AddSingleton<AppConfig> config |> ignore // For å sende mail: bytt ut = med <>
-    dbContext.SaveContextSchema() |> ignore
     services.AddAuthentication(fun options ->
             options.DefaultAuthenticateScheme <-
                 JwtBearerDefaults.AuthenticationScheme

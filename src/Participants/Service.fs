@@ -5,16 +5,14 @@ open ArrangementService
 open ResultComputationExpression
 open ArrangementService.Email
 open CalendarInvite
-open Queries
 open UserMessages
 open Models
 open ArrangementService.DomainModels
 open DateTime
 open Http
+open Queries
 
 module Service =
-
-    let repo = Repo.from models
 
     let private inviteMessage redirectUrl (event: Event) =
         [ "Hei! 😄"
@@ -116,7 +114,7 @@ module Service =
     let registerParticipant createMail registration =
         result {
 
-            let! participant = repo.create registration
+            let! participant = createParticipant registration >> Ok
 
             yield Service.sendMail (createMail participant)
             return participant
@@ -124,7 +122,7 @@ module Service =
 
     let getParticipant (eventId, email) =
         result {
-            let! participants = repo.read
+            let! participants = getParticipants >> Ok
 
             let! participant =
                 participants
@@ -136,12 +134,12 @@ module Service =
 
     let getParticipantsForEvent (event: Event): Handler<ParticipantsWithWaitingList> =
         result {
-            let! participants = repo.read
+            let! participants = getParticipants >> Ok
 
             let participantsForEvent =
                 participants
                 |> queryParticipantsBy event.Id
-                |> Seq.map models.dbToDomain
+                |> Seq.map dbToDomain
                 |> Seq.sortBy
                     (fun participant -> participant.RegistrationTime)
 
@@ -156,12 +154,12 @@ module Service =
 
     let getParticipationsForParticipant email =
         result {
-            let! participants = repo.read
+            let! participants = getParticipants >> Ok
             
             let participantsByMail =
                 participants |> queryParticipantionByParticipant email
 
-            return Seq.map models.dbToDomain participantsByMail
+            return Seq.map dbToDomain participantsByMail
         }
 
     let private sendMailToFirstPersonOnWaitingList
@@ -209,7 +207,7 @@ module Service =
             yield sendParticipantCancelMails event email
             let! participant = getParticipant (event.Id, email)
 
-            repo.del participant
+            do! deleteParticipant participant
 
             return participationSuccessfullyDeleted (event.Id, email)
         }

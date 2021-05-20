@@ -1,17 +1,68 @@
 namespace ArrangementService.Participant
 
-open UserMessages
+open System
 open System.Linq
+open Giraffe
+
+
+open UserMessages
+open ArrangementService.Email
+open ArrangementService.DomainModels
+open Microsoft.AspNetCore.Http
+open System.Data
+open System.Collections.Generic
+open Dapper.FSharp
+open Dapper.FSharp.MSSQL
 
 open ArrangementService
 
 open ArrangementService.Email
 open ResultComputationExpression
+open Microsoft.AspNetCore.Http
+open ArrangementService.UserMessage
 
 module Queries =
 
+    // TODO: Fix
+    // Denne leser ut all dataen
+    // og linq metodene under queryer
+    // Super slow, skriv om
+    let getParticipants (ctx: HttpContext): DbModel seq =
+        let foo = ctx.GetService<IDbConnection>()
+        select { table "Participants" }
+        |> foo.SelectAsync<DbModel>
+        |> Async.AwaitTask
+        |> Async.RunSynchronously
+
+    // TODO: Fix
+    // Denne trenger litt kjærlighet
+    // Returnerer nå bare det man får inn
+    let createParticipant (participant: DbModel) (ctx: HttpContext): DbModel =
+        let foo = ctx.GetService<IDbConnection>()
+        insert { table "Participants"
+                 value participant 
+               }
+        |> foo.InsertAsync
+        |> Async.AwaitTask
+        |> Async.RunSynchronously
+        |> ignore
+        participant
+
+    // TODO: Fix
+    // skal vi returnere noe? Fire or forget
+    let deleteParticipant (participant: DbModel) (ctx: HttpContext): Result<unit, UserMessage list> =
+        let foo = ctx.GetService<IDbConnection>()
+        delete { table "Participants"
+                 where (eq "EventId" participant.EventId + eq "Email" participant.Email) 
+               }
+        |> foo.DeleteAsync
+        |> Async.AwaitTask
+        |> Async.RunSynchronously
+        |> ignore
+        Ok ()
+
     let queryParticipantByKey (id: Event.Id, email: EmailAddress)
-        (participants: DbModel IQueryable) =
+        (participants: DbModel seq) =
         query {
             for participant in participants do
                 where
@@ -23,7 +74,7 @@ module Queries =
         |> withError [ participationNotFound (id, email) ]
 
     let queryParticipantionByParticipant (email: EmailAddress)
-        (participants: DbModel IQueryable) =
+        (participants: DbModel seq) =
         query {
             for participant in participants do
                 where (participant.Email = email.Unwrap)
@@ -31,7 +82,7 @@ module Queries =
         }
 
     let queryParticipantsBy (eventId: Event.Id)
-        (participants: DbModel IQueryable) =
+        (participants: DbModel seq) =
         query {
             for participant in participants do
                 where (participant.EventId = eventId.Unwrap)

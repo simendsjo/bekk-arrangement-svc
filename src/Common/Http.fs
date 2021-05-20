@@ -20,10 +20,13 @@ module Http =
     let handle (endpoint: Handler<'t>) (next: HttpFunc) (context: HttpContext) =
         match endpoint context with
         | Ok result ->
-            commitTransaction context |> ignore
+            // TODO: Sjekk
+            // at dette ikke trengs
+            // commitTransaction context |> ignore
             json result next context
         | Error errorMessage ->
-            rollbackTransaction context |> ignore
+            // TODO: SAME AS ABOVE
+            // rollbackTransaction context |> ignore
             convertUserMessagesToHttpError errorMessage next context
 
     let getBody<'WriteModel> (context: HttpContext): Result<'WriteModel, UserMessage list>

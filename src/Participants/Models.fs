@@ -8,19 +8,30 @@ open ArrangementService
 
 open TimeStamp
 open Validation
-open Database
 open Repo
 open UserMessage
 open ArrangementService.Email
 open ArrangementService.DomainModels
 open Microsoft.AspNetCore.Http
+open System.Data
+open System.Collections.Generic
+
+type DbModel =
+  { Name: string
+    Email: string
+    Comment: string
+    RegistrationTime: int64
+    EventId: Guid
+    CancellationToken: Guid
+  }
 
 type ViewModel =
     { Name: string
       Email: string
       Comment: string
       EventId: string
-      RegistrationTime: int64 }
+      RegistrationTime: int64
+    }
 
 type NewlyCreatedParticipationViewModel =
     { Participant: ViewModel
@@ -41,14 +52,7 @@ type ParticipantViewModelsWithWaitingList =
 
 type Key = Guid * string
 
-type DbModel = ArrangementDbContext.``dbo.ParticipantsEntity``
-
-type TableModel = ArrangementDbContext.dboSchema.``dbo.Participants``
-
 module Models =
-
-    let getParticipants (ctx: HttpContext): TableModel =
-        ctx.GetService<ArrangementDbContext>().Dbo.Participants
 
     let dbToDomain (dbRecord: DbModel): Participant =
         { Name = Name dbRecord.Name
@@ -63,17 +67,13 @@ module Models =
         (writeModel: WriteModel)
         : Result<Participant, UserMessage list>
         =
-        Ok Participant.Create <*> Name.Parse writeModel.name
-        <*> EmailAddress.Parse email <*> Comment.Parse writeModel.comment
-        <*> (Event.Id id |> Ok) <*> (now() |> Ok) <*> (Guid.NewGuid() |> Ok)
-
-    let updateDbWithDomain (db: DbModel) (participant: Participant) =
-        db.Name <- participant.Name.Unwrap
-        db.Email <- participant.Email.Unwrap
-        db.Comment <- participant.Comment.Unwrap
-        db.EventId <- participant.EventId.Unwrap
-        db.RegistrationTime <- participant.RegistrationTime.Unwrap
-        db
+          Ok Participant.Create 
+          <*> Name.Parse writeModel.name
+          <*> EmailAddress.Parse email 
+          <*> Comment.Parse writeModel.comment
+          <*> (Event.Id id |> Ok) 
+          <*> (now() |> Ok) 
+          <*> (Guid.NewGuid() |> Ok)
 
     let domainToView (participant: Participant): ViewModel =
         { Name = participant.Name.Unwrap
@@ -86,14 +86,3 @@ module Models =
         =
         { Participant = domainToView participant
           CancellationToken = participant.CancellationToken.ToString() }
-
-    let models: Models<DbModel, Participant, ViewModel, WriteModel, Key, IQueryable<DbModel>>
-        =
-        { key = fun record -> (record.EventId, record.Email)
-
-          table = fun ctx -> getParticipants ctx :> IQueryable<DbModel>
-          create = fun ctx -> (getParticipants ctx).Create()
-          delete = fun record -> record.Delete()
-
-          dbToDomain = dbToDomain
-          updateDbWithDomain = updateDbWithDomain }
