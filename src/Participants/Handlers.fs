@@ -15,6 +15,8 @@ open ArrangementService.Config
 
 module Handlers =
 
+    // TODO: Figure out
+    // Kvifor er ikkje email brukt her?
     let registerForEvent (eventId, email) =
         result {
             let! writeModel = getBody<WriteModel>
@@ -44,12 +46,7 @@ module Handlers =
                     createCancelUrl event isWaitlisted
                     (EmailAddress config.noReplyEmail)
 
-            let! participant = Service.registerParticipant
-                                   createMailForParticipant
-                                   (fun _ ->
-                                       writeToDomain
-                                           (eventId, email)
-                                           writeModel)
+            let! participant = Service.registerParticipant createMailForParticipant writeModel
             return domainToViewWithCancelInfo participant
         }
 

@@ -10,7 +10,6 @@ open Models
 open ArrangementService.DomainModels
 open DateTime
 open Http
-open Queries
 
 module Service =
 
@@ -114,7 +113,7 @@ module Service =
     let registerParticipant createMail registration =
         result {
 
-            let! participant = createParticipant registration >> Ok
+            let! participant = Queries.createParticipant registration
 
             yield Service.sendMail (createMail participant)
             return participant
@@ -122,11 +121,11 @@ module Service =
 
     let getParticipant (eventId, email) =
         result {
-            let! participants = getParticipants >> Ok
+            let! participants = Queries.getParticipants >> Ok
 
             let! participant =
                 participants
-                |> queryParticipantByKey (eventId, email)
+                |> Queries.queryParticipantByKey (eventId, email)
                 |> ignoreContext
 
             return participant
@@ -134,11 +133,11 @@ module Service =
 
     let getParticipantsForEvent (event: Event): Handler<ParticipantsWithWaitingList> =
         result {
-            let! participants = getParticipants >> Ok
+            let! participants = Queries.getParticipants >> Ok
 
             let participantsForEvent =
                 participants
-                |> queryParticipantsBy event.Id
+                |> Queries.queryParticipantsBy event.Id
                 |> Seq.map dbToDomain
                 |> Seq.sortBy
                     (fun participant -> participant.RegistrationTime)
@@ -154,10 +153,10 @@ module Service =
 
     let getParticipationsForParticipant email =
         result {
-            let! participants = getParticipants >> Ok
+            let! participants = Queries.getParticipants >> Ok
             
             let participantsByMail =
-                participants |> queryParticipantionByParticipant email
+                participants |> Queries.queryParticipantionByParticipant email
 
             return Seq.map dbToDomain participantsByMail
         }
@@ -207,7 +206,7 @@ module Service =
             yield sendParticipantCancelMails event email
             let! participant = getParticipant (event.Id, email)
 
-            do! deleteParticipant participant
+            do! Queries.deleteParticipant participant
 
             return participationSuccessfullyDeleted (event.Id, email)
         }

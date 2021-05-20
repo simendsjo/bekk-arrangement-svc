@@ -3,11 +3,6 @@ namespace ArrangementService.Participant
 open System
 open System.Linq
 open Giraffe
-
-
-open UserMessages
-open ArrangementService.Email
-open ArrangementService.DomainModels
 open Microsoft.AspNetCore.Http
 open System.Data
 open System.Collections.Generic
@@ -15,11 +10,11 @@ open Dapper.FSharp
 open Dapper.FSharp.MSSQL
 
 open ArrangementService
-
 open ArrangementService.Email
+open ArrangementService.DomainModels
 open ResultComputationExpression
-open Microsoft.AspNetCore.Http
 open ArrangementService.UserMessage
+open UserMessages
 
 module Queries =
 
@@ -37,16 +32,18 @@ module Queries =
     // TODO: Fix
     // Denne trenger litt kjærlighet
     // Returnerer nå bare det man får inn
-    let createParticipant (participant: DbModel) (ctx: HttpContext): DbModel =
+    let createParticipant (participant: WriteModel) (ctx: HttpContext): Result<Participant, UserMessage list> =
         let foo = ctx.GetService<IDbConnection>()
-        insert { table "Participants"
-                 value participant 
-               }
-        |> foo.InsertAsync
-        |> Async.AwaitTask
-        |> Async.RunSynchronously
-        |> ignore
-        participant
+        let inserted =
+            insert { table "Participants"
+                     value participant
+                   }
+            |> foo.InsertOutputAsync<WriteModel, {| EventId: string ; Email: string |}>
+            |> Async.AwaitTask
+            |> Async.RunSynchronously
+        let id = inserted |> Seq.head |> fun x -> (Guid.Parse x.EventId, x.Email)
+        Models.writeToDomain id participant
+
 
     // TODO: Fix
     // skal vi returnere noe? Fire or forget

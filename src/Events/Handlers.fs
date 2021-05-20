@@ -15,7 +15,7 @@ open System.Web
 
 module Handlers =
 
-    let getEvents =
+    let getEvents: Handler<ViewModel list> =
         result {
             let! events = Service.getEvents
             return Seq.map domainToView events |> Seq.toList
@@ -70,7 +70,7 @@ module Handlers =
                                    .Replace("{editToken}",
                                             event.EditToken.ToString())
 
-            let! newEvent = Service.createEvent createEditUrl (fun id -> writeToDomain id writeModel)
+            let! newEvent = Service.createEvent createEditUrl writeModel
 
             return domainToViewWithEditInfo newEvent
         }

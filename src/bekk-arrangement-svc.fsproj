@@ -7,30 +7,6 @@
     <OutputType>Exe</OutputType>
     <EnableDefaultContentItems>false</EnableDefaultContentItems>
   </PropertyGroup>
-  <PropertyGroup>
-    <IsOSX Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX)))' == 'true'">true</IsOSX>
-    <IsLinux Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' == 'true'">true</IsLinux>
-  </PropertyGroup>
-  
-   <PropertyGroup Condition="'$(IsLinux)' == 'true' AND Exists('/usr/bin/fsharpc')">
-    <DisableAutoSetFscCompilerPath>true</DisableAutoSetFscCompilerPath>
-    <DotnetFscCompilerPath></DotnetFscCompilerPath>
-    <FscToolPath>/usr/bin</FscToolPath>
-    <FscToolExe>fsharpc</FscToolExe>
-  </PropertyGroup>
-
-    <ItemGroup><!-- Mono fix -->
-    <Reference Condition="'$(IsWindows)' != 'true'" Include="FSharp.Data.SqlProvider">
-      <HintPath>../../packages/SQLProvider/lib/net451/FSharp.Data.SqlProvider.dll</HintPath>
-    </Reference>
-  </ItemGroup>
-
-  <PropertyGroup Condition="'$(IsOSX)' == 'true'">
-   <DisableAutoSetFscCompilerPath>true</DisableAutoSetFscCompilerPath>
-   <DotnetFscCompilerPath></DotnetFscCompilerPath>
-   <FscToolPath>/Library/Frameworks/Mono.framework/Versions/Current/Commands</FscToolPath>
-   <FscToolExe>fsharpc</FscToolExe>
- </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="../migration/migrator.csproj">

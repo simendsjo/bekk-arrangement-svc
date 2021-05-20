@@ -3,6 +3,7 @@ namespace ArrangementService.Event
 open System
 open System.Linq
 open Giraffe
+open Microsoft.AspNetCore.Http
 
 open ArrangementService
 
@@ -14,11 +15,24 @@ open Utils
 open UserMessage
 open ArrangementService.Email
 open ArrangementService.DomainModels
-open Microsoft.AspNetCore.Http
 
-type TableModel = ArrangementDbContext.dboSchema.``dbo.Events``
-
-type DbModel = ArrangementDbContext.``dbo.EventsEntity``
+type DbModel = 
+    { Id: Guid
+      Title: string
+      Description: string
+      Location: string
+      OrganizerName: string
+      OrganizerEmail: string
+      MaxParticipants: int
+      StartDate: DateTime
+      EndDate: DateTime
+      StartTime: TimeSpan
+      EndTime: TimeSpan
+      OpenForRegistrationTime: int64
+      ParticipantQuestion: string
+      HasWaitingList: bool 
+      EditToken: Guid
+    }
 
 type ViewModel =
     { Id: Guid
@@ -32,11 +46,13 @@ type ViewModel =
       EndDate: DateTimeCustom
       OpenForRegistrationTime: int64
       ParticipantQuestion: string
-      HasWaitingList: bool }
+      HasWaitingList: bool 
+    }
 
 type ViewModelWithEditToken =
     { Event: ViewModel
-      EditToken: string }
+      EditToken: string
+    }
 
 type WriteModel =
     { Title: string
@@ -50,19 +66,19 @@ type WriteModel =
       OpenForRegistrationTime: int64
       editUrlTemplate: string
       ParticipantQuestion: string
-      HasWaitingList: bool }
+      HasWaitingList: bool 
+    }
 
 module Models =
-
-    let getEvents (ctx: HttpContext): TableModel =
-        ctx.GetService<ArrangementDbContext>().Dbo.Events
 
     let writeToDomain
         (id: Key)
         (writeModel: WriteModel)
         : Result<Event, UserMessage list>
         =
-        Ok Event.Create <*> (Id id |> Ok) <*> Title.Parse writeModel.Title
+        Ok Event.Create 
+        <*> (Id id |> Ok) 
+        <*> Title.Parse writeModel.Title
         <*> Description.Parse writeModel.Description
         <*> Location.Parse writeModel.Location
         <*> OrganizerName.Parse writeModel.OrganizerName
@@ -90,22 +106,6 @@ module Models =
           ParticipantQuestion = ParticipantQuestion dbRecord.ParticipantQuestion
           HasWaitingList = dbRecord.HasWaitingList }
 
-    let updateDbWithDomain (db: DbModel) (event: Event) =
-        db.Title <- event.Title.Unwrap
-        db.Description <- event.Description.Unwrap
-        db.Location <- event.Location.Unwrap
-        db.OrganizerName <- event.OrganizerName.Unwrap
-        db.OrganizerEmail <- event.OrganizerEmail.Unwrap
-        db.MaxParticipants <- event.MaxParticipants.Unwrap
-        db.StartDate <- customToDateTime event.StartDate.Date
-        db.StartTime <- customToTimeSpan event.StartDate.Time
-        db.EndDate <- customToDateTime event.EndDate.Date
-        db.EndTime <- customToTimeSpan event.EndDate.Time
-        db.OpenForRegistrationTime <- event.OpenForRegistrationTime.Unwrap
-        db.ParticipantQuestion <- event.ParticipantQuestion.Unwrap
-        db.HasWaitingList <- event.HasWaitingList
-        db
-
     let domainToView (domainModel: Event): ViewModel =
         { Id = domainModel.Id.Unwrap
           Title = domainModel.Title.Unwrap
@@ -123,14 +123,3 @@ module Models =
     let domainToViewWithEditInfo (event: Event): ViewModelWithEditToken =
         { Event = domainToView event
           EditToken = event.EditToken.ToString() }
-
-    let models: Models<DbModel, Event, ViewModel, WriteModel, Key, IQueryable<DbModel>>
-        =
-        { key = fun record -> record.Id
-
-          table = fun ctx -> getEvents ctx :> IQueryable<DbModel>
-          create = fun ctx -> (getEvents ctx).Create()
-          delete = fun record -> record.Delete()
-
-          dbToDomain = dbToDomain
-          updateDbWithDomain = updateDbWithDomain }
