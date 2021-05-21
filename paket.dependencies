@@ -1,0 +1,17 @@
+source https://api.nuget.org/v3/index.json
+
+nuget Dapper.Fsharp
+nuget FSharp.Data
+nuget Giraffe
+nuget Giraffe.SerilogExtensions
+nuget Serilog
+nuget Serilog.Formatting.Compact
+nuget Serilog.Sinks.Console
+nuget Thoth.Json.Giraffe 3.1.0
+nuget Microsoft.AspNetCore
+nuget Microsoft.AspNetCore.Authentication.JwtBearer
+nuget Microsoft.AspNetCore.Cors
+nuget Microsoft.Extensions.Configuration.EnvironmentVariables
+nuget Microsoft.Extensions.Configuration.Json
+nuget Newtonsoft.Json 12.0.3
+nuget FifteenBelow.Json.Core

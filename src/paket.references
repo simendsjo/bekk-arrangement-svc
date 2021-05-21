@@ -1,0 +1,15 @@
+Dapper.Fsharp
+FSharp.Data
+Giraffe
+Giraffe.SerilogExtensions
+Serilog
+Serilog.Formatting.Compact
+Serilog.Sinks.Console
+Thoth.Json.Giraffe
+Microsoft.AspNetCore
+Microsoft.AspNetCore.Authentication.JwtBearer
+Microsoft.AspNetCore.Cors
+Microsoft.Extensions.Configuration.EnvironmentVariables
+Microsoft.Extensions.Configuration.Json
+Newtonsoft.Json
+FifteenBelow.Json.Core
