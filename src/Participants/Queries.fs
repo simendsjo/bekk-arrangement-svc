@@ -24,24 +24,18 @@ module Queries =
     // og linq metodene under queryer
     // Super slow, skriv om
     let getParticipants (ctx: HttpContext): DbModel seq =
-        let dbConnection = (getConfig ctx).currentConnection
         select { table "Participants" }
-        |> dbConnection.SelectAsync<DbModel>
-        |> Async.AwaitTask
-        |> Async.RunSynchronously
+        |> Database.runSelectQuery<DbModel> ctx
 
     // TODO: Fix
     // Denne trenger litt kjærlighet
     // Returnerer nå bare det man får inn
     let createParticipant (participant: WriteModel) (ctx: HttpContext): Result<Participant, UserMessage list> =
-        let dbConnection = (getConfig ctx).currentConnection
         let inserted =
             insert { table "Participants"
                      value participant
                    }
-            |> dbConnection.InsertOutputAsync<WriteModel, {| EventId: string ; Email: string |}>
-            |> Async.AwaitTask
-            |> Async.RunSynchronously
+            |> Database.runInsertQuery<WriteModel, {| EventId: string ; Email: string |}> ctx
         let id = inserted |> Seq.head |> fun x -> (Guid.Parse x.EventId, x.Email)
         Models.writeToDomain id participant
 
@@ -49,13 +43,10 @@ module Queries =
     // TODO: Fix
     // skal vi returnere noe? Fire or forget
     let deleteParticipant (participant: DbModel) (ctx: HttpContext): Result<unit, UserMessage list> =
-        let dbConnection = (getConfig ctx).currentConnection
         delete { table "Participants"
                  where (eq "EventId" participant.EventId + eq "Email" participant.Email) 
                }
-        |> dbConnection.DeleteAsync
-        |> Async.AwaitTask
-        |> Async.RunSynchronously
+        |> Database.runDeleteQuery ctx
         |> ignore
         Ok ()
 

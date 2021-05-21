@@ -14,32 +14,6 @@ open ResultComputationExpression
 open ArrangementService.Config
 
 module Queries =
-
-    let runSelectQuery (ctx: HttpContext) query =
-        let config = getConfig ctx
-        config.currentConnection.SelectAsync<DbModel>(query, config.currentTransaction)
-        |> Async.AwaitTask
-        |> Async.RunSynchronously
-
-    let runUpdateQuery (ctx: HttpContext) query =
-        let config = getConfig ctx
-        config.currentConnection.UpdateAsync(query, config.currentTransaction)
-        |> Async.AwaitTask
-        |> Async.RunSynchronously
-
-    let runDeleteQuery (ctx: HttpContext) query =
-        let config = getConfig ctx
-        config.currentConnection.DeleteAsync(query, config.currentTransaction)
-        |> Async.AwaitTask
-        |> Async.RunSynchronously
-
-    let runInsertQuery (ctx: HttpContext) query =
-        let config = getConfig ctx
-        config.currentConnection.InsertOutputAsync<WriteModel, {| Id: string |}>(query, config.currentTransaction)
-        |> Async.AwaitTask
-        |> Async.RunSynchronously
-        
-
     // TODO: Fix
     // Samme som i Participants
     let createEvent (event: WriteModel) (ctx: HttpContext) =
@@ -47,19 +21,19 @@ module Queries =
             insert { table "Events"
                      value event
                    }
-            |> runInsertQuery ctx
+            |> Database.runInsertQuery<WriteModel, {| Id: string |}> ctx
         let id = inserted |> Seq.head |> fun x -> x.Id
         Models.writeToDomain (Guid.Parse id) event 
 
     let getEvents (ctx: HttpContext): DbModel seq =
         select { table "Events "}
-        |> runSelectQuery ctx
+        |> Database.runSelectQuery<DbModel> ctx
 
     let deleteEvent id (ctx: HttpContext) =
         delete { table "Events" 
                  where (eq "Id" id)
                }
-        |> runDeleteQuery ctx
+        |> Database.runDeleteQuery ctx
         |> ignore
         Ok ()
 
@@ -68,7 +42,7 @@ module Queries =
                  set newEvent
                  where (eq "Id" id)
                }
-        |> runUpdateQuery ctx
+        |> Database.runUpdateQuery ctx
         |> ignore
         Ok ()
              
