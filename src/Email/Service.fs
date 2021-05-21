@@ -25,7 +25,7 @@ module Service =
                              (options.SendgridUrl, httpMethod = "POST",
                               headers =
                                   [ "Authorization",
-                                    (sprintf "Bearer %s" options.ApiKey)
+                                    $"Bearer {options.ApiKey}"
                                     "Content-Type", "application/json" ],
                               body = BinaryUpload byteBody)
                 ()

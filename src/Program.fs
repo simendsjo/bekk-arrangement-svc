@@ -11,16 +11,15 @@ open Microsoft.AspNetCore.Cors.Infrastructure
 open Microsoft.AspNetCore.Authentication.JwtBearer
 open Microsoft.IdentityModel.Tokens
 open Microsoft.AspNetCore.Hosting
+open Giraffe.Serialization
+open Thoth.Json.Net
+open System.Data
+open System.Data.SqlClient
 
 open ArrangementService
 open migrator
-open Database
 open Logging
 open SendgridApiModels
-open Giraffe.Serialization
-open Thoth.Json.Net
-open System.Data.SqlClient
-open System.Data
 
 let webApp =
     choose
@@ -56,11 +55,8 @@ let configureServices (services: IServiceCollection) =
            SendgridUrl = configuration.["Sendgrid:SendgridUrl"] })
     |> ignore
     let config =
-        { isProd =
-              configuration.["Auth0:Scheduled_Tasks_Audience"] =
-                  "https://api.bekk.no"
-          permissionsAndClaimsKey =
-              configuration.["Auth0:Permission_Claim_Type"]
+        { isProd = configuration.["Auth0:Scheduled_Tasks_Audience"] = "https://api.bekk.no"
+          permissionsAndClaimsKey = configuration.["Auth0:Permission_Claim_Type"]
           userIdClaimsKey = configuration.["Auth0:UserId_Claim"]
           adminPermissionClaim = configuration.["Auth0:Admin_Claim"]
           readPermissionClaim = configuration.["Auth0:Read_Claim"]

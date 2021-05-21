@@ -23,9 +23,9 @@ module Queries =
     // og linq metodene under queryer
     // Super slow, skriv om
     let getParticipants (ctx: HttpContext): DbModel seq =
-        let foo = ctx.GetService<IDbConnection>()
+        let dbConnection = ctx.GetService<IDbConnection>()
         select { table "Participants" }
-        |> foo.SelectAsync<DbModel>
+        |> dbConnection.SelectAsync<DbModel>
         |> Async.AwaitTask
         |> Async.RunSynchronously
 
@@ -33,12 +33,12 @@ module Queries =
     // Denne trenger litt kjærlighet
     // Returnerer nå bare det man får inn
     let createParticipant (participant: WriteModel) (ctx: HttpContext): Result<Participant, UserMessage list> =
-        let foo = ctx.GetService<IDbConnection>()
+        let dbConnection = ctx.GetService<IDbConnection>()
         let inserted =
             insert { table "Participants"
                      value participant
                    }
-            |> foo.InsertOutputAsync<WriteModel, {| EventId: string ; Email: string |}>
+            |> dbConnection.InsertOutputAsync<WriteModel, {| EventId: string ; Email: string |}>
             |> Async.AwaitTask
             |> Async.RunSynchronously
         let id = inserted |> Seq.head |> fun x -> (Guid.Parse x.EventId, x.Email)
@@ -48,11 +48,11 @@ module Queries =
     // TODO: Fix
     // skal vi returnere noe? Fire or forget
     let deleteParticipant (participant: DbModel) (ctx: HttpContext): Result<unit, UserMessage list> =
-        let foo = ctx.GetService<IDbConnection>()
+        let dbConnection = ctx.GetService<IDbConnection>()
         delete { table "Participants"
                  where (eq "EventId" participant.EventId + eq "Email" participant.Email) 
                }
-        |> foo.DeleteAsync
+        |> dbConnection.DeleteAsync
         |> Async.AwaitTask
         |> Async.RunSynchronously
         |> ignore

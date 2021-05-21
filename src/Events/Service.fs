@@ -39,15 +39,14 @@ module Service =
 
     let private createdEventMessage createEditUrl (event: Event) =
         [ "Hei! 😄"
-          sprintf "Du har nå opprettet %s." event.Title.Unwrap
-          sprintf "Her er en unik lenke for å endre arrangementet: %s."
-              (createEditUrl event)
+          $"Du har nå opprettet {event.Title.Unwrap}."
+          $"Her er en unik lenke for å endre arrangementet: {createEditUrl event}."
           "Ikke del denne med andre🕵️" ]
         |> String.concat "\n"
 
     let private createEmail createEditUrl (event: Event) =
         let message = createdEventMessage createEditUrl event
-        { Subject = sprintf "Du opprettet %s" event.Title.Unwrap
+        { Subject = $"Du opprettet {event.Title.Unwrap}"
           Message = message
           To = event.OrganizerEmail
           CalendarInvite = None }

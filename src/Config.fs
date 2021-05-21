@@ -10,8 +10,12 @@ type AppConfig =
       adminPermissionClaim: string
       readPermissionClaim: string
       sendMailInDevEnvWhiteList: string list
-      noReplyEmail: string }
+      noReplyEmail: string
+    }
 
 module Config =
     let getConfig (context: HttpContext) =
         context.GetService<AppConfig>()
+
+
+

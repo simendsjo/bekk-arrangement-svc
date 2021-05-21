@@ -27,10 +27,7 @@ module Auth =
             if user.HasClaim(permissionKey, permission) then
                 return ()
             else
-                return! [ AccessDenied
-                              (sprintf
-                                  "Missing permission <%s> in token at '%s'"
-                                   permission permissionKey) ] |> Error
+                return! [ AccessDenied $"Missing permission <{permission}> in token at '{permissionKey}'" ] |> Error
         }
 
     let isAdmin =

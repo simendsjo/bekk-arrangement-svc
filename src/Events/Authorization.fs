@@ -24,10 +24,7 @@ module Authorization =
             if hasCorrectEditToken then
                 return ()
             else
-                return! [ AccessDenied
-                              (sprintf
-                                  "You are trying to edit an event (id %O) which you did not create"
-                                   eventId) ] |> Error
+                return! [ AccessDenied $"You are trying to edit an event (id {eventId}) which you did not create"] |> Error
         }
 
     let userCanEditEvent eventId =
@@ -45,10 +42,7 @@ module Authorization =
             if openDateTime <= DateTimeOffset.Now then
                 return ()
             else
-                return! [ AccessDenied
-                              (sprintf
-                                  "Arrangementet åpner for påmelding %A"
-                                   openDateTime) ] |> Error
+                return! [ AccessDenied $"Arrangementet åpner for påmelding {openDateTime}" ] |> Error
         }
 
     let eventHasNotPassed eventId =
@@ -57,7 +51,5 @@ module Authorization =
             if event.EndDate > now() then
                 return ()
             else
-                return! [ AccessDenied
-                              "Arrangementet har allerede funnet sted" ]
-                        |> Error
+                return! [ AccessDenied "Arrangementet har allerede funnet sted" ] |> Error
         }

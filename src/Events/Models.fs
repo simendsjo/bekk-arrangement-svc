@@ -8,8 +8,6 @@ open Microsoft.AspNetCore.Http
 open ArrangementService
 
 open Validation
-open Database
-open Repo
 open DateTime
 open Utils
 open UserMessage
@@ -104,7 +102,8 @@ module Models =
               OpenForRegistrationTime dbRecord.OpenForRegistrationTime
           EditToken = dbRecord.EditToken
           ParticipantQuestion = ParticipantQuestion dbRecord.ParticipantQuestion
-          HasWaitingList = dbRecord.HasWaitingList }
+          HasWaitingList = dbRecord.HasWaitingList
+        }
 
     let domainToView (domainModel: Event): ViewModel =
         { Id = domainModel.Id.Unwrap
@@ -118,8 +117,10 @@ module Models =
           EndDate = domainModel.EndDate
           OpenForRegistrationTime = domainModel.OpenForRegistrationTime.Unwrap
           ParticipantQuestion = domainModel.ParticipantQuestion.Unwrap
-          HasWaitingList = domainModel.HasWaitingList }
+          HasWaitingList = domainModel.HasWaitingList 
+        }
 
     let domainToViewWithEditInfo (event: Event): ViewModelWithEditToken =
         { Event = domainToView event
-          EditToken = event.EditToken.ToString() }
+          EditToken = event.EditToken.ToString()
+        }

@@ -16,43 +16,34 @@ module Service =
     let private inviteMessage redirectUrl (event: Event) =
         [ "Hei! 😄"
           ""
-          sprintf "Du er nå påmeldt %s." event.Title.Unwrap
-          sprintf "Vi gleder oss til å se deg på %s den %s 🎉"
-              event.Location.Unwrap (toReadableString event.StartDate)
+          $"Du er nå påmeldt {event.Title.Unwrap}."
+          $"Vi gleder oss til å se deg på {event.Location.Unwrap} den {toReadableString event.StartDate} 🎉"
           ""
           "Siden det er begrenset med plasser, setter vi pris på om du melder deg av hvis du ikke lenger"
           "kan delta. Da blir det plass til andre på ventelisten 😊"
-          sprintf "Du kan melde deg av <a href=\"%s\">via denne lenken</a>."
-              redirectUrl
+          $"Du kan melde deg av <a href=\"{redirectUrl}\">via denne lenken</a>."
           ""
-          sprintf
-              "Bare send meg en mail på <a href=\"mailto:%s\">%s</a> om det er noe du lurer på."
-              event.OrganizerEmail.Unwrap event.OrganizerEmail.Unwrap
+          $"Bare send meg en mail på <a href=\"mailto:{event.OrganizerEmail.Unwrap}\">{event.OrganizerEmail.Unwrap}</a> om det er noe du lurer på."
           "Vi sees!"
           ""
-          sprintf "Hilsen %s i Bekk" event.OrganizerName.Unwrap ]
+          $"Hilsen {event.OrganizerName.Unwrap} i Bekk" ]
         |> String.concat "<br>" // Sendgrid formats to HTML, \n does not work
 
     let private waitlistedMessage redirectUrl (event: Event) =
         [ "Hei! 😄"
           ""
-          sprintf "Du er nå på venteliste for %s på %s den %s."
-              event.Title.Unwrap event.Location.Unwrap
-              (toReadableString event.StartDate)
+          $"Du er nå på venteliste for {event.Title.Unwrap} på {event.Location.Unwrap} den {toReadableString event.StartDate}."
           "Du vil få beskjed på e-post om du rykker opp fra ventelisten."
           ""
           "Siden det er begrenset med plasser, setter vi pris på om du melder deg av hvis du ikke lenger"
           "kan delta. Da blir det plass til andre på ventelisten 😊"
-          sprintf "Du kan melde deg av <a href=\"%s\">via denne lenken</a>."
-              redirectUrl
+          $"Du kan melde deg av <a href=\"{redirectUrl}\">via denne lenken</a>."
           "NB! Ta vare på lenken til senere - om du rykker opp fra ventelisten bruker du fortsatt denne til å melde deg av."
           ""
-          sprintf
-              "Bare send meg en mail på <a href=\"mailto:%s\">%s</a> om det er noe du lurer på."
-              event.OrganizerEmail.Unwrap event.OrganizerEmail.Unwrap
+          $"Bare send meg en mail på <a href=\"mailto:{event.OrganizerEmail.Unwrap}\">{event.OrganizerEmail.Unwrap}</a> om det er noe du lurer på."
           "Vi sees!"
           ""
-          sprintf "Hilsen %s i Bekk" event.OrganizerName.Unwrap ]
+          $"Hilsen {event.OrganizerName.Unwrap } i Bekk" ]
         |> String.concat "<br>"
 
     let createNewParticipantMail
@@ -72,30 +63,28 @@ module Service =
           To = participant.Email
           CalendarInvite =
               createCalendarAttachment
-                  (event, participant, noReplyMail, message, Create) |> Some }
+                  (event, participant, noReplyMail, message, Create) |> Some 
+        }
 
     let private createCancelledParticipationMail
         (event: Event)
         (participant: Participant)
         =
         { Subject = "Avmelding"
-          Message =
-              sprintf "%s har meldt seg av %s" participant.Name.Unwrap
-                  event.Title.Unwrap
+          Message = $"{participant.Name.Unwrap} har meldt seg av {event.Title.Unwrap}" 
           To = event.OrganizerEmail
-          CalendarInvite = None }
+          CalendarInvite = None 
+        }
 
     let private createFreeSpotAvailableMail
         (event: Event)
         (participant: Participant)
         =
-        { Subject = sprintf "Du har fått plass på %s!" event.Title.Unwrap
-          Message =
-              sprintf
-                  "Du har rykket opp fra ventelisten for %s! Hvis du ikke lenger kan delta, meld deg av med lenken fra forrige e-post."
-                  event.Title.Unwrap
+        { Subject = $"Du har fått plass på {event.Title.Unwrap}!" 
+          Message = $"Du har rykket opp fra ventelisten for {event.Title.Unwrap}! Hvis du ikke lenger kan delta, meld deg av med lenken fra forrige e-post."
           To = participant.Email
-          CalendarInvite = None }
+          CalendarInvite = None 
+        }
 
     let private createCancelledEventMail
         (message: string)
@@ -103,12 +92,13 @@ module Service =
         noReplyMail
         (participant: Participant)
         =
-        { Subject = sprintf "Avlyst: %s" event.Title.Unwrap
+        { Subject = $"Avlyst: {event.Title.Unwrap}"
           Message = message.Replace("\n", "<br>")
           To = participant.Email
           CalendarInvite =
               createCalendarAttachment
-                  (event, participant, noReplyMail, message, Cancel) |> Some }
+                  (event, participant, noReplyMail, message, Cancel) |> Some 
+        }
 
     let registerParticipant createMail registration =
         result {

@@ -4,10 +4,9 @@ open ArrangementService
 open UserMessage
 
 module UserMessages =
-    let participantNotFound email: UserMessage =
-        sprintf "Kan ikke finne deltaker %A" email |> NotFound
+    let participantNotFound email: UserMessage = 
+        $"Kan ikke finne deltaker {email}" |> NotFound
     let participationNotFound (eventId, email): UserMessage =
-        sprintf "Kan ikke finne deltaker %A for arrangement %A" email eventId
-        |> NotFound
+        $"Kan ikke finne deltaker {email} for arrangement {eventId}" |> NotFound
     let participationSuccessfullyDeleted (eventId, email): string =
-        sprintf "Deltakelse for %A på arrangement %A ble slettet" email eventId
+        $"Deltakelse for {email} på arrangement {eventId} ble slettet"

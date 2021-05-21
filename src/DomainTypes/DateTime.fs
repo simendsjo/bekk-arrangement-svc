@@ -6,7 +6,8 @@ open System
 type Date =
     { Day: int
       Month: int
-      Year: int }
+      Year: int
+    }
 
     member this.ToTuple = (this.Year, this.Month, this.Day)
 
@@ -32,7 +33,8 @@ type Date =
 [<CustomComparison; CustomEquality>]
 type Time =
     { Hour: int
-      Minute: int }
+      Minute: int
+    }
 
     member this.ToTuple = (this.Hour, this.Minute)
 
@@ -59,7 +61,8 @@ type Time =
 [<CustomComparison; CustomEquality>]
 type DateTimeCustom =
     { Date: Date
-      Time: Time }
+      Time: Time
+    }
 
     interface IComparable with
         member this.CompareTo obj =

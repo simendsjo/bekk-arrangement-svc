@@ -28,8 +28,6 @@
     <PackageReference Include="Serilog" Version="2.9.0" />
     <PackageReference Include="Serilog.Formatting.Compact" Version="1.1.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
-    <PackageReference Include="SQLProvider" Version="1.1.74" />
-    <PackageReference Include="System.Data.SqlClient" Version="4.7.0" />
     <PackageReference Include="Giraffe" Version="4.1.0" />
     <PackageReference Include="Thoth.Json.Giraffe" Version="3.1.0" />
   </ItemGroup>
@@ -42,9 +40,6 @@
     <Compile Include="LanguageExtensions\ResultComputationExpression.fs" /> 
 
     <Compile Include="Common\UserMessage.fs" />
-
-    <Compile Include="Database\DbContext.fs" />
-    <Compile Include="Database\Repo.fs" />
 
     <Compile Include="Common\Http.fs" /> 
     <Compile Include="Common\Auth.fs" />

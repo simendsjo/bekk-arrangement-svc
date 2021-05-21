@@ -47,22 +47,17 @@ module CalendarInvite =
         let utcNow =
             toUtcString (toCustomDateTime DateTime.UtcNow (TimeSpan()))
         [ "BEGIN:VEVENT"
-          sprintf "UID:%O" event.Id.Unwrap
-          sprintf "DTSTART;TZID=W. Europe Standard Time:%s"
-              (toDateString event.StartDate)
-          sprintf "DTEND;TZID=W. Europe Standard Time:%s"
-              (toDateString event.EndDate)
-          sprintf "DTSTAMP:%s" utcNow
-          sprintf "ORGANIZER:mailto:%s" noReplyMail.Unwrap
-          sprintf "ATTENDEE;PARTSTAT=ACCEPTED;RSVP=FALSE;CN=%s:mailto:%s"
-              event.OrganizerName.Unwrap event.OrganizerEmail.Unwrap
-          sprintf "ATTENDEE;PARTSTAT=ACCEPTED;RSVP=FALSE;CN=%s:mailto:%s"
-              participant.Name.Unwrap participant.Email.Unwrap
-          sprintf "SUMMARY;LANGUAGE=nb-NO:%s" event.Title.Unwrap
-          sprintf "DESCRIPTION;LANGUAGE=nb-NO:%s"
-              (message.Replace("<br>", "\n"))
-          sprintf "X-ALT-DESC;FMTTYPE=text/html:%s" event.Description.Unwrap
-          sprintf "LOCATION;LANGUAGE=nb-NO:%s" event.Location.Unwrap
+          $"UID:{event.Id.Unwrap}"
+          $"DTSTART;TZID=W. Europe Standard Time:{toDateString event.StartDate}"
+          $"DTEND;TZID=W. Europe Standard Time: {toDateString event.EndDate}"
+          $"DTSTAMP:{utcNow}"
+          $"ORGANIZER:mailto:{noReplyMail.Unwrap}"
+          $"ATTENDEE;PARTSTAT=ACCEPTED;RSVP=FALSE;CN={event.OrganizerName.Unwrap}:mailto:{event.OrganizerEmail.Unwrap}"
+          $"ATTENDEE;PARTSTAT=ACCEPTED;RSVP=FALSE;CN={participant.Name.Unwrap}:mailto:{participant.Email.Unwrap}"
+          $"SUMMARY;LANGUAGE=nb-NO:{event.Title.Unwrap}"
+          sprintf "DESCRIPTION;LANGUAGE=nb-NO:%s" (message.Replace("<br>", "\n"))
+          $"X-ALT-DESC;FMTTYPE=text/html:{event.Description.Unwrap}"
+          $"LOCATION;LANGUAGE=nb-NO:{event.Location.Unwrap}"
 
           (if status = Create then "STATUS:CONFIRMED" else "STATUS:CANCELLED")
           (if status = Create then "SEQUENCE:0" else "SEQUENCE:1")

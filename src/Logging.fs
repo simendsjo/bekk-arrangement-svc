@@ -24,7 +24,8 @@ module Logging =
           RequestTraceId: string
           StackTrace: string
           StatusCode: int
-          InnerException: exn }
+          InnerException: exn
+        }
 
     let getEmployeeName (ctx: HttpContext) =
         let nameClaim = ctx.User.FindFirst "name"

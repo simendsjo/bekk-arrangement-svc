@@ -27,9 +27,7 @@ module UserMessage =
         { userMessage: string }
 
     let private errorMessagesToUserJson messages =
-        { userMessage =
-              messages
-              |> String.concat "\n" }
+        { userMessage = messages |> String.concat "\n" }
 
     let convertUserMessagesToHttpError (errors: UserMessage list): HttpError =
 

@@ -1,20 +1,16 @@
 namespace ArrangementService.Participant
 
 open System
-open System.Linq
-open Giraffe
-
-open ArrangementService
-
-open TimeStamp
-open Validation
-open Repo
-open UserMessage
-open ArrangementService.Email
-open ArrangementService.DomainModels
 open Microsoft.AspNetCore.Http
 open System.Data
 open System.Collections.Generic
+
+open ArrangementService
+open TimeStamp
+open Validation
+open UserMessage
+open ArrangementService.Email
+open ArrangementService.DomainModels
 
 type DbModel =
   { Name: string
@@ -35,20 +31,24 @@ type ViewModel =
 
 type NewlyCreatedParticipationViewModel =
     { Participant: ViewModel
-      CancellationToken: string }
+      CancellationToken: string
+    }
 
 type WriteModel =
     { name: string
       comment: string
-      cancelUrlTemplate: string }
+      cancelUrlTemplate: string 
+    }
 
 type ParticipantsWithWaitingList =
     { attendees: Participant seq
-      waitingList: Participant seq }
+      waitingList: Participant seq
+    }
 
 type ParticipantViewModelsWithWaitingList =
     { attendees: ViewModel list
-      waitingList: ViewModel list option }
+      waitingList: ViewModel list option
+    }
 
 type Key = Guid * string
 
@@ -60,7 +60,8 @@ module Models =
           Comment = Comment dbRecord.Comment
           EventId = Event.Id dbRecord.EventId
           RegistrationTime = TimeStamp dbRecord.RegistrationTime
-          CancellationToken = dbRecord.CancellationToken }
+          CancellationToken = dbRecord.CancellationToken
+        }
 
     let writeToDomain
         ((id, email): Key)

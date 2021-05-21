@@ -26,9 +26,7 @@ module Authorization =
             if hasCorrectCancellationToken then
                 return ()
             else
-                return! [ AccessDenied
-                              "You cannot delete your participation without your cancellation token" ]
-                        |> Error
+                return! [ AccessDenied "You cannot delete your participation without your cancellation token" ] |> Error
         }
 
     let userCanCancel eventIdAndEmail =

@@ -5,7 +5,6 @@ open Microsoft.AspNetCore.Http
 
 open ArrangementService
 open UserMessage
-open Repo
 
 module Http =
 
@@ -39,4 +38,4 @@ module Http =
         ctx.GetQueryStringValue param
         |> Result.mapError
             (fun _ ->
-                [ BadInput(sprintf "Missing query parameter '%s'" param) ])
+                [ BadInput $"Missing query parameter '{param}'" ])
