@@ -41,6 +41,7 @@
 
     <Compile Include="Common\UserMessage.fs" />
 
+    <Compile Include="Common\Database.fs" /> 
     <Compile Include="Common\Http.fs" /> 
     <Compile Include="Common\Auth.fs" />
 
