@@ -32,7 +32,9 @@ let private configuration =
     builder.Build()
 
 let configureCors (builder: CorsPolicyBuilder) =
-    builder.AllowAnyMethod().AllowAnyHeader().AllowAnyOrigin() |> ignore
+    builder.AllowAnyMethod()
+           .AllowAnyHeader()
+           .AllowAnyOrigin() |> ignore
 
 let configureApp (app: IApplicationBuilder) =
     app.Use(fun context next ->
@@ -41,15 +43,13 @@ let configureApp (app: IApplicationBuilder) =
                 (configuration.["VIRTUAL_PATH"], "") |> PathString
         next.Invoke())
     |> ignore
-    app.UseAuthentication().UseCors(configureCors)
+    app.UseAuthentication()
+       .UseCors(configureCors)
        .UseGiraffe(createLoggingApp webApp config)
 
 let configureServices (services: IServiceCollection) =
     services.AddCors() |> ignore
     services.AddGiraffe() |> ignore
-    let connection: IDbConnection = 
-        new SqlConnection(configuration.["ConnectionStrings:EventDb"]) :> IDbConnection
-    services.AddSingleton<IDbConnection>(connection) |> ignore
     services.AddSingleton<SendgridOptions>
         ({ ApiKey = configuration.["Sendgrid:Apikey"]
            SendgridUrl = configuration.["Sendgrid:SendgridUrl"] })
@@ -64,8 +64,12 @@ let configureServices (services: IServiceCollection) =
           sendMailInDevEnvWhiteList =
               configuration.["Sendgrid:Dev_White_List_Addresses"].Split(',')
               |> Seq.toList
-              |> List.map (fun s -> s.Trim()) }
-    services.AddSingleton<AppConfig> config |> ignore // For å sende mail: bytt ut = med <>
+              |> List.map (fun s -> s.Trim())
+          databaseConnectionString = configuration.["ConnectionStrings:EventDb"]
+          currentConnection = null
+          currentTransaction = null
+        }
+    services.AddScoped<AppConfig> (fun _ -> { config with currentConnection = null; currentTransaction = null }) |> ignore // For å sende mail: bytt ut = med <>
     services.AddAuthentication(fun options ->
             options.DefaultAuthenticateScheme <-
                 JwtBearerDefaults.AuthenticationScheme

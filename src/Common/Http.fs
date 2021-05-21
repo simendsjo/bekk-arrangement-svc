@@ -5,6 +5,19 @@ open Microsoft.AspNetCore.Http
 
 open ArrangementService
 open UserMessage
+open System.Data
+open System.Data.SqlClient
+open Config
+
+module Database =
+    let createConnection (ctx: HttpContext) = 
+        let config = getConfig ctx
+        let connection = new SqlConnection(config.databaseConnectionString) :> IDbConnection
+        connection.Open()
+        config.currentConnection <- connection
+        let transaction = connection.BeginTransaction(IsolationLevel.Serializable)
+        config.currentTransaction <- transaction
+        transaction
 
 module Http =
 
@@ -17,15 +30,13 @@ module Http =
             convertUserMessagesToHttpError errorMessage next context
 
     let handle (endpoint: Handler<'t>) (next: HttpFunc) (context: HttpContext) =
+        let transaction = Database.createConnection context
         match endpoint context with
         | Ok result ->
-            // TODO: Sjekk
-            // at dette ikke trengs
-            // commitTransaction context |> ignore
+            transaction.Commit()
             json result next context
         | Error errorMessage ->
-            // TODO: SAME AS ABOVE
-            // rollbackTransaction context |> ignore
+            transaction.Rollback()
             convertUserMessagesToHttpError errorMessage next context
 
     let getBody<'WriteModel> (context: HttpContext): Result<'WriteModel, UserMessage list>

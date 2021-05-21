@@ -15,6 +15,7 @@ open ArrangementService.DomainModels
 open ResultComputationExpression
 open ArrangementService.UserMessage
 open UserMessages
+open ArrangementService.Config
 
 module Queries =
 
@@ -23,7 +24,7 @@ module Queries =
     // og linq metodene under queryer
     // Super slow, skriv om
     let getParticipants (ctx: HttpContext): DbModel seq =
-        let dbConnection = ctx.GetService<IDbConnection>()
+        let dbConnection = (getConfig ctx).currentConnection
         select { table "Participants" }
         |> dbConnection.SelectAsync<DbModel>
         |> Async.AwaitTask
@@ -33,7 +34,7 @@ module Queries =
     // Denne trenger litt kjærlighet
     // Returnerer nå bare det man får inn
     let createParticipant (participant: WriteModel) (ctx: HttpContext): Result<Participant, UserMessage list> =
-        let dbConnection = ctx.GetService<IDbConnection>()
+        let dbConnection = (getConfig ctx).currentConnection
         let inserted =
             insert { table "Participants"
                      value participant
@@ -48,7 +49,7 @@ module Queries =
     // TODO: Fix
     // skal vi returnere noe? Fire or forget
     let deleteParticipant (participant: DbModel) (ctx: HttpContext): Result<unit, UserMessage list> =
-        let dbConnection = ctx.GetService<IDbConnection>()
+        let dbConnection = (getConfig ctx).currentConnection
         delete { table "Participants"
                  where (eq "EventId" participant.EventId + eq "Email" participant.Email) 
                }

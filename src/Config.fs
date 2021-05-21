@@ -2,6 +2,7 @@ namespace ArrangementService
 
 open Microsoft.AspNetCore.Http
 open Giraffe
+open System.Data
 
 type AppConfig =
     { isProd: bool
@@ -11,6 +12,9 @@ type AppConfig =
       readPermissionClaim: string
       sendMailInDevEnvWhiteList: string list
       noReplyEmail: string
+      databaseConnectionString: string
+      mutable currentConnection: IDbConnection
+      mutable currentTransaction: IDbTransaction
     }
 
 module Config =
