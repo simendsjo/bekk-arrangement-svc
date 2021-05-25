@@ -27,14 +27,8 @@ module Service =
 
     let getEvent id =
         result {
-            let! events = Queries.getEvents >> Ok
-
-            let! event =
-                events
-                |> Queries.queryEventBy id
-                |> ignoreContext
-                
-            return dbToDomain event
+            let! event = Queries.queryEventByEventId id
+            return event
         }
 
     let private createdEventMessage createEditUrl (event: Event) =
