@@ -18,13 +18,14 @@ open UserMessages
 open ArrangementService.Config
 
 module Queries =
+    let participantsTable = "Participants"
 
     // TODO: Fix
     // Denne leser ut all dataen
     // og linq metodene under queryer
     // Super slow, skriv om
     let getParticipants (ctx: HttpContext): DbModel seq =
-        select { table "Participants" }
+        select { table participantsTable }
         |> Database.runSelectQuery<DbModel> ctx
 
     // TODO: Fix
@@ -32,18 +33,17 @@ module Queries =
     // Returnerer nå bare det man får inn
     let createParticipant (participant: WriteModel) (ctx: HttpContext): Result<Participant, UserMessage list> =
         let inserted =
-            insert { table "Participants"
+            insert { table participantsTable
                      value participant
                    }
             |> Database.runInsertQuery<WriteModel, {| EventId: string ; Email: string |}> ctx
         let id = inserted |> Seq.head |> fun x -> (Guid.Parse x.EventId, x.Email)
         Models.writeToDomain id participant
 
-
     // TODO: Fix
     // skal vi returnere noe? Fire or forget
     let deleteParticipant (participant: DbModel) (ctx: HttpContext): Result<unit, UserMessage list> =
-        delete { table "Participants"
+        delete { table participantsTable
                  where (eq "EventId" participant.EventId + eq "Email" participant.Email) 
                }
         |> Database.runDeleteQuery ctx

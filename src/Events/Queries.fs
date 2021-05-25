@@ -14,11 +14,13 @@ open ResultComputationExpression
 open ArrangementService.Config
 
 module Queries =
+    let eventsTable = "Events"
+
     // TODO: Fix
     // Samme som i Participants
     let createEvent (event: WriteModel) (ctx: HttpContext) =
         let inserted =
-            insert { table "Events"
+            insert { table eventsTable
                      value event
                    }
             |> Database.runInsertQuery<WriteModel, {| Id: string |}> ctx
@@ -26,11 +28,11 @@ module Queries =
         Models.writeToDomain (Guid.Parse id) event 
 
     let getEvents (ctx: HttpContext): DbModel seq =
-        select { table "Events "}
+        select { table eventsTable}
         |> Database.runSelectQuery<DbModel> ctx
 
     let deleteEvent id (ctx: HttpContext) =
-        delete { table "Events" 
+        delete { table eventsTable
                  where (eq "Id" id)
                }
         |> Database.runDeleteQuery ctx
@@ -38,7 +40,7 @@ module Queries =
         Ok ()
 
     let updateEvent id newEvent (ctx: HttpContext) =
-        update { table "Events"
+        update { table eventsTable
                  set newEvent
                  where (eq "Id" id)
                }
