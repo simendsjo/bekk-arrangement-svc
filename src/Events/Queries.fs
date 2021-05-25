@@ -31,24 +31,24 @@ module Queries =
         select { table eventsTable }
         |> Database.runSelectQuery<DbModel> ctx
 
-    let deleteEvent id (ctx: HttpContext) =
+    let deleteEvent (id: Event.Id) (ctx: HttpContext) =
         delete { table eventsTable
-                 where (eq "Id" id)
+                 where (eq "Id" id.Unwrap)
                }
         |> Database.runDeleteQuery ctx
         |> ignore
         Ok ()
 
-    let updateEvent id newEvent (ctx: HttpContext) =
+    let updateEvent (id: Event.Id) newEvent (ctx: HttpContext) =
         update { table eventsTable
                  set newEvent
-                 where (eq "Id" id)
+                 where (eq "Id" id.Unwrap)
                }
         |> Database.runUpdateQuery ctx
         |> ignore
         Ok ()
              
-    let queryEventBy (id: Id) (events: DbModel seq) =
+    let queryEventBy (id: Event.Id) (events: DbModel seq) =
         query {
             for event in events do
                 where (event.Id = id.Unwrap)

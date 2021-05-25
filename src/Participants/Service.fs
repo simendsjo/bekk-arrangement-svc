@@ -109,28 +109,20 @@ module Service =
             return participant
         }
 
-    let getParticipant (eventId, email) =
+    let getParticipant (eventId, email: EmailAddress) =
         result {
-            let! participants = Queries.getParticipants >> Ok
-
-            let! participant =
-                participants
-                |> Queries.queryParticipantByKey (eventId, email)
-                |> ignoreContext
+            let! participant = Queries.queryParticipantByKey (eventId, email)
 
             return participant
         }
 
     let getParticipantsForEvent (event: Event): Handler<ParticipantsWithWaitingList> =
         result {
-            let! participants = Queries.getParticipants >> Ok
-
-            let participantsForEvent =
-                participants
-                |> Queries.queryParticipantsBy event.Id
-                |> Seq.map dbToDomain
-                |> Seq.sortBy
+            let! participantsForEvent =
+                Queries.queryParticipantsByEventId event.Id
+                >> Seq.sortBy
                     (fun participant -> participant.RegistrationTime)
+                >> Ok
 
             return { attendees =
                          Seq.truncate event.MaxParticipants.Unwrap
@@ -143,10 +135,8 @@ module Service =
 
     let getParticipationsForParticipant email =
         result {
-            let! participants = Queries.getParticipants >> Ok
             
-            let participantsByMail =
-                participants |> Queries.queryParticipantionByParticipant email
+            let! participantsByMail = Queries.queryParticipantionByParticipant email >> Ok
 
             return Seq.map dbToDomain participantsByMail
         }

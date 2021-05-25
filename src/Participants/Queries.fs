@@ -20,18 +20,7 @@ open ArrangementService.Config
 module Queries =
     let participantsTable = "Participants"
 
-    // TODO: Fix
-    // Denne leser ut all dataen
-    // og linq metodene under queryer
-    // Super slow, skriv om
-    let getParticipants (ctx: HttpContext): DbModel seq =
-        select { table participantsTable }
-        |> Database.runSelectQuery<DbModel> ctx
-
-    // TODO: Fix
-    // Denne trenger litt kjærlighet
-    // Returnerer nå bare det man får inn
-    let createParticipant  (participant: Participant) (ctx: HttpContext): Result<Participant, UserMessage list> =
+    let createParticipant (participant: Participant) (ctx: HttpContext): Result<Participant, UserMessage list> =
         insert { table participantsTable
                  value (Models.domainToDb participant)
                }
@@ -46,35 +35,33 @@ module Queries =
 
     // TODO: Fix
     // skal vi returnere noe? Fire or forget
-    let deleteParticipant (participant: DbModel) (ctx: HttpContext): Result<unit, UserMessage list> =
+    let deleteParticipant (participant: Participant) (ctx: HttpContext): Result<unit, UserMessage list> =
         delete { table participantsTable
-                 where (eq "EventId" participant.EventId + eq "Email" participant.Email) 
+                 where (eq "EventId" participant.EventId.Unwrap + eq "Email" participant.Email.Unwrap) 
                }
         |> Database.runDeleteQuery ctx
         |> ignore
         Ok ()
 
-    let queryParticipantByKey (id: Event.Id, email: EmailAddress) (participants: DbModel seq) =
-        query {
-            for participant in participants do
-                where
-                    (participant.Email = email.Unwrap
-                     && participant.EventId = id.Unwrap)
-                select (Some participant)
-                exactlyOneOrDefault
-        }
-        |> withError [ participationNotFound (id, email) ]
+    let queryParticipantByKey (eventId: Event.Id, email: EmailAddress) ctx: Result<Participant, UserMessage list> =
+        select { table participantsTable
+                 where (eq "EventId" eventId.Unwrap + eq "Email" email.Unwrap)}
+        |> Database.runSelectQuery ctx
+        // TODO: Lage en funksjon som gjør dette. Brukes flere plasser, se over.
+        |> Seq.tryHead
+        |> function
+        | Some participant -> Ok <| Models.dbToDomain participant
+        | _ -> Error []
 
-    let queryParticipantionByParticipant (email: EmailAddress) (participants: DbModel seq) =
-        query {
-            for participant in participants do
-                where (participant.Email = email.Unwrap)
-                select participant
-        }
+    let queryParticipantionByParticipant (email: EmailAddress) ctx: DbModel seq =
+        select { table participantsTable
+                 where (eq "Email" email.Unwrap)
+               }
+       |> Database.runSelectQuery ctx
 
-    let queryParticipantsBy (eventId: Event.Id) (participants: DbModel seq) =
-        query {
-            for participant in participants do
-                where (participant.EventId = eventId.Unwrap)
-                select participant
-        }
+    let queryParticipantsByEventId (eventId: Event.Id) ctx: Participant seq =
+        select { table participantsTable
+                 where (eq "EventId" eventId.Unwrap)
+               }
+        |> Database.runSelectQuery ctx
+        |> Seq.map Models.dbToDomain
