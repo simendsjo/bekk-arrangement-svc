@@ -138,7 +138,7 @@ module Service =
             
             let! participantsByMail = Queries.queryParticipantionByParticipant email >> Ok
 
-            return Seq.map dbToDomain participantsByMail
+            return participantsByMail
         }
 
     let private sendMailToFirstPersonOnWaitingList

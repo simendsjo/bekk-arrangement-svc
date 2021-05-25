@@ -33,8 +33,6 @@ module Queries =
         // particular case shouldn't happen, so it's hard to explain 🤷‍♂️
         | _ -> Error []
 
-    // TODO: Fix
-    // skal vi returnere noe? Fire or forget
     let deleteParticipant (participant: Participant) (ctx: HttpContext): Result<unit, UserMessage list> =
         delete { table participantsTable
                  where (eq "EventId" participant.EventId.Unwrap + eq "Email" participant.Email.Unwrap) 
@@ -53,11 +51,12 @@ module Queries =
         | Some participant -> Ok <| Models.dbToDomain participant
         | _ -> Error []
 
-    let queryParticipantionByParticipant (email: EmailAddress) ctx: DbModel seq =
+    let queryParticipantionByParticipant (email: EmailAddress) ctx: Participant seq =
         select { table participantsTable
                  where (eq "Email" email.Unwrap)
                }
        |> Database.runSelectQuery ctx
+       |> Seq.map Models.dbToDomain
 
     let queryParticipantsByEventId (eventId: Event.Id) ctx: Participant seq =
         select { table participantsTable
