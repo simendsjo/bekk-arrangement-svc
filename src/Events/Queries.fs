@@ -14,12 +14,11 @@ open ArrangementService.Config
 open ArrangementService.DomainModels
 open ArrangementService.UserMessage
 open ArrangementService.Event
+open ArrangementService.Email
 
 module Queries =
     let eventsTable = "Events"
 
-    // TODO: Fix
-    // Samme som i Participants
     let createEvent (event: WriteModel) (ctx: HttpContext): Result<Event, UserMessage list> =
         let inserted =
             insert { table eventsTable
@@ -29,9 +28,10 @@ module Queries =
         let id = inserted |> Seq.head |> fun x -> x.Id
         Models.writeToDomain (Guid.Parse id) event 
 
-    let getEvents (ctx: HttpContext): DbModel seq =
+    let getEvents (ctx: HttpContext): Event seq =
         select { table eventsTable }
         |> Database.runSelectQuery<DbModel> ctx
+        |> Seq.map Models.dbToDomain
 
     let deleteEvent (id: Event.Id) (ctx: HttpContext): Result<Unit, UserMessage list> =
         delete { table eventsTable
@@ -59,11 +59,10 @@ module Queries =
        |> function
        | Some event -> Ok <| Models.dbToDomain event
        | None -> Error [ UserMessages.eventNotFound eventId ]
-             
-    let queryEventsOrganizedBy (organizerEmail: string)
-        (events: DbModel seq) =
-        query {
-            for event in events do
-                where (event.OrganizerEmail = organizerEmail)
-                select event
-        }
+
+    let queryEventsOrganizedByEmail (organizerEmail: EmailAddress) ctx: Event seq =
+        select { table eventsTable
+                 where (eq "Email" organizerEmail.Unwrap)
+               }
+       |> Database.runSelectQuery ctx
+       |> Seq.map Models.dbToDomain

@@ -12,6 +12,7 @@ open Authorization
 
 open Giraffe
 open System.Web
+open ArrangementService.DomainModels
 
 module Handlers =
 
@@ -23,7 +24,7 @@ module Handlers =
 
     let getEventsOrganizedBy organizerEmail =
         result {
-            let! events = Service.getEventsOrganizedBy organizerEmail
+            let! events = Service.getEventsOrganizedBy (EmailAddress organizerEmail)
             return Seq.map domainToView events |> Seq.toList
         }
 
@@ -52,7 +53,7 @@ module Handlers =
         result {
             let! writeModel = getBody<WriteModel>
             let! domainModel = writeToDomain id writeModel |> ignoreContext
-
+            
             let! updatedEvent = Service.updateEvent (Id id) domainModel
             return domainToView updatedEvent
         }

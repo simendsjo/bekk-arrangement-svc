@@ -13,16 +13,13 @@ module Service =
     let getEvents: Handler<Event seq> =
         result {
             let! events = Queries.getEvents >> Ok
-            return Seq.map dbToDomain events
+            return events
         }
 
     let getEventsOrganizedBy organizerEmail =
         result {
-            let! events = Queries.getEvents >> Ok
-
-            let eventsByOrganizer =
-                Queries.queryEventsOrganizedBy organizerEmail events
-            return Seq.map dbToDomain eventsByOrganizer
+            let! eventsByOrganizer = Queries.queryEventsOrganizedByEmail organizerEmail >> Ok
+            return eventsByOrganizer
         }
 
     let getEvent id =
