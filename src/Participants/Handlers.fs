@@ -15,8 +15,6 @@ open ArrangementService.Config
 
 module Handlers =
 
-    // TODO: Figure out
-    // Kvifor er ikkje email brukt her?
     let registerForEvent (eventId: Guid, email) =
         result {
             let! writeModel = getBody<WriteModel>
