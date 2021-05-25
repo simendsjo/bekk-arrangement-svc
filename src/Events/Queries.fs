@@ -28,7 +28,7 @@ module Queries =
         Models.writeToDomain (Guid.Parse id) event 
 
     let getEvents (ctx: HttpContext): DbModel seq =
-        select { table eventsTable}
+        select { table eventsTable }
         |> Database.runSelectQuery<DbModel> ctx
 
     let deleteEvent id (ctx: HttpContext) =

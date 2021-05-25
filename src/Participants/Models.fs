@@ -63,16 +63,12 @@ module Models =
           CancellationToken = dbRecord.CancellationToken
         }
 
-    let writeToDomain
-        ((id, email): Key)
-        (writeModel: WriteModel)
-        : Result<Participant, UserMessage list>
-        =
+    let writeToDomain ((eventId, email): Key) (writeModel: WriteModel) : Result<Participant, UserMessage list> =
           Ok Participant.Create 
           <*> Name.Parse writeModel.name
           <*> EmailAddress.Parse email 
           <*> Comment.Parse writeModel.comment
-          <*> (Event.Id id |> Ok) 
+          <*> (Event.Id eventId |> Ok) 
           <*> (now() |> Ok) 
           <*> (Guid.NewGuid() |> Ok)
 
@@ -82,6 +78,16 @@ module Models =
           Comment = participant.Comment.Unwrap
           EventId = participant.EventId.Unwrap.ToString()
           RegistrationTime = participant.RegistrationTime.Unwrap }
+
+
+    let domainToDb (participant: Participant): DbModel =
+        { Name = participant.Name.Unwrap
+          Email = participant.Email.Unwrap
+          Comment = participant.Comment.Unwrap
+          EventId = participant.EventId.Unwrap
+          RegistrationTime = participant.RegistrationTime.Unwrap
+          CancellationToken = participant.CancellationToken
+        }
 
     let domainToViewWithCancelInfo (participant: Participant): NewlyCreatedParticipationViewModel
         =

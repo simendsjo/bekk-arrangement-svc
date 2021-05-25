@@ -17,7 +17,7 @@ module Handlers =
 
     // TODO: Figure out
     // Kvifor er ikkje email brukt her?
-    let registerForEvent (eventId, email) =
+    let registerForEvent (eventId: Guid, email) =
         result {
             let! writeModel = getBody<WriteModel>
             let redirectUrlTemplate =
@@ -46,7 +46,8 @@ module Handlers =
                     createCancelUrl event isWaitlisted
                     (EmailAddress config.noReplyEmail)
 
-            let! participant = Service.registerParticipant createMailForParticipant writeModel
+            let! participantDomainModel = (writeToDomain (eventId, email) writeModel) |> ignoreContext
+            let! participant = Service.registerParticipant createMailForParticipant participantDomainModel
             return domainToViewWithCancelInfo participant
         }
 

@@ -11,6 +11,7 @@ module Http =
     type Handler<'t> = HttpContext -> Result<'t, UserMessage list>
 
     let check (condition: Handler<Unit>) (next: HttpFunc) (context: HttpContext) =
+        Database.createConnection context |> ignore
         match condition context with
         | Ok() -> next context
         | Error errorMessage ->

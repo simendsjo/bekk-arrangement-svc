@@ -31,14 +31,18 @@ module Queries =
     // TODO: Fix
     // Denne trenger litt kjærlighet
     // Returnerer nå bare det man får inn
-    let createParticipant (participant: WriteModel) (ctx: HttpContext): Result<Participant, UserMessage list> =
-        let inserted =
-            insert { table participantsTable
-                     value participant
-                   }
-            |> Database.runInsertQuery<WriteModel, {| EventId: string ; Email: string |}> ctx
-        let id = inserted |> Seq.head |> fun x -> (Guid.Parse x.EventId, x.Email)
-        Models.writeToDomain id participant
+    let createParticipant  (participant: Participant) (ctx: HttpContext): Result<Participant, UserMessage list> =
+        insert { table participantsTable
+                 value (Models.domainToDb participant)
+               }
+        |> Database.runInsertQuery<DbModel, DbModel> ctx
+        |> Seq.tryHead
+        |> function
+        | Some participant -> Ok <| Models.dbToDomain participant
+        // TODO: Add internal server error as an explicit type to UserMessage,
+        // potentially with a string explanation - although, this
+        // particular case shouldn't happen, so it's hard to explain 🤷‍♂️
+        | _ -> Error []
 
     // TODO: Fix
     // skal vi returnere noe? Fire or forget
@@ -50,8 +54,7 @@ module Queries =
         |> ignore
         Ok ()
 
-    let queryParticipantByKey (id: Event.Id, email: EmailAddress)
-        (participants: DbModel seq) =
+    let queryParticipantByKey (id: Event.Id, email: EmailAddress) (participants: DbModel seq) =
         query {
             for participant in participants do
                 where
@@ -62,16 +65,14 @@ module Queries =
         }
         |> withError [ participationNotFound (id, email) ]
 
-    let queryParticipantionByParticipant (email: EmailAddress)
-        (participants: DbModel seq) =
+    let queryParticipantionByParticipant (email: EmailAddress) (participants: DbModel seq) =
         query {
             for participant in participants do
                 where (participant.Email = email.Unwrap)
                 select participant
         }
 
-    let queryParticipantsBy (eventId: Event.Id)
-        (participants: DbModel seq) =
+    let queryParticipantsBy (eventId: Event.Id) (participants: DbModel seq) =
         query {
             for participant in participants do
                 where (participant.EventId = eventId.Unwrap)

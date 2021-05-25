@@ -9,14 +9,26 @@ open Config
 
 module Database =
 
+    (*
+        `createConnection` is idempotent, i.e. you can call it many times
+        and still get the same transaction.
+
+        This is useful because one (http) request does potentially many
+        "check"s before doing a "handle" of the endpoint. You really want
+        the "are there available spots on Event" to be evaluated in the
+        same transaction as the "add Participant to Event" operation.
+    *)
     let createConnection (ctx: HttpContext) = 
         let config = getConfig ctx
-        let connection = new SqlConnection(config.databaseConnectionString) :> IDbConnection
-        connection.Open()
-        config.currentConnection <- connection
-        let transaction = connection.BeginTransaction(IsolationLevel.Serializable)
-        config.currentTransaction <- transaction
-        transaction
+        if config.currentTransaction <> null then
+            config.currentTransaction
+        else
+            let connection = new SqlConnection(config.databaseConnectionString) :> IDbConnection
+            connection.Open()
+            config.currentConnection <- connection
+            let transaction = connection.BeginTransaction(IsolationLevel.Serializable)
+            config.currentTransaction <- transaction
+            transaction
 
     let runSelectQuery<'t> (ctx: HttpContext) query =
         let config = getConfig ctx

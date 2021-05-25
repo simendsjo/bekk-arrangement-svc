@@ -100,10 +100,10 @@ module Service =
                   (event, participant, noReplyMail, message, Cancel) |> Some 
         }
 
-    let registerParticipant createMail registration =
+    let registerParticipant createMail participant =
         result {
 
-            let! participant = Queries.createParticipant registration
+            let! participant = Queries.createParticipant participant
 
             yield Service.sendMail (createMail participant)
             return participant
