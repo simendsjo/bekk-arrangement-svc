@@ -7,5 +7,5 @@ module Seq =
     let safeSkip n list =
         list
         |> Seq.mapi (fun i e -> (e, i))
-        |> Seq.skipWhile (fun (e, i) -> i < n)
+        |> Seq.skipWhile (fun (_, i) -> i < n)
         |> Seq.map fst

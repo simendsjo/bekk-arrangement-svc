@@ -80,7 +80,7 @@ type OpenForRegistrationTime =
         match this with
         | OpenForRegistrationTime time -> time
 
-    static member Parse(time: int64) = OpenForRegistrationTime time |> Ok
+    static member Parse(time: string) = int64 time |> OpenForRegistrationTime |> Ok
 
 type ParticipantQuestion =
     | ParticipantQuestion of string

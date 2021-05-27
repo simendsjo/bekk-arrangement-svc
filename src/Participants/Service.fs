@@ -103,10 +103,10 @@ module Service =
     let registerParticipant createMail participant =
         result {
 
-            let! participant = Queries.createParticipant participant
+            do! Queries.createParticipant participant
 
             yield Service.sendMail (createMail participant)
-            return participant
+            return ()
         }
 
     let getParticipant (eventId, email: EmailAddress) =

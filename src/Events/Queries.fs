@@ -1,32 +1,30 @@
 namespace ArrangementService.Event
 
-open System.Linq
 open System
-open System.Data
+open ArrangementService.Participant
 open Dapper.FSharp
-open Dapper.FSharp.MSSQL
 open Microsoft.AspNetCore.Http
-open Giraffe
 
 open ArrangementService
-open ResultComputationExpression
-open ArrangementService.Config
 open ArrangementService.DomainModels
 open ArrangementService.UserMessage
 open ArrangementService.Event
 open ArrangementService.Email
+open ArrangementService.ResultComputationExpression
 
 module Queries =
     let eventsTable = "Events"
 
-    let createEvent (event: WriteModel) (ctx: HttpContext): Result<Event, UserMessage list> =
-        let inserted =
-            insert { table eventsTable
-                     value event
-                   }
-            |> Database.runInsertQuery<WriteModel, {| Id: string |}> ctx
-        let id = inserted |> Seq.head |> fun x -> x.Id
-        Models.writeToDomain (Guid.Parse id) event 
+    let createEvent (event: WriteModel) =
+        result {
+            let! event = Models.writeToDomain (Guid.NewGuid()) event |> ignoreContext
+            let dbModel = Models.domainToDb event
+            do! insert { table eventsTable
+                         value dbModel
+                       }
+                |> Database.runInsertQuery
+            return Models.dbToDomain dbModel
+        }
 
     let getEvents (ctx: HttpContext): Event seq =
         select { table eventsTable }

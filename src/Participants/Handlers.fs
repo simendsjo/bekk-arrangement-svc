@@ -45,8 +45,8 @@ module Handlers =
                     (EmailAddress config.noReplyEmail)
 
             let! participantDomainModel = (writeToDomain (eventId, email) writeModel) |> ignoreContext
-            let! participant = Service.registerParticipant createMailForParticipant participantDomainModel
-            return domainToViewWithCancelInfo participant
+            do! Service.registerParticipant createMailForParticipant participantDomainModel
+            return domainToViewWithCancelInfo participantDomainModel
         }
 
     let getParticipationsForParticipant email =

@@ -1,12 +1,6 @@
 namespace ArrangementService
 
 module ResultComputationExpression =
-
-    let withError error result =
-        match result with
-        | Some x -> Ok x
-        | None -> Error error
-
     // This is the same as `constant`
     // This is used with `let!` when an expression
     // can fail (results in the Result type), but does not

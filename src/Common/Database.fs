@@ -48,8 +48,12 @@ module Database =
         |> Async.AwaitTask
         |> Async.RunSynchronously
 
-    let runInsertQuery<'t, 'u> (ctx: HttpContext) query =
+    let runInsertQuery query (ctx: HttpContext) =
         let config = getConfig ctx
-        config.currentConnection.InsertOutputAsync<'t, 'u>(query, config.currentTransaction)
+        config.currentConnection.InsertAsync(query, config.currentTransaction)
         |> Async.AwaitTask
         |> Async.RunSynchronously
+        |> ignore
+        // TODO: Sjekk retur verdi og returner basert på det
+        
+        Ok ()

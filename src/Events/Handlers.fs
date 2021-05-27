@@ -12,7 +12,6 @@ open Authorization
 
 open Giraffe
 open System.Web
-open ArrangementService.DomainModels
 
 module Handlers =
 

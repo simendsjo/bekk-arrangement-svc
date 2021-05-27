@@ -61,7 +61,7 @@ type WriteModel =
       MaxParticipants: int
       StartDate: DateTimeCustom
       EndDate: DateTimeCustom
-      OpenForRegistrationTime: int64
+      OpenForRegistrationTime: string
       editUrlTemplate: string
       ParticipantQuestion: string 
       HasWaitingList: bool 
@@ -104,6 +104,25 @@ module Models =
           ParticipantQuestion = ParticipantQuestion dbRecord.ParticipantQuestion
           HasWaitingList = dbRecord.HasWaitingList
         }
+        
+    let domainToDb (domainModel: Event): DbModel =
+        { Id = domainModel.Id.Unwrap
+          Title = domainModel.Title.Unwrap
+          Description = domainModel.Description.Unwrap
+          Location = domainModel.Location.Unwrap
+          OrganizerName = domainModel.OrganizerName.Unwrap
+          OrganizerEmail = domainModel.OrganizerEmail.Unwrap
+          MaxParticipants = domainModel.MaxParticipants.Unwrap
+          StartDate = customToDateTime domainModel.StartDate.Date
+          StartTime = customToTimeSpan domainModel.StartDate.Time
+          EndDate = customToDateTime domainModel.EndDate.Date
+          EndTime = customToTimeSpan domainModel.EndDate.Time
+          OpenForRegistrationTime = domainModel.OpenForRegistrationTime.Unwrap
+          EditToken = domainModel.EditToken
+          ParticipantQuestion = domainModel.ParticipantQuestion.Unwrap
+          HasWaitingList = domainModel.HasWaitingList
+        }
+        
 
     let domainToView (domainModel: Event): ViewModel =
         { Id = domainModel.Id.Unwrap

@@ -1,37 +1,25 @@
 namespace ArrangementService.Participant
 
-open System
-open System.Linq
-open Giraffe
 open Microsoft.AspNetCore.Http
-open System.Data
-open System.Collections.Generic
 open Dapper.FSharp
-open Dapper.FSharp.MSSQL
 
 open ArrangementService
 open ArrangementService.Email
 open ArrangementService.DomainModels
 open ResultComputationExpression
 open ArrangementService.UserMessage
-open UserMessages
-open ArrangementService.Config
 
 module Queries =
     let participantsTable = "Participants"
 
-    let createParticipant (participant: Participant) (ctx: HttpContext): Result<Participant, UserMessage list> =
-        insert { table participantsTable
-                 value (Models.domainToDb participant)
-               }
-        |> Database.runInsertQuery<DbModel, DbModel> ctx
-        |> Seq.tryHead
-        |> function
-        | Some participant -> Ok <| Models.dbToDomain participant
-        // TODO: Add internal server error as an explicit type to UserMessage,
-        // potentially with a string explanation - although, this
-        // particular case shouldn't happen, so it's hard to explain 🤷‍♂️
-        | _ -> Error []
+    let createParticipant (participant: Participant) =
+        result {
+            do! insert { table participantsTable
+                         value (Models.domainToDb participant)
+                       }
+                |> Database.runInsertQuery
+            return ()
+        }
 
     let deleteParticipant (participant: Participant) (ctx: HttpContext): Result<unit, UserMessage list> =
         delete { table participantsTable

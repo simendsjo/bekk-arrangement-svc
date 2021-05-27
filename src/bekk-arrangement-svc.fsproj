@@ -33,11 +33,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="Utils\Seq.fs" />
     <Compile Include="Config.fs" />
 
     <Compile Include="LanguageExtensions\Validation.fs" />
-    <Compile Include="LanguageExtensions\ResultComputationExpression.fs" /> 
+    <Compile Include="LanguageExtensions\ResultComputationExpression.fs" />
+    <Compile Include="LanguageExtensions\Seq.fs" />
+    <Compile Include="LanguageExtensions\Option.fs" /> 
 
     <Compile Include="Common\UserMessage.fs" />
 
