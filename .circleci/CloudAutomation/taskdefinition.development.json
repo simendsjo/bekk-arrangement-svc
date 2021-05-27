@@ -15,7 +15,7 @@
       "name": "arrangement-svc-dev"
     }
   ],
-  "memory": "64",
+  "memory": "256",
   "family": "arrangement-svc-dev",
   "networkMode": "bridge"
 }
