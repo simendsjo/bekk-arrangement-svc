@@ -40,6 +40,7 @@ module Queries =
         Ok ()
 
     let updateEvent (id: Event.Id) (newEvent: Event) (ctx: HttpContext): Result<Unit, UserMessage list> =
+        let newEvent = Models.domainToDb newEvent
         update { table eventsTable
                  set newEvent
                  where (eq "Id" id.Unwrap)
