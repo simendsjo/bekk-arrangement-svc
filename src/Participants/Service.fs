@@ -123,15 +123,26 @@ module Service =
                 >> Seq.sortBy
                     (fun participant -> participant.RegistrationTime)
                 >> Ok
+            
+            match event.MaxParticipants.Unwrap with
+            //Max participants = 0 means participants = infinity 
+            | 0 -> return {
+                attendees =
+                    participantsForEvent
 
-            return { attendees =
-                         Seq.truncate event.MaxParticipants.Unwrap
-                             participantsForEvent
+                waitingList =
+                    [] 
+                }
 
-                     waitingList =
-                         Seq.safeSkip event.MaxParticipants.Unwrap
-                             participantsForEvent }
-        }
+            | maxParticipants -> return { 
+                attendees =
+                    Seq.truncate maxParticipants
+                        participantsForEvent
+
+                waitingList =
+                    Seq.safeSkip maxParticipants
+                        participantsForEvent }
+                }
 
     let getParticipationsForParticipant email =
         result {
