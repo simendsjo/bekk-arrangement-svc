@@ -68,6 +68,8 @@
     <Compile Include="Events\Queries.fs" />
     <Compile Include="Participants\Queries.fs" />
 
+    <Compile Include="Events\Validation.fs" />
+
     <Compile Include="Events\Service.fs" />
     <Compile Include="Participants\Service.fs" />
 

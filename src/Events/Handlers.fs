@@ -52,6 +52,7 @@ module Handlers =
         result {
             let! writeModel = getBody<WriteModel>
             let! domainModel = writeToDomain id writeModel |> ignoreContext
+
             
             let! updatedEvent = Service.updateEvent (Id id) domainModel
             return domainToView updatedEvent

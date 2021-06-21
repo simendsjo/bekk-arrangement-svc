@@ -2,9 +2,9 @@ namespace ArrangementService.Event
 
 open ArrangementService
 open ArrangementService.Email
-open Models
 open ResultComputationExpression
 open UserMessages
+open Validation
 open ArrangementService.DomainModels
 open Http
 
@@ -58,12 +58,14 @@ module Service =
             return newEvent
         }
 
+
     let updateEvent id event =
         result {
+            do! assertNumberOfParticipantsLessThanOrEqualMax event
             do! Queries.updateEvent id event
             return event 
         }
-
+    
     let deleteEvent id =
         result {
             do! Queries.deleteEvent id
