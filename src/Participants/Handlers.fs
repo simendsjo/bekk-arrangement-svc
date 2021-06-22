@@ -12,6 +12,7 @@ open System.Web
 open System
 open ArrangementService.DomainModels
 open ArrangementService.Config
+open ArrangementService.Event.Authorization
 
 module Handlers =
 
@@ -83,13 +84,22 @@ module Handlers =
                          else
                              None }
         }
+    
+    let getNumberOfParticipantsForEvent id =
+        result {
+            let! count = Service.getNumberOfParticipantsForEvent (Event.Id id)
+            return count.Unwrap
+        }
 
     let routes: HttpHandler =
         choose
             [ GET
               >=> choose
-                      [ routef "/events/%O/participants"
-                            (handle << getParticipantsForEvent)
+                      [ routef "/events/%O/participants" (fun eventId ->
+                            check (userCanSeeParticipants eventId)
+                            >=> (handle << getParticipantsForEvent) eventId)
+                        routef "/events/%O/participants/count" 
+                            (handle << getNumberOfParticipantsForEvent)
                         routef "/participants/%s/events"
                             (handle << getParticipationsForParticipant) ]
               DELETE
