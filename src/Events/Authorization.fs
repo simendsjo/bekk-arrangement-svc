@@ -27,12 +27,13 @@ module Authorization =
                 return! [ AccessDenied $"You are trying to edit an event (id {eventId}) which you did not create"] |> Error
         }
     
-    let userCanSeeParticipants = userCreatedEvent
 
     let userCanEditEvent eventId =
         anyOf
             [ userCreatedEvent eventId
               isAdmin ]
+
+    let userCanSeeParticipants = userCanEditEvent
 
     let eventHasOpenedForRegistration eventId =
         result {
