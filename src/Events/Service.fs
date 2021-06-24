@@ -7,6 +7,7 @@ open UserMessages
 open Validation
 open ArrangementService.DomainModels
 open Http
+open Models
 
 module Service =
 
@@ -59,11 +60,21 @@ module Service =
         }
 
 
-    let updateEvent id event =
+(* 
+    This function fetches the editToken from the database so it fits with our
+    writeToDomain function. Every field in the writeModel-records needs to be present when
+    updating, even though you might only want to update one field. Its not a very
+    intuitive solution but it works for now
+    -- Summer intern 2021
+*)
+    let updateEvent (id:Event.Id) writeModel =
         result {
-            do! assertNumberOfParticipantsLessThanOrEqualMax event
-            do! Queries.updateEvent id event
-            return event 
+            let! editToken = Queries.queryEditTokenByEventId id
+            let! newEvent = writeToDomain id.Unwrap writeModel editToken |> ignoreContext
+
+            do! assertNumberOfParticipantsLessThanOrEqualMax newEvent
+            do! Queries.updateEvent newEvent
+            return newEvent 
         }
     
     let deleteEvent id =
