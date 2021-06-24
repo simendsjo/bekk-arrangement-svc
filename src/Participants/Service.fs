@@ -121,12 +121,10 @@ module Service =
         result {
             let! participantsForEvent =
                 Queries.queryParticipantsByEventId event.Id
-                >> Seq.sortBy
-                    (fun participant -> participant.RegistrationTime)
                 >> Ok
             
             match event.MaxParticipants.Unwrap with
-            //Max participants = 0 means participants = infinity 
+            // Max participants = 0 means participants = infinity 
             | 0 -> return {
                 attendees =
                     participantsForEvent
@@ -224,4 +222,28 @@ module Service =
         result {
             let! count = Queries.getNumberOfParticipantsForEvent eventId
             return NumberOfParticipants count
+        }
+    
+    let getWaitinglistSpot eventId email =
+        result {
+            let! event = Service.getEvent eventId
+
+            let! { attendees = attendees
+                   waitingList = waitingList } = getParticipantsForEvent event
+
+            let isParticipant =  
+                Seq.append attendees waitingList 
+                |> Seq.exists (fun y -> y.Email = email)
+
+            if not isParticipant then
+                return! Error [ participantNotFound email ]
+
+            else
+                let waitingListIndex = 
+                    waitingList 
+                    |> Seq.tryFindIndex (fun participant -> participant.Email = email)
+                
+                return waitingListIndex 
+                    |> Option.map (fun index -> index + 1) 
+                    |> Option.defaultValue 0 
         }
