@@ -18,18 +18,13 @@ module Validation =
 
             // Man kan alltid øke så lenge den forrige
             // ikke var uendelig
-            if newMax > oldMax && oldMax <> 0 then
+            // og man har venteliste
+            if newMax >= oldMax && oldMax <> 0 && newEvent.HasWaitingList then
                 return ()
             else
 
             // Den nye er uendelig, all good
             if newMax = 0 then
-                return ()
-            else
-
-            // Man kan beholde størrelsen så lenge det finnes
-            // en venteliste
-            if newMax = oldMax && newEvent.HasWaitingList then
                 return ()
             else
 
