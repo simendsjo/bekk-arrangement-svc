@@ -27,6 +27,12 @@ module Validation =
                 return ()
             else
 
+            // Man kan beholde størrelsen så lenge det finnes
+            // en venteliste
+            if newMax = oldMax && newEvent.HasWaitingList then
+                return ()
+            else
+
             // Det er plass til alle
             let! numberOfParticipants = Participant.Queries.getNumberOfParticipantsForEvent newEvent.Id
             if numberOfParticipants <= newMax then
