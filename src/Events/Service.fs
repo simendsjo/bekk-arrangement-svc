@@ -34,7 +34,7 @@ module Service =
           $"Du har nå opprettet {event.Title.Unwrap}."
           $"Her er en unik lenke for å endre arrangementet: {createEditUrl event}."
           "Ikke del denne med andre🕵️" ]
-        |> String.concat "\n"
+        |> String.concat "<br>"
 
     let private createEmail createEditUrl (event: Event) =
         let message = createdEventMessage createEditUrl event
