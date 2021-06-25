@@ -60,19 +60,20 @@ module Service =
         }
 
 
-(* 
-    This function fetches the editToken from the database so it fits with our
-    writeToDomain function. Every field in the writeModel-records needs to be present when
-    updating, even though you might only want to update one field. Its not a very
-    intuitive solution but it works for now
-    -- Summer intern 2021
-*)
-    let updateEvent (id:Event.Id) writeModel =
+    (* 
+        This function fetches the editToken from the database so it fits with our
+        writeToDomain function. Every field in the writeModel-records needs to be present when
+        updating, even though you might only want to update one field. Its not a very
+        intuitive solution but it works for now
+        -- Summer intern 2021
+    *)
+    let updateEvent (id: Event.Id) writeModel =
         result {
-            let! editToken = Queries.queryEditTokenByEventId id
-            let! newEvent = writeToDomain id.Unwrap writeModel editToken |> ignoreContext
+            let! oldEvent = Queries.queryEventByEventId id
+            let! newEvent = writeToDomain id.Unwrap writeModel oldEvent.EditToken |> ignoreContext
 
-            do! assertNumberOfParticipantsLessThanOrEqualMax newEvent
+            do! assertCapacity oldEvent newEvent
+
             do! Queries.updateEvent newEvent
             return newEvent 
         }
