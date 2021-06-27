@@ -6,6 +6,7 @@ open FSharp.Control.Tasks
 
 open ArrangementService
 open UserMessage
+open System
 
 module Http =
 
@@ -43,7 +44,9 @@ module Http =
                 [ BadInput $"Missing query parameter '{param}'" ])
 
     let withRetry (handler: HttpHandler) (next: HttpFunc) (ctx: HttpContext): HttpFuncResult =
-        let rec retry () =
+        let seed = Guid.NewGuid().GetHashCode()
+        let rnd = Random(seed)
+        let rec retry delay =
             try
                 handler next ctx
             with _ ->
@@ -52,8 +55,17 @@ module Http =
                 config.currentConnection.Close()
                 config.currentConnection <- null
                 config.currentTransaction <- null
-                retry () 
-        retry ()
+
+                let jitter = rnd.NextDouble() + 0.5 // [0.5, 1.5]
+                let delayWithJitter =
+                    2.0 * delay * jitter + 20.0 * jitter
+
+                Async.Sleep (int delayWithJitter)
+                |> Async.RunSynchronously
+
+                retry delayWithJitter 
+
+        retry 50.0
 
     let parseBody<'T> (ctx: HttpContext) =
         let body = 
