@@ -21,14 +21,14 @@ module Database =
     let createConnection (ctx: HttpContext) = 
         let config = getConfig ctx
         if config.currentTransaction <> null then
-            config.currentTransaction
+            config.currentConnection, config.currentTransaction
         else
             let connection = new SqlConnection(config.databaseConnectionString) :> IDbConnection
             connection.Open()
             config.currentConnection <- connection
             let transaction = connection.BeginTransaction(IsolationLevel.Serializable)
             config.currentTransaction <- transaction
-            transaction
+            connection, transaction
 
     let runSelectQuery<'t> (ctx: HttpContext) query =
         let config = getConfig ctx

@@ -11,7 +11,6 @@ open Microsoft.AspNetCore.Cors.Infrastructure
 open Microsoft.AspNetCore.Authentication.JwtBearer
 open Microsoft.IdentityModel.Tokens
 open Microsoft.AspNetCore.Hosting
-open Giraffe.Serialization
 open Thoth.Json.Net
 open System.Data
 open System.Data.SqlClient
@@ -89,9 +88,9 @@ let configureServices (services: IServiceCollection) =
     let extraEncoder =
         Extra.empty |> Extra.withInt64
 
-    services.AddSingleton<Json.IJsonSerializer>
+    services.AddSingleton<Json.ISerializer>
         (Thoth.Json.Giraffe.ThothSerializer
-            (extra = extraEncoder, isCamelCase = true, skipNullField = true))
+            (caseStrategy = CamelCase, extra = extraEncoder, skipNullField = true))
     |> ignore
 
 
