@@ -2,6 +2,7 @@ namespace ArrangementService
 
 open Giraffe
 open Microsoft.AspNetCore.Http
+open FSharp.Control.Tasks
 
 open ArrangementService
 open UserMessage
@@ -18,13 +19,15 @@ module Http =
             convertUserMessagesToHttpError errorMessage next context
 
     let handle (endpoint: Handler<'t>) (next: HttpFunc) (context: HttpContext) =
-        let transaction = Database.createConnection context
+        let conn, transaction = Database.createConnection context
         match endpoint context with
         | Ok result ->
             transaction.Commit()
+            conn.Close()
             json result next context
         | Error errorMessage ->
             transaction.Rollback()
+            conn.Close()
             convertUserMessagesToHttpError errorMessage next context
 
     let getBody<'WriteModel> (context: HttpContext): Result<'WriteModel, UserMessage list>
@@ -38,3 +41,27 @@ module Http =
         |> Result.mapError
             (fun _ ->
                 [ BadInput $"Missing query parameter '{param}'" ])
+
+    let withRetry (handler: HttpHandler) (next: HttpFunc) (ctx: HttpContext): HttpFuncResult =
+        let rec retry () =
+            try
+                handler next ctx
+            with _ ->
+                let config = Config.getConfig ctx
+                config.currentTransaction.Rollback()
+                config.currentConnection.Close()
+                config.currentConnection <- null
+                config.currentTransaction <- null
+                retry () 
+        retry ()
+
+    let parseBody<'T> (ctx: HttpContext) =
+        let body = 
+            ctx.ReadBodyBufferedFromRequestAsync()
+            |> Async.AwaitTask
+            |> Async.RunSynchronously
+
+        Thoth.Json.Net.Decode.Auto.fromString<'T> body
+        |> function
+        | Ok x -> Ok x
+        | Error _ -> Error [ BadInput $"Kunne ikke parse body: {body}" ]
