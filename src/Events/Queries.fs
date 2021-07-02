@@ -11,9 +11,11 @@ open ArrangementService.UserMessage
 open ArrangementService.Event
 open ArrangementService.Email
 open ArrangementService.ResultComputationExpression
+open ArrangementService.Tools
 
 module Queries =
     let eventsTable = "Events"
+
 
     let createEvent (event: WriteModel) =
         result {
@@ -22,7 +24,7 @@ module Queries =
             do! insert { table eventsTable
                          value dbModel
                        }
-                |> Database.runInsertQuery
+                |> flip Database.runInsertQuery
             return Models.dbToDomain dbModel
         }
 
