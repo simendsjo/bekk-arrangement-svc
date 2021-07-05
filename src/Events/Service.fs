@@ -80,7 +80,7 @@ module Service =
     let updateEvent (id: Event.Id) writeModel =
         result {
             let! oldEvent = Queries.queryEventByEventId id
-            let! newEvent = writeToDomain id.Unwrap writeModel oldEvent.EditToken |> ignoreContext
+            let! newEvent = writeToDomain id.Unwrap writeModel oldEvent.EditToken oldEvent.IsCancelled |> ignoreContext
 
             do! assertValidCapacityChange oldEvent newEvent
             do! Queries.updateEvent newEvent
@@ -88,6 +88,12 @@ module Service =
             yield sendMailToPeopleWhoHaveReceivedASpotDueToIncreasedCapacity oldEvent newEvent
 
             return newEvent 
+        }
+
+    let cancelEvent event =
+        result {
+            do! Queries.updateEvent {event with IsCancelled=true}
+            return eventSuccessfullyCancelled event.Title
         }
     
     let deleteEvent id =
