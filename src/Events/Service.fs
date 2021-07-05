@@ -59,6 +59,12 @@ module Service =
             return newEvent
         }
 
+    let sendMailToPeopleWhoHaveReceivedASpotDueToIncreasedCapacity oldEvent newEvent =
+        result {
+            if newEvent.MaxParticipants.Unwrap > oldEvent.MaxParticipants.Unwrap then
+                return ()
+        }
+
 
     (* 
         This function fetches the editToken from the database so it fits with our
@@ -72,9 +78,11 @@ module Service =
             let! oldEvent = Queries.queryEventByEventId id
             let! newEvent = writeToDomain id.Unwrap writeModel oldEvent.EditToken |> ignoreContext
 
-            do! assertCapacity oldEvent newEvent
-
+            do! assertValidCapacityChange oldEvent newEvent
             do! Queries.updateEvent newEvent
+
+            yield sendMailToPeopleWhoHaveReceivedASpotDueToIncreasedCapacity oldEvent newEvent
+
             return newEvent 
         }
     

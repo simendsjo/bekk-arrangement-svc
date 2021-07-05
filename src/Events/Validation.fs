@@ -11,7 +11,7 @@ module Validation =
         For instance if the event is full it is not
         allowed to decrease number of spots
     *)
-    let assertCapacity (oldEvent: Event) (newEvent: Event) =
+    let assertValidCapacityChange (oldEvent: Event) (newEvent: Event) =
         result {
             let oldMax = oldEvent.MaxParticipants.Unwrap
             let newMax = newEvent.MaxParticipants.Unwrap
