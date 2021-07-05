@@ -38,6 +38,12 @@ module ResultComputationExpression =
         member this.Delay(f) = f
         member this.Run(f) = f()
         member this.Zero() = this.Return()
+        member this.For(sequence, body) =
+            fun ctx ->
+                sequence
+                |> Seq.iter (fun x -> body x ctx |> ignore)
+                Ok ()
+
 
         member this.Combine(lhs, rhs) =
             fun ctx ->
