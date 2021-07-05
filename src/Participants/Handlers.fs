@@ -18,7 +18,8 @@ module Handlers =
 
     let registerForEvent (eventId: Guid, email) =
         result {
-            let! writeModel = getBody<WriteModel>
+            let! writeModel = parseBody<WriteModel>
+
             let redirectUrlTemplate =
                 HttpUtility.UrlDecode writeModel.cancelUrlTemplate
 
@@ -114,9 +115,8 @@ module Handlers =
               POST
               >=> choose
                       [ routef "/events/%O/participants/%s" (fun (eventId: Guid, email) ->
-                            check (eventHasAvailableSpots eventId)
-                            >=> check
-                                    (eventHasNotPassed eventId)
-                            >=> check
-                                    (eventHasOpenedForRegistration eventId)
-                            >=> (handle << registerForEvent) (eventId, email)) ] ]
+                            (check (eventHasAvailableSpots eventId)
+                            >=> check (eventHasNotPassed eventId)
+                            >=> check (eventHasOpenedForRegistration eventId)
+                            >=> (handle << registerForEvent) (eventId, email))
+                            |> withRetry) ] ]

@@ -21,14 +21,14 @@ module Database =
     let createConnection (ctx: HttpContext) = 
         let config = getConfig ctx
         if config.currentTransaction <> null then
-            config.currentTransaction
+            config.currentConnection, config.currentTransaction
         else
             let connection = new SqlConnection(config.databaseConnectionString) :> IDbConnection
             connection.Open()
             config.currentConnection <- connection
             let transaction = connection.BeginTransaction(IsolationLevel.Serializable)
             config.currentTransaction <- transaction
-            transaction
+            connection, transaction
 
     let runSelectQuery<'t> (ctx: HttpContext) query =
         let config = getConfig ctx
@@ -48,12 +48,12 @@ module Database =
         |> Async.AwaitTask
         |> Async.RunSynchronously
 
-    let runInsertQuery query (ctx: HttpContext) =
+    let runInsertQuery (ctx: HttpContext) query =
         let config = getConfig ctx
         config.currentConnection.InsertAsync(query, config.currentTransaction)
         |> Async.AwaitTask
         |> Async.RunSynchronously
         |> ignore
         // TODO: Sjekk retur verdi og returner basert på det
-        
+
         Ok ()

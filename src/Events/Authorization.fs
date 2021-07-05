@@ -45,7 +45,7 @@ module Authorization =
             if openDateTime <= DateTimeOffset.Now then
                 return ()
             else
-                return! [ AccessDenied $"Arrangementet åpner for påmelding {openDateTime}" ] |> Error
+                return! [ AccessDenied $"Arrangementet åpner for påmelding {openDateTime.ToLocalTime}" ] |> Error
         }
 
     let eventHasNotPassed eventId =
