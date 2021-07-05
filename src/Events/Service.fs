@@ -304,24 +304,6 @@ module Service =
                     |> Option.defaultValue 0 
         }
 
-    let sendMailToPeopleWhoHaveReceivedASpotDueToIncreasedCapacity oldEvent newEvent =
-        result {
-            let newMax = newEvent.MaxParticipants.Unwrap
-            let oldMax = oldEvent.MaxParticipants.Unwrap
-            if newMax > oldMax then
-                let numberOfNewPeople = newMax - oldMax
-                let! { waitingList = waitingList } = getParticipantsForEvent oldEvent
-
-                let newPeople =
-                    waitingList
-                    |> Seq.truncate numberOfNewPeople
-
-                for newAttendee in newPeople do
-                    yield Service.sendMail <| createFreeSpotAvailableMail newEvent newAttendee
- 
-                return ()
-        }
-
 
     (* 
         This function fetches the editToken from the database so it fits with our
@@ -335,10 +317,18 @@ module Service =
             let! oldEvent = Event.Queries.queryEventByEventId id
             let! newEvent = Event.Models.writeToDomain id.Unwrap writeModel oldEvent.EditToken oldEvent.IsCancelled |> ignoreContext
 
+            let! { waitingList = oldWaitingList } = getParticipantsForEvent oldEvent
+            let numberOfNewPeople = newEvent.MaxParticipants.Unwrap - oldEvent.MaxParticipants.Unwrap
+
             do! Event.Validation.assertValidCapacityChange oldEvent newEvent
             do! Event.Queries.updateEvent newEvent
 
-            yield sendMailToPeopleWhoHaveReceivedASpotDueToIncreasedCapacity oldEvent newEvent
+            if numberOfNewPeople > 0 then
+                let newPeople =
+                    oldWaitingList
+                    |> Seq.truncate numberOfNewPeople
+                for newAttendee in newPeople do
+                    yield Service.sendMail <| createFreeSpotAvailableMail newEvent newAttendee
 
             return newEvent 
         }
