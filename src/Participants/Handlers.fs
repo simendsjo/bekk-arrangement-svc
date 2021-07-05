@@ -33,7 +33,7 @@ module Handlers =
                                             participant.CancellationToken.ToString
                                                 ())
 
-            let! event = Event.Service.getEvent (Event.Id eventId)
+            let! event = Service.getEvent (Event.Id eventId)
             let! participants = Service.getParticipantsForEvent event
             let isWaitlisted =
                 event.HasWaitingList
@@ -62,7 +62,7 @@ module Handlers =
         result {
             let! emailAddress = EmailAddress.Parse email |> ignoreContext
             
-            let! event = Event.Service.getEvent (Event.Id id)
+            let! event = Service.getEvent (Event.Id id)
             let! deleteResult = Service.deleteParticipant (event, emailAddress) 
             
             return deleteResult
@@ -70,7 +70,7 @@ module Handlers =
 
     let getParticipantsForEvent id =
         result {
-            let! event = Event.Service.getEvent (Event.Id id)
+            let! event = Service.getEvent (Event.Id id)
             let! participants = Service.getParticipantsForEvent event
             let hasWaitingList = event.HasWaitingList
             return { attendees =
