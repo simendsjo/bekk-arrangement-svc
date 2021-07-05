@@ -58,37 +58,6 @@ module Service =
             return newEvent
         }
 
-    let sendMailToPeopleWhoHaveReceivedASpotDueToIncreasedCapacity oldEvent newEvent =
-        result {
-            let newMax = newEvent.MaxParticipants.Unwrap
-            let oldMax = oldEvent.MaxParticipants.Unwrap
-            if newMax > oldMax then
-                let numberOfExistingPeople = oldMax
-                let numberOfNewPeople = newMax - oldMax
-                return ()
-        }
-
-
-    (* 
-        This function fetches the editToken from the database so it fits with our
-        writeToDomain function. Every field in the writeModel-records needs to be present when
-        updating, even though you might only want to update one field. Its not a very
-        intuitive solution but it works for now
-        -- Summer intern 2021
-    *)
-    let updateEvent (id: Event.Id) writeModel =
-        result {
-            let! oldEvent = Event.Queries.queryEventByEventId id
-            let! newEvent = Event.Models.writeToDomain id.Unwrap writeModel oldEvent.EditToken oldEvent.IsCancelled |> ignoreContext
-
-            do! Event.Validation.assertValidCapacityChange oldEvent newEvent
-            do! Event.Queries.updateEvent newEvent
-
-            yield sendMailToPeopleWhoHaveReceivedASpotDueToIncreasedCapacity oldEvent newEvent
-
-            return newEvent 
-        }
-
     let cancelEvent event =
         result {
             do! Event.Queries.updateEvent {event with IsCancelled=true}
@@ -333,4 +302,43 @@ module Service =
                 return waitingListIndex 
                     |> Option.map (fun index -> index + 1) 
                     |> Option.defaultValue 0 
+        }
+
+    let sendMailToPeopleWhoHaveReceivedASpotDueToIncreasedCapacity oldEvent newEvent =
+        result {
+            let newMax = newEvent.MaxParticipants.Unwrap
+            let oldMax = oldEvent.MaxParticipants.Unwrap
+            if newMax > oldMax then
+                let numberOfNewPeople = newMax - oldMax
+                let! { waitingList = waitingList } = getParticipantsForEvent oldEvent
+
+                let newPeople =
+                    waitingList
+                    |> Seq.truncate numberOfNewPeople
+
+                for newAttendee in newPeople do
+                    yield Service.sendMail <| createFreeSpotAvailableMail newEvent newAttendee
+ 
+                return ()
+        }
+
+
+    (* 
+        This function fetches the editToken from the database so it fits with our
+        writeToDomain function. Every field in the writeModel-records needs to be present when
+        updating, even though you might only want to update one field. Its not a very
+        intuitive solution but it works for now
+        -- Summer intern 2021
+    *)
+    let updateEvent (id: Event.Id) writeModel =
+        result {
+            let! oldEvent = Event.Queries.queryEventByEventId id
+            let! newEvent = Event.Models.writeToDomain id.Unwrap writeModel oldEvent.EditToken oldEvent.IsCancelled |> ignoreContext
+
+            do! Event.Validation.assertValidCapacityChange oldEvent newEvent
+            do! Event.Queries.updateEvent newEvent
+
+            yield sendMailToPeopleWhoHaveReceivedASpotDueToIncreasedCapacity oldEvent newEvent
+
+            return newEvent 
         }
