@@ -69,8 +69,8 @@ module Service =
 *)
     let updateEvent (id:Event.Id) writeModel =
         result {
-            let! editToken = Queries.queryEditTokenByEventId id
-            let! newEvent = writeToDomain id.Unwrap writeModel editToken |> ignoreContext
+            let! {EditToken = editToken; IsCancelled=isCancelled}= Queries.queryEventByEventId id
+            let! newEvent = writeToDomain id.Unwrap writeModel editToken isCancelled |> ignoreContext
 
             do! assertNumberOfParticipantsLessThanOrEqualMax newEvent
             do! Queries.updateEvent newEvent
