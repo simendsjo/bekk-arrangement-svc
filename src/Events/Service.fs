@@ -61,7 +61,11 @@ module Service =
 
     let sendMailToPeopleWhoHaveReceivedASpotDueToIncreasedCapacity oldEvent newEvent =
         result {
-            if newEvent.MaxParticipants.Unwrap > oldEvent.MaxParticipants.Unwrap then
+            let newMax = newEvent.MaxParticipants.Unwrap
+            let oldMax = oldEvent.MaxParticipants.Unwrap
+            if newMax > oldMax then
+                let numberOfExistingPeople = oldMax
+                let numberOfNewPeople = newMax - oldMax
                 return ()
         }
 
