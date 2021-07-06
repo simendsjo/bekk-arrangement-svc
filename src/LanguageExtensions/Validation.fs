@@ -29,3 +29,8 @@ module Validation =
         |> function
         | [] -> constructor thingToValidate |> Ok
         | errors -> Error errors
+
+    let optionally f x =
+        match x with
+        | None -> Ok ()
+        | Some x -> f x

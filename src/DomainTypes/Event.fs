@@ -83,15 +83,16 @@ type OpenForRegistrationTime =
     static member Parse(time: string) = int64 time |> OpenForRegistrationTime |> Ok
 
 type ParticipantQuestion =
-    | ParticipantQuestion of string
+    | ParticipantQuestion of string option
 
     member this.Unwrap =
         match this with
         | ParticipantQuestion participantQuestion -> participantQuestion
 
-    static member Parse(participantQuestion: string) =
+    static member Parse(participantQuestion: string option) =
         [ validateMaxLength 500
-              (BadInput "Spørsmål til deltaker kan ha maks 500 tegn") ]
+              (BadInput "Spørsmål til deltaker kan ha maks 500 tegn")
+          |> optionally ]
         |> validateAll ParticipantQuestion participantQuestion
 
 type NumberOfParticipants = 

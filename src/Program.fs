@@ -98,6 +98,8 @@ let configureServices (services: IServiceCollection) =
 let main _ =
     let contentRoot = Directory.GetCurrentDirectory()
     let webRoot = Path.Combine(contentRoot, "WebRoot")
+
+    Dapper.FSharp.OptionTypes.register()
     Migrate.Run(configuration.["ConnectionStrings:EventDb"])
 
     WebHostBuilder()

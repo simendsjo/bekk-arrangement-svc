@@ -13,10 +13,10 @@ module Database =
         `createConnection` is idempotent, i.e. you can call it many times
         and still get the same transaction.
 
-        This is useful because one (http) request does potentially many
-        "check"s before doing a "handle" of the endpoint. You really want
-        the "are there available spots on Event" to be evaluated in the
-        same transaction as the "add Participant to Event" operation.
+        This is useful because one (http) request does potentially many "check"s
+        before doing a "handle" of the endpoint. You really want the "are there
+        available spots on Event" to be evaluated in the same transaction as the
+        "add Participant to Event" operation.
     *)
     let createConnection (ctx: HttpContext) = 
         let config = getConfig ctx
