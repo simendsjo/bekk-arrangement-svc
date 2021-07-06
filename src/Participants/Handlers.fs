@@ -28,7 +28,8 @@ module Handlers =
                                             participant.EventId.Unwrap.ToString
                                                 ())
                                    .Replace("{email}",
-                                            participant.Email.Unwrap)
+                                            participant.Email.Unwrap
+                                            |> Uri.EscapeDataString)
                                    .Replace("{cancellationToken}",
                                             participant.CancellationToken.ToString
                                                 ())
