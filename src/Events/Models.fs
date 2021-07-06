@@ -29,7 +29,8 @@ type DbModel =
       OpenForRegistrationTime: int64
       ParticipantQuestion: string option
       HasWaitingList: bool 
-      IsCancelled: bool 
+      IsCancelled: bool
+      IsExternal: bool 
       EditToken: Guid
     }
 
@@ -47,6 +48,7 @@ type ViewModel =
       ParticipantQuestion: string option
       HasWaitingList: bool 
       IsCancelled: bool 
+      IsExternal: bool
     }
 
 type ViewModelWithEditToken =
@@ -67,6 +69,7 @@ type WriteModel =
       editUrlTemplate: string
       ParticipantQuestion: string option
       HasWaitingList: bool 
+      IsExternal: bool
     }
 
 module Models =
@@ -92,6 +95,7 @@ module Models =
         <*> ParticipantQuestion.Parse writeModel.ParticipantQuestion
         <*> (writeModel.HasWaitingList |> Ok)
         <*> Ok isCancelled
+        <*> (writeModel.IsExternal |> Ok)
 
     let dbToDomain (dbRecord: DbModel): Event =
         { Id = Id dbRecord.Id
@@ -109,6 +113,7 @@ module Models =
           ParticipantQuestion = ParticipantQuestion dbRecord.ParticipantQuestion
           HasWaitingList = dbRecord.HasWaitingList
           IsCancelled = dbRecord.IsCancelled
+          IsExternal = dbRecord.IsExternal
         }
         
     let domainToDb (domainModel: Event): DbModel =
@@ -128,6 +133,7 @@ module Models =
           ParticipantQuestion = domainModel.ParticipantQuestion.Unwrap
           HasWaitingList = domainModel.HasWaitingList
           IsCancelled = domainModel.IsCancelled
+          IsExternal = domainModel.IsExternal
         }
         
 
@@ -145,6 +151,7 @@ module Models =
           ParticipantQuestion = domainModel.ParticipantQuestion.Unwrap
           HasWaitingList = domainModel.HasWaitingList 
           IsCancelled = domainModel.IsCancelled 
+          IsExternal = domainModel.IsExternal
         }
 
     let domainToViewWithEditInfo (event: Event): ViewModelWithEditToken =
