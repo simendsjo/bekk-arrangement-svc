@@ -70,7 +70,6 @@
     <Compile Include="Events\Validation.fs" />
 
     <Compile Include="Events\Service.fs" />
-    <Compile Include="Participants\Service.fs" />
 
     <Compile Include="Events\Authorization.fs" />
     <Compile Include="Participants\Authorization.fs" />

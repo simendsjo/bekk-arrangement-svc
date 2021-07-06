@@ -43,11 +43,11 @@ module Handlers =
         result {
             let! messageToParticipants = getBody<string>
             let! event = Service.getEvent (Id id)
-            let! participants = Participant.Service.getParticipantsForEvent event
+            let! participants = Service.getParticipantsForEvent event
 
             let! config = getConfig >> Ok
 
-            yield Participant.Service.sendCancellationMailToParticipants
+            yield Service.sendCancellationMailToParticipants
                       messageToParticipants (EmailAddress config.noReplyEmail) participants.attendees event
 
             let! result =  match removeEventType with 

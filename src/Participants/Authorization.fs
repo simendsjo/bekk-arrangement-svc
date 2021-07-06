@@ -1,7 +1,6 @@
 namespace ArrangementService.Participant
 
 open Giraffe
-open Microsoft.AspNetCore.Http
 
 open ArrangementService
 open Auth
@@ -55,7 +54,7 @@ module Authorization =
     let oneCanParticipateOnEvent eventIdKey =
         let eventId = Event.Id eventIdKey
         result {
-            let! event = Event.Service.getEvent eventId
+            let! event = Service.getEvent eventId
             do! eventHasAvailableSpots event
             do! Event.Authorization.eventHasNotPassed event
             do! Event.Authorization.eventHasOpenedForRegistration event
