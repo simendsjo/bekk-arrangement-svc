@@ -54,3 +54,15 @@ module Authorization =
             else
                 return! [ AccessDenied "Arrangementet har allerede funnet sted" ] |> Error
         }
+
+    let eventIsExternalOrUserIsAuthenticated (eventId: Key) = 
+        result {
+            let! event = Service.getEvent (Event.Id eventId)
+            let! user = (fun ctx -> ctx.User |> Ok)
+            if event.IsExternal then
+                return ()
+            else if user.Identity.IsAuthenticated then 
+                return ()
+            else 
+                return! [AccessDenied "User does not have access to event"] |> Error 
+        }

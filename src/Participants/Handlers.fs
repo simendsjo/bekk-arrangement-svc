@@ -13,6 +13,7 @@ open System
 open ArrangementService.DomainModels
 open ArrangementService.Config
 open ArrangementService.Event.Authorization
+open ArrangementService.Auth
 
 module Handlers =
 
@@ -102,12 +103,15 @@ module Handlers =
                       [ routef "/events/%O/participants" (fun eventId ->
                             check (userCanSeeParticipants eventId)
                             >=> (handle << getParticipantsForEvent) eventId)
-                        routef "/events/%O/participants/count" 
-                            (handle << getNumberOfParticipantsForEvent)
+                        routef "/events/%O/participants/count" (fun eventId -> 
+                            check (eventIsExternalOrUserIsAuthenticated eventId)
+                            >=> (handle << getNumberOfParticipantsForEvent) eventId)
                         routef "/events/%O/participants/%s/waitinglist-spot" (fun (eventId, email) ->
-                            (handle << getWaitinglistSpot) (eventId, email))
-                        routef "/participants/%s/events"
-                            (handle << getParticipationsForParticipant) ]
+                            check (eventIsExternalOrUserIsAuthenticated eventId)
+                            >=> (handle << getWaitinglistSpot) (eventId, email))
+                        routef "/participants/%s/events" (fun email ->
+                            check (isAuthenticated)
+                            >=> (handle << getParticipationsForParticipant) email) ]
               DELETE
               >=> choose
                       [ routef "/events/%O/participants/%s" (fun parameters ->

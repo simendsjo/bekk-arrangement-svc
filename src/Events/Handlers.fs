@@ -13,6 +13,7 @@ open Authorization
 open Microsoft.AspNetCore.Http
 open Giraffe
 open System.Web
+open ArrangementService.Auth
 
 module Handlers =
 
@@ -88,10 +89,17 @@ module Handlers =
         choose
             [ GET
               >=> choose
-                      [ route "/events" >=> handle getEvents
-                        routef "/events/%O" (handle << getEvent)
-                        routef "/events/organizer/%s"
-                            (handle << getEventsOrganizedBy) ]
+                      [ route "/events" >=>
+                            check (isAuthenticated)
+                            >=> handle getEvents
+
+                        routef "/events/%O" (fun eventId -> 
+                        check (eventIsExternalOrUserIsAuthenticated eventId)
+                        >=> (handle << getEvent) eventId)
+
+                        routef "/events/organizer/%s" (fun email -> 
+                            check (isAuthenticated)
+                            >=> (handle << getEventsOrganizedBy) email)]
               DELETE
               >=> choose
                       [ routef "/events/%O" (fun id ->
@@ -106,4 +114,8 @@ module Handlers =
                       [ routef "/events/%O" (fun id ->
                             check (userCanEditEvent id)
                             >=> (handle << updateEvent) id) ]
-              POST >=> choose [ route "/events" >=> handle createEvent ] ]
+              POST 
+              >=> choose 
+                    [ route "/events" >=>
+                            check (isAuthenticated)
+                            >=> handle createEvent ] ]
