@@ -12,12 +12,14 @@ module UserMessage =
         | AccessDenied of string
         | NotFound of string
         | InternalErrorMessage of string
+        | NotLoggedIn of string
 
     type private ErrorCodes =
         | BadRequest
         | Forbidden
         | ResourceNotFound
         | InternalError
+        | Unauthorized
 
     type private LessThanGreaterOrSame =
         | Same of string
@@ -51,6 +53,7 @@ module UserMessage =
                 | _, AccessDenied m -> Greater(Forbidden, m)
                 | _, BadInput m -> Greater(BadRequest, m)
                 | _, InternalErrorMessage m -> Greater(InternalError, m)
+                | _, NotLoggedIn m -> Greater(Unauthorized, m)
 
             match current |> hasGreaterOrEqualSeverityThan errorCode with
             | Greater(greaterErrorCode, message) ->
@@ -68,6 +71,7 @@ module UserMessage =
             | BadRequest -> RequestErrors.BAD_REQUEST userMessage
             | Forbidden -> RequestErrors.FORBIDDEN userMessage
             | ResourceNotFound -> RequestErrors.NOT_FOUND userMessage
+            | Unauthorized -> RequestErrors.UNAUTHORIZED "Bearer" "Access to internal event" userMessage
             | InternalError ->
                 [ "Something has gone wrong" ]
                 |> errorMessagesToUserJson

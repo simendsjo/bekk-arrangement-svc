@@ -37,3 +37,12 @@ module Auth =
             let! isAdmin = isAuthorized config.permissionsAndClaimsKey config.adminPermissionClaim
             return isAdmin
         }
+
+    let isAuthenticated =
+        result {
+            let! user = (fun (ctx: HttpContext) -> ctx.User |> Ok)
+            if user.Identity.IsAuthenticated then
+                return ()
+            else
+                return! [ NotLoggedIn $"User not logged in" ] |> Error
+        }
