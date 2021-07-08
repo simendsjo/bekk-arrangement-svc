@@ -29,7 +29,8 @@ module Queries =
         }
 
     let getEvents (ctx: HttpContext): Event seq =
-        select { table eventsTable }
+        select { table eventsTable
+                 orderBy "StartDate" Desc }
         |> Database.runSelectQuery<DbModel> ctx
         |> Seq.map Models.dbToDomain
 
