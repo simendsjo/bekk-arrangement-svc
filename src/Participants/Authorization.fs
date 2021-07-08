@@ -56,8 +56,8 @@ module Authorization =
         result {
             let! event = Service.getEvent eventId
             do! eventHasAvailableSpots event
-            do! Event.Authorization.eventHasNotPassed event
-            do! Event.Authorization.eventHasOpenedForRegistration event
+            do! Event.Authorization.eventHasNotPassed event |> ignoreContext
+            do! Event.Authorization.eventHasOpenedForRegistration event |> ignoreContext
             do! eventIsNotCancelled event |> ignoreContext
             do! Event.Authorization.eventIsExternalOrUserIsAuthenticated eventIdKey 
         }

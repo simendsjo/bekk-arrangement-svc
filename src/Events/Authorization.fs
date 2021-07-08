@@ -36,24 +36,20 @@ module Authorization =
     let userCanSeeParticipants = userCanEditEvent
 
     let eventHasOpenedForRegistration (event:DomainModels.Event) =
-        result {
-            let openDateTime =
-                DateTimeOffset.FromUnixTimeMilliseconds
-                    event.OpenForRegistrationTime.Unwrap
+        let openDateTime =
+            DateTimeOffset.FromUnixTimeMilliseconds
+                event.OpenForRegistrationTime.Unwrap
 
-            if openDateTime <= DateTimeOffset.Now then
-                return ()
-            else
-                return! [ AccessDenied $"Arrangementet åpner for påmelding {openDateTime.ToLocalTime}" ] |> Error
-        }
+        if openDateTime <= DateTimeOffset.Now then
+            Ok ()
+        else
+            Error [ AccessDenied $"Arrangementet åpner for påmelding {openDateTime.ToLocalTime}" ] 
 
     let eventHasNotPassed (event:DomainModels.Event) =
-        result {
             if event.EndDate > now() then
-                return ()
+                Ok ()
             else
-                return! [ AccessDenied "Arrangementet har allerede funnet sted" ] |> Error
-        }
+                Error [ AccessDenied "Arrangementet har allerede funnet sted" ] 
 
     let eventIsExternalOrUserIsAuthenticated (eventId: Key) = 
         result {
