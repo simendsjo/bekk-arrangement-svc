@@ -30,13 +30,6 @@ module Auth =
                 return! [ AccessDenied $"Missing permission <{permission}> in token at '{permissionKey}'" ] |> Error
         }
 
-    let isAdmin =
-        result {
-            let! config = (fun (ctx: HttpContext) -> ctx.GetService<AppConfig>() |> Ok)
-
-            let! isAdmin = isAuthorized config.permissionsAndClaimsKey config.adminPermissionClaim
-            return isAdmin
-        }
 
     let isAuthenticated =
         result {
@@ -45,4 +38,13 @@ module Auth =
                 return ()
             else
                 return! [ NotLoggedIn $"User not logged in" ] |> Error
+        }
+
+    let isAdmin =
+        result {
+            do! isAuthenticated
+            let! config = (fun (ctx: HttpContext) -> ctx.GetService<AppConfig>() |> Ok)
+
+            let! isAdmin = isAuthorized config.permissionsAndClaimsKey config.adminPermissionClaim
+            return isAdmin
         }
