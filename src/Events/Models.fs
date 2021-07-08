@@ -27,7 +27,7 @@ type DbModel =
       StartTime: TimeSpan
       EndTime: TimeSpan
       OpenForRegistrationTime: int64
-      ParticipantQuestion: string 
+      ParticipantQuestion: string option
       HasWaitingList: bool 
       IsCancelled: bool 
       EditToken: Guid
@@ -44,7 +44,7 @@ type ViewModel =
       StartDate: DateTimeCustom
       EndDate: DateTimeCustom
       OpenForRegistrationTime: int64
-      ParticipantQuestion: string 
+      ParticipantQuestion: string option
       HasWaitingList: bool 
       IsCancelled: bool 
     }
@@ -65,7 +65,7 @@ type WriteModel =
       EndDate: DateTimeCustom
       OpenForRegistrationTime: string
       editUrlTemplate: string
-      ParticipantQuestion: string 
+      ParticipantQuestion: string option
       HasWaitingList: bool 
     }
 
