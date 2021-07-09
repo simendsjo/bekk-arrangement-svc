@@ -94,11 +94,11 @@ module Handlers =
                             >=> handle getEvents
 
                         routef "/events/%O" (fun eventId -> 
-                        check (eventIsExternalOrUserIsAuthenticated eventId)
-                        >=> (handle << getEvent) eventId)
+                            check (eventIsExternalOrUserIsAuthenticated eventId)
+                            >=> (handle << getEvent) eventId)
 
                         routef "/events/organizer/%s" (fun email -> 
-                            check (isAuthenticated)
+                            check isAuthenticated
                             >=> (handle << getEventsOrganizedBy) email)]
               DELETE
               >=> choose
@@ -117,5 +117,5 @@ module Handlers =
               POST 
               >=> choose 
                     [ route "/events" >=>
-                            check (isAuthenticated)
+                            check isAuthenticated
                             >=> handle createEvent ] ]

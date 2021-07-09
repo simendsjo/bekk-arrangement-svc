@@ -110,7 +110,7 @@ module Handlers =
                             check (eventIsExternalOrUserIsAuthenticated eventId)
                             >=> (handle << getWaitinglistSpot) (eventId, email))
                         routef "/participants/%s/events" (fun email ->
-                            check (isAuthenticated)
+                            check isAuthenticated
                             >=> (handle << getParticipationsForParticipant) email) ]
               DELETE
               >=> choose
