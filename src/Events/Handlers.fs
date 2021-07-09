@@ -57,10 +57,15 @@ module Handlers =
             return result
         }
 
+    let getEmployeeId = Auth.getUserId 
+                            >> Option.map Event.EmployeeId 
+                            >> Option.withError [UserMessages.couldNotRetrieveUserId]
+
     let updateEvent (id:Key) =
         result {
             let! writeModel = getBody<WriteModel>
-            let! updatedEvent = Service.updateEvent (Id id) writeModel
+            let! employeeId = getEmployeeId
+            let! updatedEvent = Service.updateEvent employeeId (Id id) writeModel
             return domainToView updatedEvent
         }
 
@@ -77,7 +82,9 @@ module Handlers =
                                    .Replace("{editToken}",
                                             event.EditToken.ToString())
 
-            let! newEvent = Service.createEvent createEditUrl writeModel
+            let! employeeId = getEmployeeId
+
+            let! newEvent = Service.createEvent createEditUrl employeeId.Unwrap writeModel
 
             return domainToViewWithEditInfo newEvent
         }

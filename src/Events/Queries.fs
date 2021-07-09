@@ -17,9 +17,9 @@ module Queries =
     let eventsTable = "Events"
 
 
-    let createEvent (event: WriteModel) =
+    let createEvent employeeId (event: WriteModel)  =
         result {
-            let! event = Models.writeToDomain (Guid.NewGuid()) event (Guid.NewGuid()) false |> ignoreContext
+            let! event = Models.writeToDomain (Guid.NewGuid()) event (Guid.NewGuid()) false employeeId |> ignoreContext
             let dbModel = Models.domainToDb event
             do! insert { table eventsTable
                          value dbModel

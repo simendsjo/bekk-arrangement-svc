@@ -6,6 +6,12 @@ open ArrangementService.Utils
 open UserMessage
 
 
+type EmployeeId = 
+    | EmployeeId of int option
+    member this.Unwrap =
+        match this with
+        | EmployeeId id -> id
+
 type Name =
     | Name of string
 

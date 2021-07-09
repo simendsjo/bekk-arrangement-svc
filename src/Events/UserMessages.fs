@@ -21,3 +21,6 @@ module UserMessages =
 
     let invalidRemovalOfWaitingList : UserMessage = 
         $"Du kan ikke fjerne venteliste når det er folk på den" |> BadInput
+
+    let couldNotRetrieveUserId : UserMessage = 
+        $"Kunne ikke hente ut bruker id" |> InternalErrorMessage

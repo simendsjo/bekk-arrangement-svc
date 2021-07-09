@@ -1,9 +1,6 @@
 namespace ArrangementService.Participant
 
 open System
-open Microsoft.AspNetCore.Http
-open System.Data
-open System.Collections.Generic
 
 open ArrangementService
 open TimeStamp
@@ -19,6 +16,7 @@ type DbModel =
     RegistrationTime: int64
     EventId: Guid
     CancellationToken: Guid
+    EmployeeId: int option
   }
 
 type ViewModel =
@@ -27,6 +25,7 @@ type ViewModel =
       Comment: string
       EventId: string
       RegistrationTime: int64
+      EmployeeId: int option
     }
 
 type NewlyCreatedParticipationViewModel =
@@ -61,9 +60,10 @@ module Models =
           EventId = Event.Id dbRecord.EventId
           RegistrationTime = TimeStamp dbRecord.RegistrationTime
           CancellationToken = dbRecord.CancellationToken
+          EmployeeId = Participant.EmployeeId dbRecord.EmployeeId
         }
 
-    let writeToDomain ((eventId, email): Key) (writeModel: WriteModel) : Result<Participant, UserMessage list> =
+    let writeToDomain ((eventId, email): Key) (writeModel: WriteModel) (employeeId: int option): Result<Participant, UserMessage list> =
           Ok Participant.Create 
           <*> Name.Parse writeModel.name
           <*> EmailAddress.Parse email 
@@ -71,13 +71,17 @@ module Models =
           <*> (Event.Id eventId |> Ok) 
           <*> (now() |> Ok) 
           <*> (Guid.NewGuid() |> Ok)
+          <*> Ok (Participant.EmployeeId employeeId)
+    
 
     let domainToView (participant: Participant): ViewModel =
         { Name = participant.Name.Unwrap
           Email = participant.Email.Unwrap
           Comment = participant.Comment.Unwrap
           EventId = participant.EventId.Unwrap.ToString()
-          RegistrationTime = participant.RegistrationTime.Unwrap }
+          RegistrationTime = participant.RegistrationTime.Unwrap
+          EmployeeId = participant.EmployeeId.Unwrap 
+           }
 
 
     let domainToDb (participant: Participant): DbModel =
@@ -87,6 +91,7 @@ module Models =
           EventId = participant.EventId.Unwrap
           RegistrationTime = participant.RegistrationTime.Unwrap
           CancellationToken = participant.CancellationToken
+          EmployeeId = participant.EmployeeId.Unwrap
         }
 
     let domainToViewWithCancelInfo (participant: Participant): NewlyCreatedParticipationViewModel
