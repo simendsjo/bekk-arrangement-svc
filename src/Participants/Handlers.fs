@@ -47,8 +47,10 @@ module Handlers =
                 Service.createNewParticipantMail
                     createCancelUrl event isWaitlisted
                     (EmailAddress config.noReplyEmail)
+            
+            let! userId = Auth.getUserId >> Ok // None for external participants 
 
-            let! participantDomainModel = (writeToDomain (eventId, email) writeModel) |> ignoreContext
+            let! participantDomainModel = (writeToDomain (eventId, email) writeModel userId) |> ignoreContext
             do! Service.registerParticipant createMailForParticipant participantDomainModel
             return domainToViewWithCancelInfo participantDomainModel
         }

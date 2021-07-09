@@ -32,6 +32,7 @@ type DbModel =
       IsCancelled: bool
       IsExternal: bool 
       EditToken: Guid
+      OrganizerId: int
     }
 
 type ViewModel =
@@ -49,6 +50,7 @@ type ViewModel =
       HasWaitingList: bool 
       IsCancelled: bool 
       IsExternal: bool
+      OrganizerId: int
     }
 
 type ViewModelWithEditToken =
@@ -79,6 +81,7 @@ module Models =
         (writeModel: WriteModel)
         (editToken: Guid)
         (isCancelled: bool)
+        (organizerId: int)
         : Result<Event, UserMessage list>
         =
         Ok Event.Create 
@@ -96,6 +99,7 @@ module Models =
         <*> (writeModel.HasWaitingList |> Ok)
         <*> Ok isCancelled
         <*> (writeModel.IsExternal |> Ok)
+        <*> (EmployeeId organizerId |> Ok)
 
     let dbToDomain (dbRecord: DbModel): Event =
         { Id = Id dbRecord.Id
@@ -114,6 +118,7 @@ module Models =
           HasWaitingList = dbRecord.HasWaitingList
           IsCancelled = dbRecord.IsCancelled
           IsExternal = dbRecord.IsExternal
+          OrganizerId = EmployeeId dbRecord.OrganizerId
         }
         
     let domainToDb (domainModel: Event): DbModel =
@@ -134,6 +139,7 @@ module Models =
           HasWaitingList = domainModel.HasWaitingList
           IsCancelled = domainModel.IsCancelled
           IsExternal = domainModel.IsExternal
+          OrganizerId = domainModel.OrganizerId.Unwrap
         }
         
 
@@ -152,6 +158,7 @@ module Models =
           HasWaitingList = domainModel.HasWaitingList 
           IsCancelled = domainModel.IsCancelled 
           IsExternal = domainModel.IsExternal
+          OrganizerId = domainModel.OrganizerId.Unwrap
         }
 
     let domainToViewWithEditInfo (event: Event): ViewModelWithEditToken =

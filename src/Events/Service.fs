@@ -49,9 +49,9 @@ module Service =
             yield Service.sendMail mail
         }
 
-    let createEvent createEditUrl event =
+    let createEvent createEditUrl employeeId event =
         result {
-            let! newEvent = Event.Queries.createEvent event
+            let! newEvent = Event.Queries.createEvent employeeId event
 
             yield sendNewlyCreatedEventMail createEditUrl newEvent
 
@@ -306,16 +306,16 @@ module Service =
 
 
     (* 
-        This function fetches the editToken from the database so it fits with our
+        This function fetches the event from the database so it fits with our
         writeToDomain function. Every field in the writeModel-records needs to be present when
         updating, even though you might only want to update one field. Its not a very
         intuitive solution but it works for now
         -- Summer intern 2021
     *)
-    let updateEvent (id: Event.Id) writeModel =
+    let updateEvent (employeeId:Event.EmployeeId) (id: Event.Id) writeModel =
         result {
             let! oldEvent = Event.Queries.queryEventByEventId id
-            let! newEvent = Event.Models.writeToDomain id.Unwrap writeModel oldEvent.EditToken oldEvent.IsCancelled |> ignoreContext
+            let! newEvent = Event.Models.writeToDomain id.Unwrap writeModel oldEvent.EditToken oldEvent.IsCancelled employeeId.Unwrap |> ignoreContext
 
             let! { waitingList = oldWaitingList } = getParticipantsForEvent oldEvent
             let numberOfNewPeople = newEvent.MaxParticipants.Unwrap - oldEvent.MaxParticipants.Unwrap

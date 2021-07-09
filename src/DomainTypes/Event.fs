@@ -15,6 +15,12 @@ type Id =
         match this with
         | Id id -> id
 
+type EmployeeId =
+    | EmployeeId of int
+    member this.Unwrap =
+        match this with
+        | EmployeeId id -> id
+
 type Title =
     | Title of string
 
