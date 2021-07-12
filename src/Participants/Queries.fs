@@ -61,6 +61,13 @@ module Queries =
        |> Database.runSelectQuery ctx
        |> Seq.map Models.dbToDomain
 
+    let queryParticipationsByEmployeeId (employeeId: Event.EmployeeId) ctx: Participant seq =
+        select { table participantsTable
+                 where (eq "EmployeeId" employeeId.Unwrap)
+               }
+       |> Database.runSelectQuery ctx
+       |> Seq.map Models.dbToDomain
+
     let queryParticipantsByEventId (eventId: Event.Id) ctx: Participant seq =
         select { table participantsTable
                  where (eq "EventId" eventId.Unwrap)

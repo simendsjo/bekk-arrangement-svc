@@ -64,8 +64,7 @@ module Handlers =
     let updateEvent (id:Key) =
         result {
             let! writeModel = getBody<WriteModel>
-            let! employeeId = getEmployeeId
-            let! updatedEvent = Service.updateEvent employeeId (Id id) writeModel
+            let! updatedEvent = Service.updateEvent (Id id) writeModel
             return domainToView updatedEvent
         }
 
@@ -92,12 +91,21 @@ module Handlers =
     let deleteEvent = deleteOrCancelEvent Delete
     let cancelEvent = deleteOrCancelEvent Cancel
 
+
+    let getLocalStorageData = 
+        result {
+            let! employeeId = getEmployeeId
+            let! events = Service.getEventsOrganizedByOrganizerId employeeId
+            let! participations = Service.getParticipationsByEmployeeId employeeId
+            return Participant.Models.DomainToLocalStorageView events participations
+        }
+
     let routes: HttpHandler =
         choose
             [ GET
               >=> choose
                       [ route "/events" >=>
-                            check (isAuthenticated)
+                            check isAuthenticated
                             >=> handle getEvents
 
                         routef "/events/%O" (fun eventId -> 
@@ -106,7 +114,12 @@ module Handlers =
 
                         routef "/events/organizer/%s" (fun email -> 
                             check isAuthenticated
-                            >=> (handle << getEventsOrganizedBy) email)]
+                            >=> (handle << getEventsOrganizedBy) email)
+
+                        route "/localstorage" >=>
+                            check isAuthenticated
+                            >=> handle getLocalStorageData  
+                      ]
               DELETE
               >=> choose
                       [ routef "/events/%O" (fun id ->

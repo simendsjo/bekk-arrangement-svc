@@ -51,6 +51,20 @@ type ParticipantViewModelsWithWaitingList =
 
 type Key = Guid * string
 
+type EditableEventLocalStorage = {
+  EventId: Guid
+  EditToken: Guid
+}
+type ParticipationsLocalStorage = {
+  EventId: Guid
+  Email: string
+  CancellationToken: Guid
+}
+type ViewModelLocalStorage =
+  { EditableEvents: EditableEventLocalStorage list
+    Participations: ParticipationsLocalStorage list
+  }
+
 module Models =
 
     let dbToDomain (dbRecord: DbModel): Participant =
@@ -81,7 +95,7 @@ module Models =
           EventId = participant.EventId.Unwrap.ToString()
           RegistrationTime = participant.RegistrationTime.Unwrap
           EmployeeId = participant.EmployeeId.Unwrap 
-           }
+        }
 
 
     let domainToDb (participant: Participant): DbModel =
@@ -98,3 +112,16 @@ module Models =
         =
         { Participant = domainToView participant
           CancellationToken = participant.CancellationToken.ToString() }
+
+    let DomainToLocalStorageView events (participations: Participant seq) : ViewModelLocalStorage = 
+        let eventToLocalStorage event = { EventId=event.Id.Unwrap
+                                          EditToken = event.EditToken
+                                        }
+        let participationToLocalStorage (participant:Participant) = { EventId=participant.EventId.Unwrap
+                                                                      Email= participant.Email.Unwrap
+                                                                      CancellationToken=participant.CancellationToken
+                                                                    }
+
+        { EditableEvents = (events |> Seq.map eventToLocalStorage |> Seq.toList)
+          Participations = participations |> Seq.map participationToLocalStorage |> Seq.toList
+        }
