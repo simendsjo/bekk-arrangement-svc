@@ -57,9 +57,9 @@ module Handlers =
             return result
         }
 
-    let getEmployeeId = Auth.getUserId 
-                            >> Option.map Event.EmployeeId 
-                            >> Option.withError [UserMessages.couldNotRetrieveUserId]
+    let getEmployeeId = Auth.getUserId // option int
+                            >> Option.map Event.EmployeeId  // option EmployeeId
+                            >> Option.withError [UserMessages.couldNotRetrieveUserId] // Result<EmployeeId, UserMessage list>
 
     let updateEvent (id:Key) =
         result {
