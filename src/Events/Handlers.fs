@@ -92,11 +92,10 @@ module Handlers =
     let cancelEvent = deleteOrCancelEvent Cancel
 
 
-    let getLocalStorageData = 
+    let getLocalStorageData employeeId = 
         result {
-            let! employeeId = getEmployeeId
-            let! events = Service.getEventsOrganizedByOrganizerId employeeId
-            let! participations = Service.getParticipationsByEmployeeId employeeId
+            let! events = Service.getEventsOrganizedByOrganizerId (Event.EmployeeId employeeId)
+            let! participations = Service.getParticipationsByEmployeeId (Event.EmployeeId employeeId)
             return Participant.Models.DomainToLocalStorageView events participations
         }
 
@@ -116,9 +115,9 @@ module Handlers =
                             check isAuthenticated
                             >=> (handle << getEventsOrganizedBy) email)
 
-                        route "/localstorage" >=>
-                            check isAuthenticated
-                            >=> handle getLocalStorageData  
+                        routef "/localstorage/%i" (fun id ->
+                            check (isAdminOrAuthenticatedAsUser id)
+                            >=> (handle << getLocalStorageData) id) 
                       ]
               DELETE
               >=> choose

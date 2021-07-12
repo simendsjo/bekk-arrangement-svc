@@ -34,6 +34,7 @@ module Auth =
         }
 
 
+
     let isAuthenticated =
         result {
             let! user = (fun (ctx: HttpContext) -> ctx.User |> Ok)
@@ -51,9 +52,22 @@ module Auth =
             let! isAdmin = isAuthorized config.permissionsAndClaimsKey config.adminPermissionClaim
             return isAdmin
         }
+    
 
     let getUserId (ctx:HttpContext) : int option =
         isAuthenticated ctx 
             |> function
                 | Error _ -> None
                 | Ok _ -> ctx.User.FindFirst(employeeIdClaim).Value |> Tools.tryParseInt
+
+    let isAuthenticatedAs id =
+        result{
+            let! userId = getUserId >> Option.withError ([NotLoggedIn $"Could not retrieve UserId"])
+            if userId = id then
+                return ()
+            else
+                return! [AccessDenied $"User not logged in with id:{id}"] |> Error
+       }
+
+    let isAdminOrAuthenticatedAsUser id = anyOf [isAdmin
+                                                 isAuthenticatedAs id]
