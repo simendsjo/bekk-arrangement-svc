@@ -21,6 +21,11 @@ module Service =
             let! eventsByOrganizer = Event.Queries.queryEventsOrganizedByEmail organizerEmail >> Ok
             return eventsByOrganizer
         }
+    let getEventsOrganizedByOrganizerId (organizerId:Event.EmployeeId) =
+        result {
+            let! eventsByOrganizer = Event.Queries.queryEventsOrganizedByOrganizerId organizerId >> Ok
+            return eventsByOrganizer
+        }
 
     let getEvent id =
         result {
@@ -206,6 +211,11 @@ module Service =
 
             return participantsByMail
         }
+    let getParticipationsByEmployeeId employeeId =
+        result {
+            let! participations = Participant.Queries.queryParticipationsByEmployeeId employeeId >> Ok
+            return participations
+        }
 
     let private sendMailToFirstPersonOnWaitingList
         (event: Event)
@@ -312,10 +322,10 @@ module Service =
         intuitive solution but it works for now
         -- Summer intern 2021
     *)
-    let updateEvent (employeeId:Event.EmployeeId) (id: Event.Id) writeModel =
+    let updateEvent (id: Event.Id) writeModel =
         result {
             let! oldEvent = Event.Queries.queryEventByEventId id
-            let! newEvent = Event.Models.writeToDomain id.Unwrap writeModel oldEvent.EditToken oldEvent.IsCancelled employeeId.Unwrap |> ignoreContext
+            let! newEvent = Event.Models.writeToDomain id.Unwrap writeModel oldEvent.EditToken oldEvent.IsCancelled oldEvent.OrganizerId.Unwrap |> ignoreContext
 
             let! { waitingList = oldWaitingList } = getParticipantsForEvent oldEvent
             let numberOfNewPeople = newEvent.MaxParticipants.Unwrap - oldEvent.MaxParticipants.Unwrap

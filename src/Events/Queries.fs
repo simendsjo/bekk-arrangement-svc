@@ -68,3 +68,10 @@ module Queries =
                }
        |> Database.runSelectQuery ctx
        |> Seq.map Models.dbToDomain
+
+    let queryEventsOrganizedByOrganizerId (organizerId: EmployeeId) ctx: Event seq =
+        select { table eventsTable
+                 where (eq "OrganizerId" organizerId.Unwrap)
+               }
+       |> Database.runSelectQuery ctx
+       |> Seq.map Models.dbToDomain

@@ -6,7 +6,10 @@ open Microsoft.AspNetCore.Http
 open ResultComputationExpression
 open UserMessage
 
+
 module Auth =
+
+    let employeeIdClaim = "https://api.bekk.no/claims/employeeId"
 
     let anyOf these =
         fun ctx ->
@@ -48,16 +51,9 @@ module Auth =
             let! isAdmin = isAuthorized config.permissionsAndClaimsKey config.adminPermissionClaim
             return isAdmin
         }
-    let tryParseInt s = 
-        try 
-            s |> int |> Some
-        with :? System.FormatException -> 
-            None
-    
-    let employeeIdClaim = "https://api.bekk.no/claims/employeeId"
 
     let getUserId (ctx:HttpContext) : int option =
         isAuthenticated ctx 
             |> function
                 | Error _ -> None
-                | Ok _ -> ctx.User.FindFirst(employeeIdClaim).Value |> tryParseInt
+                | Ok _ -> ctx.User.FindFirst(employeeIdClaim).Value |> Tools.tryParseInt
