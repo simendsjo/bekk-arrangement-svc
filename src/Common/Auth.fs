@@ -62,7 +62,7 @@ module Auth =
 
     let isAuthenticatedAs id =
         result{
-            let! userId = getUserId >> Option.withError ([NotLoggedIn $"Could not retrieve UserId"])
+            let! userId = getUserId >> Option.withError [NotLoggedIn $"Could not retrieve UserId"]
             if userId = id then
                 return ()
             else

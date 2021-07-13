@@ -113,7 +113,7 @@ module Models =
         { Participant = domainToView participant
           CancellationToken = participant.CancellationToken.ToString() }
 
-    let DomainToLocalStorageView events (participations: Participant seq) : ViewModelLocalStorage = 
+    let domainToLocalStorageView events (participations: Participant seq) : ViewModelLocalStorage = 
         let eventToLocalStorage event = { EventId=event.Id.Unwrap
                                           EditToken = event.EditToken
                                         }
