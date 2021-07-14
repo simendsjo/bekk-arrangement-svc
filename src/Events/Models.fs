@@ -14,6 +14,11 @@ open UserMessage
 open ArrangementService.Email
 open ArrangementService.DomainModels
 
+type ShortnameDbModel = {
+  Shortname: string 
+  EventId: Guid
+}
+
 type DbModel = 
     { Id: Guid
       Title: string

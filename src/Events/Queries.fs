@@ -16,6 +16,8 @@ open ArrangementService.Tools
 module Queries =
     let eventsTable = "Events"
 
+    let shortnamesTable = "Shortnames"
+
 
     let createEvent employeeId (event: WriteModel)  =
         result {
@@ -75,3 +77,14 @@ module Queries =
                }
        |> Database.runSelectQuery ctx
        |> Seq.map Models.dbToDomain
+
+    let queryEventByShortname (shortname: string) ctx: Result<Event, UserMessage list> =
+        select { table shortnamesTable 
+                 where (eq "Shortname" shortname)
+                 innerJoin eventsTable "Id" "EventId"
+               }
+       |> Database.runSelectJoinQuery<ShortnameDbModel, Event.DbModel> ctx
+       |> Seq.tryHead
+       |> function
+       | Some (_, event) -> Ok <| Models.dbToDomain event
+       | None -> Error [ UserMessages.eventNotFound shortname ]

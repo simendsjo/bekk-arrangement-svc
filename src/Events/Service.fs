@@ -342,3 +342,9 @@ module Service =
 
             return newEvent 
         }
+
+    let getEventByShortname shortname = 
+        result {
+            let! event = Event.Queries.queryEventByShortname shortname
+            return event
+        }

@@ -25,3 +25,7 @@ module Tools =
             s |> int |> Some
         with :? System.FormatException -> 
             None
+
+    let tee f x =
+        f x
+        x
