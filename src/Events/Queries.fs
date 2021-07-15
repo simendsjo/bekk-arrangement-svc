@@ -30,6 +30,14 @@ module Queries =
 
     let getEvents (ctx: HttpContext): Event seq =
         select { table eventsTable
+                 where (ge "EndDate" DateTime.Now)
+                 orderBy "StartDate" Asc }
+        |> Database.runSelectQuery<DbModel> ctx
+        |> Seq.map Models.dbToDomain
+
+    let getPastEvents (ctx: HttpContext): Event seq =
+        select { table eventsTable
+                 where (lt "EndDate" DateTime.Now)
                  orderBy "StartDate" Desc }
         |> Database.runSelectQuery<DbModel> ctx
         |> Seq.map Models.dbToDomain

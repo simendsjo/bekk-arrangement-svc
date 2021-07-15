@@ -15,6 +15,12 @@ module Service =
             let! events = Event.Queries.getEvents >> Ok
             return events
         }
+    
+    let getPastEvents: Handler<Event seq> =
+        result {
+            let! events = Event.Queries.getPastEvents >> Ok
+            return events
+        }
 
     let getEventsOrganizedBy organizerEmail =
         result {
