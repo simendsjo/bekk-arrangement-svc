@@ -27,6 +27,12 @@ module Handlers =
             return Seq.map domainToView events |> Seq.toList
         }
 
+    let getPastEvents: Handler<ViewModel list> =
+        result {
+            let! events = Service.getPastEvents
+            return Seq.map domainToView events |> Seq.toList
+        }
+
     let getEventsOrganizedBy organizerEmail =
         result {
             let! events = Service.getEventsOrganizedBy (EmailAddress organizerEmail)
@@ -106,6 +112,10 @@ module Handlers =
                       [ route "/events" >=>
                             check isAuthenticated
                             >=> handle getEvents
+
+                        route "/events/previous" >=>
+                            check isAuthenticated
+                            >=> handle getPastEvents
 
                         routef "/events/%O" (fun eventId -> 
                             check (eventIsExternalOrUserIsAuthenticated eventId)
