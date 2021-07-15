@@ -77,6 +77,7 @@ type WriteModel =
       ParticipantQuestion: string option
       HasWaitingList: bool 
       IsExternal: bool
+      Shortname: string option
     }
 
 module Models =

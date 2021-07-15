@@ -58,6 +58,11 @@ module Service =
         result {
             let! newEvent = Event.Queries.createEvent employeeId event
 
+            match event.Shortname with
+            | None -> yield! Ok () |> ignoreContext
+            | Some shortname ->
+                yield! Event.Queries.setShortname newEvent.Id shortname
+
             yield sendNewlyCreatedEventMail createEditUrl newEvent
 
             return newEvent
