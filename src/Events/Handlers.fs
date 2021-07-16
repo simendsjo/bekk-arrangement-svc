@@ -101,7 +101,8 @@ module Handlers =
 
     let getEventIdByShortname =
         result {
-            let! shortname = queryParam "shortname"
+            let! shortnameEncoded = queryParam "shortname"
+            let shortname = System.Web.HttpUtility.UrlDecode(shortnameEncoded)
             let! event = Service.getEventByShortname shortname
             return event.Id.Unwrap
         }
