@@ -64,6 +64,8 @@
     <Compile Include="Events\Models.fs" />
     <Compile Include="Participants\Models.fs" />
 
+    <Compile Include="Events\PureBusinessLogic.fs" />
+
     <Compile Include="Events\Queries.fs" />
     <Compile Include="Participants\Queries.fs" />
 

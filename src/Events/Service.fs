@@ -218,29 +218,12 @@ module Service =
 
     let getParticipantsForEvent (event: Event): Handler<Participant.ParticipantsWithWaitingList> =
         result {
-            let! participantsForEvent =
+            let! allParticipantsForEvent =
                 Participant.Queries.queryParticipantsByEventId event.Id
                 >> Ok
+            return BusinessLogic.getAttendeesAndWaitinglist event allParticipantsForEvent
+        }
             
-            match event.MaxParticipants.Unwrap with
-            // Max participants = 0 means participants = infinity 
-            | 0 -> return {
-                attendees =
-                    participantsForEvent
-
-                waitingList =
-                    [] 
-                }
-
-            | maxParticipants -> return { 
-                attendees =
-                    Seq.truncate maxParticipants
-                        participantsForEvent
-
-                waitingList =
-                    Seq.safeSkip maxParticipants
-                        participantsForEvent }
-                }
 
     let getParticipationsForParticipant email =
         result {
@@ -331,25 +314,10 @@ module Service =
     let getWaitinglistSpot eventId email =
         result {
             let! event = getEvent eventId
+            let! participants = getParticipantsForEvent event
 
-            let! { attendees = attendees
-                   waitingList = waitingList } = getParticipantsForEvent event
+            return BusinessLogic.getWaitinglistSpot event email participants
 
-            let isParticipant =  
-                Seq.append attendees waitingList 
-                |> Seq.exists (fun y -> y.Email = email)
-
-            if not isParticipant then
-                return! Error [ Participant.UserMessages.participantNotFound email ]
-
-            else
-                let waitingListIndex = 
-                    waitingList 
-                    |> Seq.tryFindIndex (fun participant -> participant.Email = email)
-                
-                return waitingListIndex 
-                    |> Option.map (fun index -> index + 1) 
-                    |> Option.defaultValue 0 
         }
 
 
