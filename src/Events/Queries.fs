@@ -89,12 +89,23 @@ module Queries =
        | Some (_, event) -> Ok <| Models.dbToDomain event
        | None -> Error [ UserMessages.eventNotFound shortname ]
 
-    let setShortname (eventId: Event.Id) (shortname: string) (ctx: HttpContext): Result<Unit, UserMessage list> =
-        // TODO: teste om den finnes for så å slette?
-        // eventuelt handtere at eventet må vere in the past
-        insert { table shortnamesTable
-                 value {| Shortname = shortname; EventId = eventId.Unwrap |}
+    let insertShortname (eventId: Event.Id) (shortname: string) (ctx: HttpContext): Result<Unit, UserMessage list> =
+        try
+            insert { table shortnamesTable
+                     value {| Shortname = shortname; EventId = eventId.Unwrap |}
+                   }
+            |> Database.runInsertQuery ctx
+            |> ignore
+            Ok ()
+
+        // Inserten kan feile feks dersom Shortname (PK) allerede finnes
+        with _ -> 
+            Error []
+
+    let deleteShortname (shortname: string) (ctx: HttpContext): Result<Unit, UserMessage list> =
+        delete { table shortnamesTable
+                 where (eq "Shortname" shortname)
                }
-        |> Database.runInsertQuery ctx
+        |> Database.runDeleteQuery ctx
         |> ignore
         Ok ()
