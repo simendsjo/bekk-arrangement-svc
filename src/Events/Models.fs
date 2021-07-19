@@ -56,6 +56,7 @@ type ViewModel =
       IsCancelled: bool 
       IsExternal: bool
       OrganizerId: int
+      IsInThePast: bool
     }
 
 type ViewModelWithEditToken =
@@ -165,6 +166,7 @@ module Models =
           IsCancelled = domainModel.IsCancelled 
           IsExternal = domainModel.IsExternal
           OrganizerId = domainModel.OrganizerId.Unwrap
+          IsInThePast = domainModel.StartDate <= DateTime.now() 
         }
 
     let domainToViewWithEditInfo (event: Event): ViewModelWithEditToken =
