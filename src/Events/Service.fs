@@ -333,10 +333,10 @@ module Service =
             let! oldEvent = Event.Queries.queryEventByEventId id
             let! newEvent = Event.Models.writeToDomain id.Unwrap writeModel oldEvent.EditToken oldEvent.IsCancelled oldEvent.OrganizerId.Unwrap |> ignoreContext
 
-            let! { waitingList = oldWaitingList } = getParticipantsForEvent oldEvent
+            let! { attendees=currentAttendees; waitingList = oldWaitingList } = getParticipantsForEvent oldEvent
             let numberOfNewPeople = newEvent.MaxParticipants.Unwrap - oldEvent.MaxParticipants.Unwrap
 
-            do! Event.Validation.assertValidCapacityChange oldEvent newEvent
+            do! Event.Validation.assertValidCapacityChange oldEvent newEvent (Seq.append currentAttendees oldWaitingList) |> ignoreContext
             do! Event.Queries.updateEvent newEvent
 
             if numberOfNewPeople > 0 then
