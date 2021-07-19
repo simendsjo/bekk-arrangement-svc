@@ -105,6 +105,14 @@ module Handlers =
             return Participant.Models.domainToLocalStorageView events participations
         }
 
+    let getEventIdByShortname =
+        result {
+            let! shortnameEncoded = queryParam "shortname"
+            let shortname = System.Web.HttpUtility.UrlDecode(shortnameEncoded)
+            let! event = Service.getEventByShortname shortname
+            return event.Id.Unwrap
+        }
+
     let routes: HttpHandler =
         choose
             [ GET
@@ -128,6 +136,8 @@ module Handlers =
                         routef "/events-and-participations/%i" (fun id ->
                             check (isAdminOrAuthenticatedAsUser id)
                             >=> (handle << getEventAndParticipationSummaryForEmployee) id) 
+                        
+                        route "/events/id" >=> handle getEventIdByShortname
                       ]
               DELETE
               >=> choose

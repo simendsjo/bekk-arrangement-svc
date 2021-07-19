@@ -36,6 +36,12 @@ module Database =
         |> Async.AwaitTask
         |> Async.RunSynchronously
 
+    let runSelectJoinQuery<'a, 'b> (ctx: HttpContext) query =
+        let config = getConfig ctx
+        config.currentConnection.SelectAsync<'a, 'b>(query, config.currentTransaction)
+        |> Async.AwaitTask
+        |> Async.RunSynchronously
+
     let runUpdateQuery (ctx: HttpContext) query =
         let config = getConfig ctx
         config.currentConnection.UpdateAsync(query, config.currentTransaction)

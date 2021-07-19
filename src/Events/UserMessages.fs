@@ -24,3 +24,6 @@ module UserMessages =
 
     let couldNotRetrieveUserId : UserMessage = 
         $"Kunne ikke hente ut bruker-id" |> InternalErrorMessage
+
+    let shortnameIsInUse shortname: UserMessage = 
+        $"Det finnes allerede et pågående arrangement med kortnavn '{shortname}'" |> BadInput

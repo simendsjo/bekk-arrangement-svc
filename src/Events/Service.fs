@@ -7,6 +7,7 @@ open ArrangementService.DomainModels
 open Http
 open DateTime
 open CalendarInvite
+open ArrangementService.Event
 
 module Service =
 
@@ -60,9 +61,40 @@ module Service =
             yield Service.sendMail mail
         }
 
+    type EventWithShortname =
+        | EventExistsWithShortname of Event
+        | UnusedShortname
+
+    let private setShortname eventId shortname =
+        result {
+            let! shortnameExists =
+                    Queries.queryEventByShortname shortname
+                    >> function
+                    | Ok event -> EventExistsWithShortname event |> Ok
+                    | Error _ -> UnusedShortname |> Ok
+
+            match shortnameExists with
+            | UnusedShortname ->
+                yield! Ok () |> ignoreContext
+
+            | EventExistsWithShortname event ->
+                if event.EndDate >= DateTime.now() then
+                    return! Error [ UserMessages.shortnameIsInUse shortname ]
+                else
+                    yield! Queries.deleteShortname shortname
+
+            yield! Queries.insertShortname eventId shortname
+            return ()
+        }
+
     let createEvent createEditUrl employeeId event =
         result {
-            let! newEvent = Event.Queries.createEvent employeeId event
+            let! newEvent = Queries.createEvent employeeId event
+
+            match event.Shortname with
+            | None -> yield! Ok () |> ignoreContext
+            | Some shortname ->
+                yield! setShortname newEvent.Id shortname
 
             yield sendNewlyCreatedEventMail createEditUrl newEvent
 
@@ -347,4 +379,10 @@ module Service =
                     yield Service.sendMail <| createFreeSpotAvailableMail newEvent newAttendee
 
             return newEvent 
+        }
+
+    let getEventByShortname shortname = 
+        result {
+            let! event = Event.Queries.queryEventByShortname shortname
+            return event
         }

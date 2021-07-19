@@ -1,0 +1,9 @@
+USE [arrangement-db];
+
+CREATE TABLE [Shortnames]
+(
+	Shortname NVARCHAR(255) PRIMARY KEY NOT NULL,
+	EventId UNIQUEIDENTIFIER NOT NULL UNIQUE,
+
+	CONSTRAINT Fk_Shortname_EventId FOREIGN KEY (EventId) REFERENCES Events(Id)
+);
