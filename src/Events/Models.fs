@@ -160,7 +160,7 @@ module Models =
           IsCancelled = domainModel.IsCancelled 
           IsExternal = domainModel.IsExternal
           OrganizerId = domainModel.OrganizerId.Unwrap
-          IsInThePast = domainModel.StartDate <= DateTime.now() 
+          IsInThePast = domainModel.EndDate <= DateTime.now() 
         }
 
     let domainToViewWithEditInfo (event: Event): ViewModelWithEditToken =
