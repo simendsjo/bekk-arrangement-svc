@@ -417,8 +417,8 @@ module Service =
                           |> Seq.map participantToRow 
                           |> String.concat "\n"
         let eventName = $"{event.Title.Unwrap}"
-        let attendeesTitle = "Attendees"
-        let waitinglistTitle = "Waitinglist"
+        let attendeesTitle = "Påmeldte"
+        let waitinglistTitle = "Venteliste"
 
         eventName + "\n"
         + attendeesTitle + "\n"

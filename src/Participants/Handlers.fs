@@ -113,7 +113,7 @@ module Handlers =
     let exportParticipationsDataForEvent (eventId) ctx = 
         let strRepresentation = Service.exportParticipationsDataForEvent (Event.Id eventId) ctx
         ctx.SetHttpHeader (HeaderNames.ContentType, "text/csv")
-        ctx.SetHttpHeader (HeaderNames.ContentDisposition, "attachment; filename=hei.csv")
+        ctx.SetHttpHeader (HeaderNames.ContentDisposition, $"attachment; filename=\"{eventId}.csv\"")
         strRepresentation
 
     let routes: HttpHandler =
