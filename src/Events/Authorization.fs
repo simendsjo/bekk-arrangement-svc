@@ -3,6 +3,7 @@ namespace ArrangementService.Event
 open Giraffe
 
 open ArrangementService
+open ArrangementService.DomainModels
 open Auth
 open ResultComputationExpression
 open UserMessage
@@ -12,12 +13,9 @@ open System
 
 module Authorization =
 
-    let userIsOrganizer eventId =
+    let userIsOrganizer (event: DomainModels.Event) =
         result {
-            let! event = Service.getEvent (Id eventId)
-
             let! userId = getUserId >> Ok
-
 
             let isTheOrganizer = userId = Some event.OrganizerId.Unwrap
 
@@ -25,13 +23,13 @@ module Authorization =
                 return ()
             else
                 return!
-                    [ AccessDenied $"You are trying to edit an event (id {eventId}) which you did not create" ]
+                    [ AccessDenied
+                          $"Du prøver å endre på et arrangement (id {event.Id.Unwrap}) som du ikke er arrangør av" ]
                     |> Error
         }
 
-    let userHasCorrectEditToken eventId =
+    let userHasCorrectEditToken (event: DomainModels.Event) =
         result {
-            let! event = Service.getEvent (Id eventId)
             let! editToken = queryParam "editToken"
 
             let hasCorrectEditToken = editToken = event.EditToken.ToString()
@@ -40,15 +38,23 @@ module Authorization =
                 return ()
             else
                 return!
-                    [ AccessDenied $"You are trying to edit an event (id {eventId}) using the wrong editToken" ]
+                    [ AccessDenied $"Du prøvde å gjøre endringer på et arrangement (id {event.Id.Unwrap}) med ugyldig editToken" ]
                     |> Error
         }
 
 
     let userCanEditEvent eventId =
-        anyOf [ isAdmin
-                userHasCorrectEditToken eventId
-                userIsOrganizer eventId ]
+        result {
+            let! event = Service.getEvent (Event.Id eventId)
+
+            let! authResult =
+                anyOf [ isAdmin
+                        userHasCorrectEditToken event
+                        userIsOrganizer event ]
+
+            return authResult
+        }
+
 
     let userCanSeeParticipants = userCanEditEvent
 
@@ -75,7 +81,7 @@ module Authorization =
             if event.IsExternal then
                 return ()
             else
-                return! Error [ AccessDenied "Event is internal" ]
+                return! Error [ AccessDenied "Arrangementet er internt" ]
         }
 
     let eventIsExternalOrUserIsAuthenticated (eventId: Key) =
