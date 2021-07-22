@@ -115,7 +115,7 @@ module Handlers =
 
     let routes: HttpHandler =
         choose
-            [ GET
+            [ GET_HEAD
               >=> choose
                       [ route "/events" >=>
                             check isAuthenticated
