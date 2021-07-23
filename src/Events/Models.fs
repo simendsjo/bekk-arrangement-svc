@@ -1,9 +1,6 @@
 namespace ArrangementService.Event
 
 open System
-open System.Linq
-open Giraffe
-open Microsoft.AspNetCore.Http
 
 open ArrangementService
 
@@ -57,6 +54,7 @@ type ViewModel =
       IsExternal: bool
       OrganizerId: int
       IsInThePast: bool
+      Shortname: string option
     }
 
 type ViewModelWithEditToken =
@@ -107,8 +105,9 @@ module Models =
         <*> Ok isCancelled
         <*> (writeModel.IsExternal |> Ok)
         <*> (EmployeeId organizerId |> Ok)
+        <*> (Shortname writeModel.Shortname |> Ok)
 
-    let dbToDomain (dbRecord: DbModel): Event =
+    let dbToDomain (dbRecord: DbModel, shortname: string option): Event =
         { Id = Id dbRecord.Id
           Title = Title dbRecord.Title
           Description = Description dbRecord.Description
@@ -126,6 +125,10 @@ module Models =
           IsCancelled = dbRecord.IsCancelled
           IsExternal = dbRecord.IsExternal
           OrganizerId = EmployeeId dbRecord.OrganizerId
+          Shortname = 
+            match shortname with
+            | Some shortname -> Shortname (Some shortname)
+            | None -> Shortname None
         }
         
     let domainToDb (domainModel: Event): DbModel =
@@ -167,6 +170,7 @@ module Models =
           IsExternal = domainModel.IsExternal
           OrganizerId = domainModel.OrganizerId.Unwrap
           IsInThePast = domainModel.EndDate <= DateTime.now() 
+          Shortname = domainModel.Shortname.Unwrap
         }
 
     let domainToViewWithEditInfo (event: Event): ViewModelWithEditToken =
