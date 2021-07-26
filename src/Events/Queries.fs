@@ -41,7 +41,7 @@ module Queries =
     let getPastEvents (ctx: HttpContext): Event seq =
         select { table eventsTable
                  leftJoin shortnamesTable "EventId" "Id"
-                 where (lt "EndDate" DateTime.Now)
+                 where (lt "EndDate" DateTime.Now + eq "IsCancelled" false)
                  orderBy "StartDate" Desc }
         |> Database.runOuterJoinSelectQuery<Event.DbModel, ShortnameDbModel>  ctx
         |> Seq.map (fun (event, shortnameDbModel) -> (event, shortnameDbModel |> Option.map (fun dbModel -> dbModel.Shortname)))
