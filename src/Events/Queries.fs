@@ -39,7 +39,7 @@ module Queries =
 
     let getPastEvents (ctx: HttpContext): Event seq =
         select { table eventsTable
-                 where (lt "EndDate" DateTime.Now)
+                 where (lt "EndDate" DateTime.Now + eq "IsCancelled" false)
                  orderBy "StartDate" Desc }
         |> Database.runSelectQuery<DbModel> ctx
         |> Seq.map Models.dbToDomain
