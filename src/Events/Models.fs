@@ -126,10 +126,7 @@ module Models =
           IsCancelled = dbRecord.IsCancelled
           IsExternal = dbRecord.IsExternal
           OrganizerId = EmployeeId dbRecord.OrganizerId
-          Shortname = 
-            match shortname with
-            | Some shortname -> Shortname (Some shortname)
-            | None -> Shortname None
+          Shortname = Shortname shortname
         }
         
     let domainToDb (domainModel: Event): DbModel =
