@@ -105,7 +105,7 @@ module Models =
         <*> Ok isCancelled
         <*> (writeModel.IsExternal |> Ok)
         <*> (EmployeeId organizerId |> Ok)
-        <*> (Shortname writeModel.Shortname |> Ok)
+        <*> Shortname.Parse writeModel.Shortname
 
     let dbToDomain (dbRecord: DbModel, shortname: string option): Event =
         { Id = Id dbRecord.Id

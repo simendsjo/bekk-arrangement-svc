@@ -116,8 +116,16 @@ type Shortname =
         | Shortname shortname -> shortname
 
     static member Parse(shortname: string option) =
-        [ validateMaxLength 200
+        [ validateMinLength 1
+              (BadInput "URL kortnavn kan ikke vere tom streng!")
+          |> optionally
+
+          validateMaxLength 200
               (BadInput "URL kortnavn kan ha maks 200 tegn")
-          |> optionally ]
-          // TODO add more validaitons, such as no slash (/) or empty string
+          |> optionally
+
+          validateDoesNotContain "/?#"
+              (BadInput "URL kortnavn kan ikke inneholde reserverte tegn")
+          |> optionally
+        ]
         |> validateAll Shortname shortname

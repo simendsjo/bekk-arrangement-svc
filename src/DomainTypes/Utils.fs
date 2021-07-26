@@ -20,3 +20,9 @@ module Utils =
     let validateDateRange startDate endDate =
         [ validateBefore (BadInput "Startdato må være før sluttdato") ]
         |> validateAll id (startDate, endDate)
+
+    let validateDoesNotContain (values: 'T seq) errorMessage (list: 'T seq) =
+        validate (fun xs ->
+                        values
+                        |> Seq.forall (fun value -> xs |> Seq.contains value |> not )
+        ) errorMessage list
