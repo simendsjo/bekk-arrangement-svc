@@ -371,6 +371,19 @@ module Service =
             do! Event.Validation.assertValidCapacityChange oldEvent newEvent
             do! Event.Queries.updateEvent newEvent
 
+            if newEvent.Shortname <> oldEvent.Shortname then
+                match oldEvent.Shortname with
+                | Shortname (Some oldShortname) ->
+                    yield! Queries.deleteShortname oldShortname
+                | Shortname None ->
+                    yield! Ok () |> ignoreContext
+
+                match newEvent.Shortname with
+                | Shortname (Some shortname) ->
+                    yield! setShortname newEvent.Id shortname
+                | Shortname None ->
+                    yield! Ok () |> ignoreContext
+
             if numberOfNewPeople > 0 then
                 let newPeople =
                     oldWaitingList
