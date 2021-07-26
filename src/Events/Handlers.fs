@@ -81,6 +81,7 @@ module Handlers =
             let redirectUrlTemplate =
                 HttpUtility.UrlDecode writeModel.editUrlTemplate
 
+            let viewUrl = writeModel.viewUrl
             let createEditUrl (event: Event) =
                 redirectUrlTemplate.Replace("{eventId}",
                                             event.Id.Unwrap.ToString())
@@ -89,7 +90,7 @@ module Handlers =
 
             let! employeeId = getEmployeeId
 
-            let! newEvent = Service.createEvent createEditUrl employeeId.Unwrap writeModel
+            let! newEvent = Service.createEvent viewUrl createEditUrl employeeId.Unwrap writeModel
 
             return domainToViewWithEditInfo newEvent
         }

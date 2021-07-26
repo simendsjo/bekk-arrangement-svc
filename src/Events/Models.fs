@@ -72,6 +72,7 @@ type WriteModel =
       StartDate: DateTimeCustom
       EndDate: DateTimeCustom
       OpenForRegistrationTime: string
+      viewUrl: string option
       editUrlTemplate: string
       ParticipantQuestion: string option
       HasWaitingList: bool 
