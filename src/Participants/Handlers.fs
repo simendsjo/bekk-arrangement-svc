@@ -101,11 +101,7 @@ module Handlers =
     let getWaitinglistSpot (eventId, email) = Service.getWaitinglistSpot (Event.Id eventId) (EmailAddress email) 
 
 
-    let exportParticipationsDataForEvent (eventId) ctx = 
-        let strRepresentation = Service.exportParticipationsDataForEvent (Event.Id eventId) ctx
-        ctx.SetHttpHeader (HeaderNames.ContentType, "text/csv")
-        ctx.SetHttpHeader (HeaderNames.ContentDisposition, $"attachment; filename=\"{eventId}.csv\"")
-        strRepresentation
+    let exportParticipationsDataForEvent (eventId) ctx = Service.exportParticipationsDataForEvent (Event.Id eventId) ctx
 
     let routes: HttpHandler =
         choose
@@ -119,7 +115,7 @@ module Handlers =
                             >=> (handle << getNumberOfParticipantsForEvent) eventId)
                         routef "/events/%O/participants/export" (fun eventId -> 
                             check (userCanEditEvent eventId)
-                            >=> (csvhandle << exportParticipationsDataForEvent) eventId)
+                            >=> ((csvhandle eventId) << exportParticipationsDataForEvent) eventId)
                         routef "/events/%O/participants/%s/waitinglist-spot" (fun (eventId, email) ->
                             check (eventIsExternalOrUserIsAuthenticated eventId)
                             >=> (handle << getWaitinglistSpot) (eventId, email))
