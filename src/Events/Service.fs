@@ -387,24 +387,37 @@ module Service =
             return event
         }
     
-    let participantToRow (participant:Participant) = $"{participant.Name.Unwrap},{participant.Email.Unwrap},{participant.Comment.Unwrap}"
+
+    let participantToCSVRow (participant:Participant) =
+        let filterSemicolon = String.filter ((<>) ';')
+        let name = participant.Name.Unwrap |> filterSemicolon
+        let email = participant.Email.Unwrap |> filterSemicolon
+        let comment = participant.Comment.Unwrap |> filterSemicolon
+        $"{name};{email};{comment}"
 
     let createExportEventString (event:Event) (participants:Participant.ParticipantsWithWaitingList) =
+        let newline="\n"
+
         let attendees = participants.attendees 
-                        |> Seq.map participantToRow 
-                        |>String.concat "\n" 
+                        |> Seq.map participantToCSVRow 
+                        |>String.concat newline 
         let waitingList = participants.waitingList 
-                          |> Seq.map participantToRow 
-                          |> String.concat "\n"
-        let eventName = $"{event.Title.Unwrap}"
+                          |> Seq.map participantToCSVRow 
+                          |> String.concat newline
+        let eventName = event.Title.Unwrap 
         let attendeesTitle = "Påmeldte"
         let waitinglistTitle = "Venteliste"
+        let header = "Navn;Epost;Kommentar"
 
-        eventName + "\n"
-        + attendeesTitle + "\n"
-        + attendees + "\n"
-        + waitinglistTitle + "\n"
-        + waitingList + "\n"
+        ["sep=;" 
+         eventName 
+         attendeesTitle 
+         header 
+         attendees 
+         waitinglistTitle
+         header 
+         waitingList 
+        ] |> String.concat newline
 
     let exportParticipationsDataForEvent (id: Event.Id) =
         result {
