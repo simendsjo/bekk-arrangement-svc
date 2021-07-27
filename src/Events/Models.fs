@@ -1,9 +1,6 @@
 namespace ArrangementService.Event
 
 open System
-open System.Linq
-open Giraffe
-open Microsoft.AspNetCore.Http
 
 open ArrangementService
 
@@ -57,6 +54,7 @@ type ViewModel =
       IsExternal: bool
       OrganizerId: int
       IsInThePast: bool
+      Shortname: string option
     }
 
 type ViewModelWithEditToken =
@@ -74,6 +72,7 @@ type WriteModel =
       StartDate: DateTimeCustom
       EndDate: DateTimeCustom
       OpenForRegistrationTime: string
+      viewUrl: string option
       editUrlTemplate: string
       ParticipantQuestion: string option
       HasWaitingList: bool 
@@ -107,8 +106,9 @@ module Models =
         <*> Ok isCancelled
         <*> (writeModel.IsExternal |> Ok)
         <*> (EmployeeId organizerId |> Ok)
+        <*> Shortname.Parse writeModel.Shortname
 
-    let dbToDomain (dbRecord: DbModel): Event =
+    let dbToDomain (dbRecord: DbModel, shortname: string option): Event =
         { Id = Id dbRecord.Id
           Title = Title dbRecord.Title
           Description = Description dbRecord.Description
@@ -126,6 +126,7 @@ module Models =
           IsCancelled = dbRecord.IsCancelled
           IsExternal = dbRecord.IsExternal
           OrganizerId = EmployeeId dbRecord.OrganizerId
+          Shortname = Shortname shortname
         }
         
     let domainToDb (domainModel: Event): DbModel =
@@ -167,6 +168,7 @@ module Models =
           IsExternal = domainModel.IsExternal
           OrganizerId = domainModel.OrganizerId.Unwrap
           IsInThePast = domainModel.EndDate <= DateTime.now() 
+          Shortname = domainModel.Shortname.Unwrap
         }
 
     let domainToViewWithEditInfo (event: Event): ViewModelWithEditToken =

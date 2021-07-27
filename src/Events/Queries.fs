@@ -14,10 +14,9 @@ open ArrangementService.ResultComputationExpression
 open ArrangementService.Tools
 
 module Queries =
+
     let eventsTable = "Events"
-
     let shortnamesTable = "Shortnames"
-
 
     let createEvent employeeId (event: WriteModel)  =
         result {
@@ -27,21 +26,25 @@ module Queries =
                          value dbModel
                        }
                 |> flip Database.runInsertQuery
-            return Models.dbToDomain dbModel
+            return Models.dbToDomain (dbModel, event.Shortname.Unwrap)
         }
 
     let getEvents (ctx: HttpContext): Event seq =
         select { table eventsTable
+                 leftJoin shortnamesTable "EventId" "Id"
                  where (ge "EndDate" DateTime.Now)
                  orderBy "StartDate" Asc }
-        |> Database.runSelectQuery<DbModel> ctx
+        |> Database.runOuterJoinSelectQuery<Event.DbModel, ShortnameDbModel>  ctx
+        |> Seq.map (fun (event, shortnameDbModel) -> (event, shortnameDbModel |> Option.map (fun dbModel -> dbModel.Shortname)))
         |> Seq.map Models.dbToDomain
 
     let getPastEvents (ctx: HttpContext): Event seq =
         select { table eventsTable
+                 leftJoin shortnamesTable "EventId" "Id"
                  where (lt "EndDate" DateTime.Now + eq "IsCancelled" false)
                  orderBy "StartDate" Desc }
-        |> Database.runSelectQuery<DbModel> ctx
+        |> Database.runOuterJoinSelectQuery<Event.DbModel, ShortnameDbModel>  ctx
+        |> Seq.map (fun (event, shortnameDbModel) -> (event, shortnameDbModel |> Option.map (fun dbModel -> dbModel.Shortname)))
         |> Seq.map Models.dbToDomain
 
     let deleteEvent (id: Event.Id) (ctx: HttpContext): Result<Unit, UserMessage list> =
@@ -64,26 +67,32 @@ module Queries =
 
     let queryEventByEventId (eventId: Event.Id) ctx: Result<Event, UserMessage list> =
         select { table eventsTable 
+                 leftJoin shortnamesTable "EventId" "Id"
                  where (eq "Id" eventId.Unwrap)
                }
-       |> Database.runSelectQuery ctx
+       |> Database.runOuterJoinSelectQuery<Event.DbModel, ShortnameDbModel>  ctx
+       |> Seq.map (fun (event, shortnameDbModel) -> (event, shortnameDbModel |> Option.map (fun dbModel -> dbModel.Shortname)))
        |> Seq.tryHead
        |> function
-       | Some event -> Ok <| Models.dbToDomain event
+       | Some eventWithShortname -> Ok <| Models.dbToDomain eventWithShortname
        | None -> Error [ UserMessages.eventNotFound eventId ]
 
     let queryEventsOrganizedByEmail (organizerEmail: EmailAddress) ctx: Event seq =
         select { table eventsTable
+                 leftJoin shortnamesTable "EventId" "Id" 
                  where (eq "Email" organizerEmail.Unwrap)
                }
-       |> Database.runSelectQuery ctx
+       |> Database.runOuterJoinSelectQuery<Event.DbModel, ShortnameDbModel>  ctx
+       |> Seq.map (fun (event, shortnameDbModel) -> (event, shortnameDbModel |> Option.map (fun dbModel -> dbModel.Shortname)))
        |> Seq.map Models.dbToDomain
 
     let queryEventsOrganizedByOrganizerId (organizerId: EmployeeId) ctx: Event seq =
         select { table eventsTable
+                 leftJoin shortnamesTable "EventId" "Id" 
                  where (eq "OrganizerId" organizerId.Unwrap)
                }
-       |> Database.runSelectQuery ctx
+       |> Database.runOuterJoinSelectQuery<Event.DbModel, ShortnameDbModel>  ctx
+       |> Seq.map (fun (event, shortnameDbModel) -> (event, shortnameDbModel |> Option.map (fun dbModel -> dbModel.Shortname)))
        |> Seq.map Models.dbToDomain
 
     let queryEventByShortname (shortname: string) ctx: Result<Event, UserMessage list> =
@@ -91,10 +100,10 @@ module Queries =
                  where (eq "Shortname" shortname)
                  innerJoin eventsTable "Id" "EventId"
                }
-       |> Database.runSelectJoinQuery<ShortnameDbModel, Event.DbModel> ctx
+       |> Database.runInnerJoinSelectQuery<ShortnameDbModel, Event.DbModel> ctx
        |> Seq.tryHead
        |> function
-       | Some (_, event) -> Ok <| Models.dbToDomain event
+       | Some (shortname, event) -> Ok <| Models.dbToDomain (event, Some shortname.Shortname)
        | None -> Error [ UserMessages.eventNotFound shortname ]
 
     let insertShortname (eventId: Event.Id) (shortname: string) (ctx: HttpContext): Result<Unit, UserMessage list> =

@@ -107,3 +107,25 @@ type NumberOfParticipants =
     member this.Unwrap =
         match this with
         | NumberOfParticipants count -> count
+
+type Shortname =
+    | Shortname of string option
+
+    member this.Unwrap =
+        match this with
+        | Shortname shortname -> shortname
+
+    static member Parse(shortname: string option) =
+        [ validateMinLength 1
+              (BadInput "URL kortnavn kan ikke vere tom streng!")
+          |> optionally
+
+          validateMaxLength 200
+              (BadInput "URL kortnavn kan ha maks 200 tegn")
+          |> optionally
+
+          validateDoesNotContain "/?#"
+              (BadInput "URL kortnavn kan ikke inneholde reserverte tegn")
+          |> optionally
+        ]
+        |> validateAll Shortname shortname

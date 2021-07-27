@@ -40,24 +40,26 @@ module Service =
             return event
         }
 
-    let private createdEventMessage createEditUrl (event: Event) =
+    let private createdEventMessage (viewUrl: string option) createEditUrl (event: Event) =
         [ "Hei! 😄"
-          $"Du har nå opprettet {event.Title.Unwrap}."
+          $"Du har nå opprettet {event.Title.Unwrap}" + (match viewUrl with
+                                                            | None -> "."
+                                                            | Some url -> $": {url}.")
           $"Her er en unik lenke for å endre arrangementet: {createEditUrl event}."
           "Ikke del denne med andre🕵️" ]
         |> String.concat "<br>"
 
-    let private createEmail createEditUrl (event: Event) =
-        let message = createdEventMessage createEditUrl event
+    let private createEmail viewUrl createEditUrl (event: Event) =
+        let message = createdEventMessage viewUrl createEditUrl event
         { Subject = $"Du opprettet {event.Title.Unwrap}"
           Message = message
           To = event.OrganizerEmail
           CalendarInvite = None }
 
-    let private sendNewlyCreatedEventMail createEditUrl (event: Event) =
+    let private sendNewlyCreatedEventMail viewUrl createEditUrl (event: Event) =
         result {
             let mail =
-                createEmail createEditUrl event
+                createEmail viewUrl createEditUrl event
             yield Service.sendMail mail
         }
 
@@ -87,7 +89,7 @@ module Service =
             return ()
         }
 
-    let createEvent createEditUrl employeeId event =
+    let createEvent viewUrl createEditUrl employeeId event =
         result {
             let! newEvent = Queries.createEvent employeeId event
 
@@ -96,7 +98,7 @@ module Service =
             | Some shortname ->
                 yield! setShortname newEvent.Id shortname
 
-            yield sendNewlyCreatedEventMail createEditUrl newEvent
+            yield sendNewlyCreatedEventMail viewUrl createEditUrl newEvent
 
             return newEvent
         }
@@ -370,6 +372,19 @@ module Service =
 
             do! Event.Validation.assertValidCapacityChange oldEvent newEvent
             do! Event.Queries.updateEvent newEvent
+
+            if newEvent.Shortname <> oldEvent.Shortname then
+                match oldEvent.Shortname with
+                | Shortname (Some oldShortname) ->
+                    yield! Queries.deleteShortname oldShortname
+                | Shortname None ->
+                    yield! Ok () |> ignoreContext
+
+                match newEvent.Shortname with
+                | Shortname (Some shortname) ->
+                    yield! setShortname newEvent.Id shortname
+                | Shortname None ->
+                    yield! Ok () |> ignoreContext
 
             if numberOfNewPeople > 0 then
                 let newPeople =

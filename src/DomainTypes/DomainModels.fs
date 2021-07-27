@@ -27,9 +27,10 @@ type Event =
       IsCancelled: bool
       IsExternal: bool
       OrganizerId: Event.EmployeeId
+      Shortname: Event.Shortname
     }
     static member Create =
-        fun id title description location organizerName organizerEmail maxParticipants (startDate, endDate) openForRegistrationTime editToken participantQuestion hasWaitingList isCancelled isExternal organizerId->
+        fun id title description location organizerName organizerEmail maxParticipants (startDate, endDate) openForRegistrationTime editToken participantQuestion hasWaitingList isCancelled isExternal organizerId shortname ->
             { Id = id
               Title = title
               Description = description
@@ -46,6 +47,7 @@ type Event =
               IsCancelled = isCancelled
               IsExternal = isExternal
               OrganizerId = organizerId
+              Shortname = shortname
             }
 
 type Participant =
