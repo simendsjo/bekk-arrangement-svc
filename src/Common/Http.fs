@@ -2,7 +2,7 @@ namespace ArrangementService
 
 open Giraffe
 open Microsoft.AspNetCore.Http
-open FSharp.Control.Tasks
+open Microsoft.Net.Http.Headers
 
 open ArrangementService
 open UserMessage
@@ -19,6 +19,12 @@ module Http =
         | Error errorMessage ->
             convertUserMessagesToHttpError errorMessage next context
 
+    let setCsvHeaders (filename:Guid) : HttpHandler =
+        fun (next : HttpFunc) (ctx : HttpContext) ->
+            ctx.SetHttpHeader (HeaderNames.ContentType, "text/csv")
+            ctx.SetHttpHeader (HeaderNames.ContentDisposition, $"attachment; filename=\"{filename}.csv\"")
+            next ctx
+
     let generalHandle (responseBodyFunc: ('t -> HttpHandler)) (endpoint: Handler<'t>) (next: HttpFunc) (context: HttpContext) =
         let conn, transaction = Database.createConnection context
         match endpoint context with
@@ -31,8 +37,9 @@ module Http =
             conn.Close()
             convertUserMessagesToHttpError errorMessage next context
 
-    let csvhandle (endpoint: Handler<string>) = generalHandle setBodyFromString endpoint
+    let csvhandle filename (endpoint: Handler<string>) = setCsvHeaders filename >=> generalHandle setBodyFromString endpoint
     let handle (endpoint: Handler<'t>)= generalHandle json endpoint
+
 
     let getBody<'WriteModel> (context: HttpContext): Result<'WriteModel, UserMessage list>
         =
