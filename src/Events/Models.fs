@@ -23,7 +23,7 @@ type DbModel =
       Location: string
       OrganizerName: string
       OrganizerEmail: string
-      MaxParticipants: int
+      MaxParticipants: int option
       StartDate: DateTime
       EndDate: DateTime
       StartTime: TimeSpan
@@ -44,7 +44,7 @@ type ViewModel =
       Location: string
       OrganizerName: string
       OrganizerEmail: string
-      MaxParticipants: int
+      MaxParticipants: int option
       StartDate: DateTimeCustom
       EndDate: DateTimeCustom
       OpenForRegistrationTime: int64
@@ -68,7 +68,7 @@ type WriteModel =
       Location: string
       OrganizerName: string
       OrganizerEmail: string
-      MaxParticipants: int
+      MaxParticipants: int option
       StartDate: DateTimeCustom
       EndDate: DateTimeCustom
       OpenForRegistrationTime: string

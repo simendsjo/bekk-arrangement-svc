@@ -69,14 +69,14 @@ type OrganizerName =
         |> validateAll OrganizerName organizerName
 
 type MaxParticipants =
-    | MaxParticipants of int
+    | MaxParticipants of int option
 
     member this.Unwrap =
         match this with
         | MaxParticipants maxParticipants -> maxParticipants
 
-    static member Parse(maxParticipants: int) =
-        [ validateNotNegative (BadInput "Antall kan ikke være negativt") ]
+    static member Parse(maxParticipants: int option) =
+        [ validateNotNegative (BadInput "Antall kan ikke være negativt") |> optionally ]
         |> validateAll MaxParticipants maxParticipants
 
 type OpenForRegistrationTime =

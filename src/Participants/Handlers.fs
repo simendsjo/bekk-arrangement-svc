@@ -39,9 +39,10 @@ module Handlers =
             let! participants = Service.getParticipantsForEvent event
             let isWaitlisted =
                 event.HasWaitingList
+                && event.MaxParticipants.Unwrap.IsSome
                 && participants.attendees
                    |> Seq.length
-                   >= event.MaxParticipants.Unwrap
+                   >= event.MaxParticipants.Unwrap.Value
             let! config = getConfig >> Ok
             let createMailForParticipant =
                 Service.createNewParticipantMail

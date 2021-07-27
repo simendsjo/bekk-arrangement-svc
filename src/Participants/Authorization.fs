@@ -39,7 +39,7 @@ module Authorization =
             let maxParticipants = event.MaxParticipants.Unwrap
             let! participants = Service.getParticipantsForEvent event
             
-            if hasWaitingList || maxParticipants = 0 || participants.attendees |> Seq.length < maxParticipants
+            if hasWaitingList || maxParticipants.IsNone || maxParticipants.IsSome && participants.attendees |> Seq.length < maxParticipants.Value
             then
                 return ()
             else

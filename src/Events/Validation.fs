@@ -13,34 +13,41 @@ module Validation =
     *)
     let assertValidCapacityChange (oldEvent: Event) (newEvent: Event) =
         result {
-            let oldMax = oldEvent.MaxParticipants.Unwrap
-            let newMax = newEvent.MaxParticipants.Unwrap
-
-            // Man kan alltid øke så lenge den forrige
-            // ikke var uendelig
-            // og man har venteliste
-            if newMax >= oldMax && oldMax <> 0 && newEvent.HasWaitingList then
+            match oldEvent.MaxParticipants.Unwrap, newEvent.MaxParticipants.Unwrap with
+            | _, None ->
+                // Den nye er uendelig, all good
                 return ()
-            else
 
-            // Den nye er uendelig, all good
-            if newMax = 0 then
-                return ()
-            else
+            | None, Some newMax ->
+                // Det er plass til alle
+                let! numberOfParticipants = Participant.Queries.getNumberOfParticipantsForEvent newEvent.Id
+                if numberOfParticipants <= newMax then
+                    return () 
+                else
+                
+                return! Error [ UserMessages.invalidMaxParticipantValue ]
 
-            // Det er plass til alle
-            let! numberOfParticipants = Participant.Queries.getNumberOfParticipantsForEvent newEvent.Id
-            if numberOfParticipants <= newMax then
-                return () 
-            else
+            | Some oldMax, Some newMax -> 
+                // Man kan alltid øke så lenge den forrige
+                // ikke var uendelig
+                // og man har venteliste
+                if newMax >= oldMax && newEvent.HasWaitingList then
+                    return ()
+                else
 
-            // Dette er ikke lov her nede fordi vi sjekker over at
-            // det ikke er plass til alle
-            // Derfor vil det være frekt å fjerne ventelista
-            let isRemovingWaitingList = newEvent.HasWaitingList = false && oldEvent.HasWaitingList = true
-            if isRemovingWaitingList then
-                return! Error [ UserMessages.invalidRemovalOfWaitingList ]
-            else
-            
-            return! Error [ UserMessages.invalidMaxParticipantValue ]
+                // Det er plass til alle
+                let! numberOfParticipants = Participant.Queries.getNumberOfParticipantsForEvent newEvent.Id
+                if numberOfParticipants <= newMax then
+                    return () 
+                else
+
+                // Dette er ikke lov her nede fordi vi sjekker over at
+                // det ikke er plass til alle
+                // Derfor vil det være frekt å fjerne ventelista
+                let isRemovingWaitingList = newEvent.HasWaitingList = false && oldEvent.HasWaitingList = true
+                if isRemovingWaitingList then
+                    return! Error [ UserMessages.invalidRemovalOfWaitingList ]
+                else
+                
+                return! Error [ UserMessages.invalidMaxParticipantValue ]
         }

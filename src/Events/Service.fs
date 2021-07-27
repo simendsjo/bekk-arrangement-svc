@@ -225,8 +225,8 @@ module Service =
                 >> Ok
             
             match event.MaxParticipants.Unwrap with
-            // Max participants = 0 means participants = infinity 
-            | 0 -> return {
+            // Max participants = None means participants = infinity 
+            | None -> return {
                 attendees =
                     participantsForEvent
 
@@ -234,7 +234,7 @@ module Service =
                     [] 
                 }
 
-            | maxParticipants -> return { 
+            | Some maxParticipants -> return { 
                 attendees =
                     Seq.truncate maxParticipants
                         participantsForEvent
@@ -368,7 +368,6 @@ module Service =
             let! newEvent = Event.Models.writeToDomain id.Unwrap writeModel oldEvent.EditToken oldEvent.IsCancelled oldEvent.OrganizerId.Unwrap |> ignoreContext
 
             let! { waitingList = oldWaitingList } = getParticipantsForEvent oldEvent
-            let numberOfNewPeople = newEvent.MaxParticipants.Unwrap - oldEvent.MaxParticipants.Unwrap
 
             do! Event.Validation.assertValidCapacityChange oldEvent newEvent
             do! Event.Queries.updateEvent newEvent
@@ -385,6 +384,12 @@ module Service =
                     yield! setShortname newEvent.Id shortname
                 | Shortname None ->
                     yield! Ok () |> ignoreContext
+
+            let numberOfNewPeople =
+                match oldEvent.MaxParticipants.Unwrap, newEvent.MaxParticipants.Unwrap with
+                | Some _, None -> Seq.length oldWaitingList
+                | Some old, Some new' -> new' - old
+                | _ -> 0
 
             if numberOfNewPeople > 0 then
                 let newPeople =
