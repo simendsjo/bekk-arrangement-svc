@@ -55,9 +55,6 @@ module Authorization =
             return authResult
         }
 
-
-    let userCanSeeParticipants = userCanEditEvent
-
     let eventHasOpenedForRegistration (event: DomainModels.Event) =
         let openDateTime =
             DateTimeOffset.FromUnixTimeMilliseconds event.OpenForRegistrationTime.Unwrap

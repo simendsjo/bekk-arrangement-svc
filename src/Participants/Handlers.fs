@@ -78,13 +78,21 @@ module Handlers =
             let! event = Service.getEvent (Event.Id id)
             let! participants = Service.getParticipantsForEvent event
             let hasWaitingList = event.HasWaitingList
+            let! userCanGetInformation = userCanEditEvent id
+                                         >> function 
+                                         | Ok () -> Ok true
+                                         | Error _ -> Ok false
+
+
             return { attendees =
                          Seq.map domainToView participants.attendees
+                         |> Seq.map (fun p -> if not userCanGetInformation then {p with Email = None; Comment = None} else p) 
                          |> Seq.toList
                      waitingList =
                          if hasWaitingList then
                              Seq.map domainToView
                                  participants.waitingList
+                             |> Seq.map (fun p -> if not userCanGetInformation then {p with Email = None; Comment = None} else p) 
                              |> Seq.toList
                              |> Some
                          else
@@ -104,8 +112,9 @@ module Handlers =
             [ GET
               >=> choose
                       [ routef "/events/%O/participants" (fun eventId ->
-                            check (userCanSeeParticipants eventId)
+                            check isAuthenticated
                             >=> (handle << getParticipantsForEvent) eventId)
+
                         routef "/events/%O/participants/count" (fun eventId -> 
                             check (eventIsExternalOrUserIsAuthenticated eventId)
                             >=> (handle << getNumberOfParticipantsForEvent) eventId)

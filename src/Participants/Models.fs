@@ -21,8 +21,8 @@ type DbModel =
 
 type ViewModel =
     { Name: string
-      Email: string
-      Comment: string
+      Email: string option
+      Comment: string option
       EventId: string
       RegistrationTime: int64
       EmployeeId: int option
@@ -90,8 +90,8 @@ module Models =
 
     let domainToView (participant: Participant): ViewModel =
         { Name = participant.Name.Unwrap
-          Email = participant.Email.Unwrap
-          Comment = participant.Comment.Unwrap
+          Email = Some participant.Email.Unwrap 
+          Comment = Some participant.Comment.Unwrap
           EventId = participant.EventId.Unwrap.ToString()
           RegistrationTime = participant.RegistrationTime.Unwrap
           EmployeeId = participant.EmployeeId.Unwrap 
