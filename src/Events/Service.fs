@@ -121,8 +121,8 @@ module Service =
           $"Du er nå påmeldt {event.Title.Unwrap}."
           $"Vi gleder oss til å se deg på {event.Location.Unwrap} den {toReadableString event.StartDate} 🎉"
           ""
-          "Siden det er begrenset med plasser, setter vi pris på om du melder deg av hvis du ikke lenger"
-          "kan delta. Da blir det plass til andre på ventelisten 😊"
+          if event.MaxParticipants.Unwrap.IsSome then 
+            "Siden det er begrenset med plasser, setter vi pris på om du melder deg av hvis du ikke lenger\nkan delta. Da blir det plass til andre på ventelisten 😊"
           $"Du kan melde deg av <a href=\"{redirectUrl}\">via denne lenken</a>."
           ""
           $"Bare send meg en mail på <a href=\"mailto:{event.OrganizerEmail.Unwrap}\">{event.OrganizerEmail.Unwrap}</a> om det er noe du lurer på."
