@@ -121,7 +121,7 @@ module DateTime =
             "00" // Format: "20200101T192209"
 
     let toReadableString (dt: DateTimeCustom) =
-        sprintf "%s/%s/%s kl %s:%s" (dt.Date.Day.ToString().PadLeft(2, '0'))
+        sprintf "%s.%s.%s kl %s:%s" (dt.Date.Day.ToString().PadLeft(2, '0'))
             (dt.Date.Month.ToString().PadLeft(2, '0'))
             (dt.Date.Year.ToString()) (dt.Time.Hour.ToString().PadLeft(2, '0'))
             (dt.Time.Minute.ToString().PadLeft(2, '0'))
