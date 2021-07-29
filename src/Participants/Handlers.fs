@@ -115,7 +115,7 @@ module Handlers =
                             >=> (handle << getNumberOfParticipantsForEvent) eventId)
                         routef "/events/%O/participants/export" (fun eventId -> 
                             check (userCanEditEvent eventId)
-                            >=> ((csvhandle eventId) << exportParticipationsDataForEvent) eventId)
+                            >=> (csvhandle eventId << exportParticipationsDataForEvent) eventId)
                         routef "/events/%O/participants/%s/waitinglist-spot" (fun (eventId, email) ->
                             check (eventIsExternalOrUserIsAuthenticated eventId)
                             >=> (handle << getWaitinglistSpot) (eventId, email))
