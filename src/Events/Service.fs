@@ -451,3 +451,46 @@ module Service =
             let! event = Event.Queries.queryEventByShortname shortname
             return event
         }
+    
+
+    let participantToCSVRow (participant:Participant) =
+        let dobbeltfnuttTilEnkelfnutt character = if character='"' then '\'' else character
+        let escapeComma word = $"\"{word}\""
+        let cleaning = String.map dobbeltfnuttTilEnkelfnutt >> escapeComma
+
+        [participant.Name.Unwrap
+         participant.Email.Unwrap
+         participant.Comment.Unwrap] 
+        |> List.map cleaning
+        |> String.concat ","
+
+    let createExportEventString (event:Event) (participants:Participant.ParticipantsWithWaitingList) =
+        let newline="\n"
+
+        let attendees = participants.attendees 
+                        |> Seq.map participantToCSVRow 
+                        |> String.concat newline 
+        let waitingList = participants.waitingList 
+                          |> Seq.map participantToCSVRow 
+                          |> String.concat newline
+        let eventName = event.Title.Unwrap 
+        let attendeesTitle = "Påmeldte"
+        let waitinglistTitle = "Venteliste"
+        let header = ["Navn";"Epost";"Kommentar"] |> String.concat ","
+
+        [eventName 
+         attendeesTitle 
+         header 
+         attendees 
+         waitinglistTitle
+         header 
+         waitingList 
+        ] |> String.concat newline
+
+    let exportParticipationsDataForEvent (id: Event.Id) =
+        result {
+            let! event = Event.Queries.queryEventByEventId id
+            let! participants = getParticipantsForEvent event
+            let str = createExportEventString event participants
+            return str
+        }

@@ -2,14 +2,16 @@ namespace ArrangementService.Participant
 
 open Giraffe
 
+open Microsoft.Net.Http.Headers
+open System.Web
+open System
+
 open ArrangementService
 open Http
 open ResultComputationExpression
 open Models
 open ArrangementService.Email
 open Authorization
-open System.Web
-open System
 open ArrangementService.DomainModels
 open ArrangementService.Config
 open ArrangementService.Event.Authorization
@@ -107,9 +109,12 @@ module Handlers =
     
     let getWaitinglistSpot (eventId, email) = Service.getWaitinglistSpot (Event.Id eventId) (EmailAddress email) 
 
+
+    let exportParticipationsDataForEvent eventId = Service.exportParticipationsDataForEvent (Event.Id eventId)
+
     let routes: HttpHandler =
         choose
-            [ GET
+            [ GET_HEAD
               >=> choose
                       [ routef "/events/%O/participants" (fun eventId ->
                             check isAuthenticated
@@ -118,6 +123,9 @@ module Handlers =
                         routef "/events/%O/participants/count" (fun eventId -> 
                             check (eventIsExternalOrUserIsAuthenticated eventId)
                             >=> (handle << getNumberOfParticipantsForEvent) eventId)
+                        routef "/events/%O/participants/export" (fun eventId -> 
+                            check (userCanEditEvent eventId)
+                            >=> (csvhandle eventId << exportParticipationsDataForEvent) eventId)
                         routef "/events/%O/participants/%s/waitinglist-spot" (fun (eventId, email) ->
                             check (eventIsExternalOrUserIsAuthenticated eventId)
                             >=> (handle << getWaitinglistSpot) (eventId, email))
