@@ -363,7 +363,7 @@ module Service =
                      noReplyMail participant) ctx
 
         Service.sendMail
-                (createCancellationConfirmationToOrganizer event messageToParticipants)
+                (createCancellationConfirmationToOrganizer event messageToParticipants) ctx
 
         participants |> Seq.iter sendMailToParticipant
 
