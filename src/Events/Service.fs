@@ -41,12 +41,13 @@ module Service =
         }
 
     let private createdEventMessage (viewUrl: string option) createEditUrl (event: Event) =
-        [ "Hei! 😄"
-          $"Du har nå opprettet {event.Title.Unwrap}" + (match viewUrl with
-                                                            | None -> "."
-                                                            | Some url -> $": {url}.")
+        [ $"Hei {event.OrganizerName.Unwrap}! 😄"
+          $"Arrangementet ditt {event.Title.Unwrap} er nå opprettet" 
+          $"Se arrangmentet, få oversikt over påmeldte deltagere og gjør eventuelle endringer her:" + (match viewUrl with
+                                                                                                      | None -> "."
+                                                                                                      | Some url -> $": {url}.")
           $"Her er en unik lenke for å endre arrangementet: {createEditUrl event}."
-          "Ikke del denne med andre🕵️" ]
+          "Del denne kun med personer som du ønsker skal ha redigeringstilgang.🕵️" ]
         |> String.concat "<br>"
 
     let private createEmail viewUrl createEditUrl (event: Event) =
@@ -123,6 +124,7 @@ module Service =
           ""
           if event.MaxParticipants.Unwrap.IsSome then 
             "Siden det er begrenset med plasser, setter vi pris på om du melder deg av hvis du ikke lenger<br>kan delta. Da blir det plass til andre på ventelisten 😊"
+          else "Gjerne meld deg av dersom du ikke lenger har mulighet til å delta."
           $"Du kan melde deg av <a href=\"{redirectUrl}\">via denne lenken</a>."
           ""
           $"Bare send meg en mail på <a href=\"mailto:{event.OrganizerEmail.Unwrap}\">{event.OrganizerEmail.Unwrap}</a> om det er noe du lurer på."
@@ -168,12 +170,27 @@ module Service =
                   (event, participant, noReplyMail, message, Create) |> Some 
         }
 
-    let private createCancelledParticipationMail
+    let private createCancelledParticipationMailToOrganizer
         (event: Event)
         (participant: Participant)
         =
         { Subject = "Avmelding"
           Message = $"{participant.Name.Unwrap} har meldt seg av {event.Title.Unwrap}" 
+          To = event.OrganizerEmail
+          CalendarInvite = None 
+        }
+
+    let private createCancelledParticipationMailToAttendee
+        (event: Event)
+        (participant: Participant)
+        =
+        { Subject = "Avmelding"
+          Message = [
+                    $"Vi bekrefter at du nå er avmeldt {event.Title.Unwrap}." 
+                    ""
+                    "Takk for at du gir beskjed! Vi håper å se deg ved en senere anledning.😊"
+                    ]
+                    |> String.concat "<br>"
           To = event.OrganizerEmail
           CalendarInvite = None 
         }
@@ -272,7 +289,14 @@ module Service =
 
     let private sendMailToOrganizerAboutCancellation event participant =
         result {
-            let mail = createCancelledParticipationMail event participant
+            let mail = createCancelledParticipationMailToOrganizer event participant
+
+            yield Service.sendMail mail
+        }
+
+    let private sendMailWithCancellationConfirmation event participant =
+        result {
+            let mail = createCancelledParticipationMailToAttendee event participant
 
             yield Service.sendMail mail
         }
@@ -289,6 +313,8 @@ module Service =
             | None -> return ()
             | Some participant ->
                 yield sendMailToOrganizerAboutCancellation event
+                          participant
+                yield sendMailWithCancellationConfirmation event 
                           participant
                 let eventHasWaitingList = event.HasWaitingList
                 if eventHasWaitingList then
@@ -307,6 +333,22 @@ module Service =
             return Participant.UserMessages.participationSuccessfullyDeleted (event.Id, email)
         }
 
+    let private createCancellationConfirmationToOrganizer
+        (event: Event)
+        (messageToParticipants: string)
+        =
+        { Subject = $"Avlyst: {event.Title.Unwrap}"
+          Message = [
+                    $"Du har avlyst arrangementet ditt {event.Title.Unwrap}." 
+                    "Denne meldingen ble sendt til alle påmeldte:"
+                    ""
+                    messageToParticipants
+                    ]
+                    |> String.concat "<br>"
+          To = event.OrganizerEmail
+          CalendarInvite = None 
+        }
+
 
     let sendCancellationMailToParticipants
         messageToParticipants
@@ -319,6 +361,9 @@ module Service =
             Service.sendMail
                 (createCancelledEventMail messageToParticipants event
                      noReplyMail participant) ctx
+
+        Service.sendMail
+                (createCancellationConfirmationToOrganizer event messageToParticipants)
 
         participants |> Seq.iter sendMailToParticipant
 
