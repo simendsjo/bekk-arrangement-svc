@@ -42,10 +42,10 @@ module Service =
 
     let private createdEventMessage (viewUrl: string option) createEditUrl (event: Event) =
         [ $"Hei {event.OrganizerName.Unwrap}! 😄"
-          $"Arrangementet ditt {event.Title.Unwrap} er nå opprettet" 
-          $"Se arrangmentet, få oversikt over påmeldte deltagere og gjør eventuelle endringer her:" + (match viewUrl with
-                                                                                                      | None -> "."
-                                                                                                      | Some url -> $": {url}.")
+          $"Arrangementet ditt {event.Title.Unwrap} er nå opprettet." 
+          match viewUrl with
+          | None -> ""
+          | Some url -> $"Se arrangmentet, få oversikt over påmeldte deltagere og gjør eventuelle endringer her: {url}."
           $"Her er en unik lenke for å endre arrangementet: {createEditUrl event}."
           "Del denne kun med personer som du ønsker skal ha redigeringstilgang.🕵️" ]
         |> String.concat "<br>"
