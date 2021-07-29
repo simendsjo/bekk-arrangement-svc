@@ -110,7 +110,7 @@ module Handlers =
     let getWaitinglistSpot (eventId, email) = Service.getWaitinglistSpot (Event.Id eventId) (EmailAddress email) 
 
 
-    let exportParticipationsDataForEvent (eventId) ctx = Service.exportParticipationsDataForEvent (Event.Id eventId) ctx
+    let exportParticipationsDataForEvent eventId = Service.exportParticipationsDataForEvent (Event.Id eventId)
 
     let routes: HttpHandler =
         choose

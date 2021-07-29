@@ -409,28 +409,31 @@ module Service =
     
 
     let participantToCSVRow (participant:Participant) =
-        let filterSemicolon = String.filter ((<>) ';')
-        let name = participant.Name.Unwrap |> filterSemicolon
-        let email = participant.Email.Unwrap |> filterSemicolon
-        let comment = participant.Comment.Unwrap |> filterSemicolon
-        $"{name};{email};{comment}"
+        let dobbeltfnuttTilEnkelfnutt character = if character='"' then '\'' else character
+        let escapeComma word = $"\"{word}\""
+        let cleaning = String.map dobbeltfnuttTilEnkelfnutt >> escapeComma
+
+        [participant.Name.Unwrap
+         participant.Email.Unwrap
+         participant.Comment.Unwrap] 
+        |> List.map cleaning
+        |> String.concat ","
 
     let createExportEventString (event:Event) (participants:Participant.ParticipantsWithWaitingList) =
         let newline="\n"
 
         let attendees = participants.attendees 
                         |> Seq.map participantToCSVRow 
-                        |>String.concat newline 
+                        |> String.concat newline 
         let waitingList = participants.waitingList 
                           |> Seq.map participantToCSVRow 
                           |> String.concat newline
         let eventName = event.Title.Unwrap 
         let attendeesTitle = "Påmeldte"
         let waitinglistTitle = "Venteliste"
-        let header = "Navn;Epost;Kommentar"
+        let header = ["Navn";"Epost";"Kommentar"] |> String.concat ","
 
-        ["sep=;" 
-         eventName 
+        [eventName 
          attendeesTitle 
          header 
          attendees 
