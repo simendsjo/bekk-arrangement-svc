@@ -26,14 +26,12 @@ module UserMessage =
         | Greater of ErrorCodes * string
         | Less
 
-    type private UserJsonMessage =
-        { userMessage: string }
+    type private UserJsonMessage = { userMessage: string }
 
     let private errorMessagesToUserJson messages =
         { userMessage = messages |> String.concat "\n" }
 
-    let convertUserMessagesToHttpError (errors: UserMessage list): HttpError =
-
+    let convertUserMessagesToHttpError (errors: UserMessage list) : HttpError =
         let reduceErrors (errorCode, errorMessages) current =
 
             let hasGreaterOrEqualSeverityThan prev next =
@@ -43,6 +41,7 @@ module UserMessage =
 
                 | Forbidden, NotFound m -> Greater(ResourceNotFound, m)
                 | Forbidden, AccessDenied m -> Same m
+                | Forbidden, NotLoggedIn m -> Greater(Unauthorized, m)
                 | Forbidden, _ -> Less
 
                 | BadRequest, NotFound m -> Greater(ResourceNotFound, m)
@@ -56,16 +55,13 @@ module UserMessage =
                 | _, NotLoggedIn m -> Greater(Unauthorized, m)
 
             match current |> hasGreaterOrEqualSeverityThan errorCode with
-            | Greater(greaterErrorCode, message) ->
-                (greaterErrorCode, [ message ])
+            | Greater (greaterErrorCode, message) -> (greaterErrorCode, [ message ])
             | Same message -> (errorCode, errorMessages @ [ message ])
-            | Less ->
-                (errorCode, errorMessages)
+            | Less -> (errorCode, errorMessages)
 
         errors
         |> List.fold reduceErrors (InternalError, [])
-        |> fun (errorCode, errorMessages) ->
-            (errorCode, errorMessagesToUserJson errorMessages)
+        |> fun (errorCode, errorMessages) -> (errorCode, errorMessagesToUserJson errorMessages)
         |> fun (errorCode, userMessage) ->
             match errorCode with
             | BadRequest -> RequestErrors.BAD_REQUEST userMessage

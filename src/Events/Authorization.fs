@@ -38,7 +38,8 @@ module Authorization =
                 return ()
             else
                 return!
-                    [ AccessDenied $"Du prøvde å gjøre endringer på et arrangement (id {event.Id.Unwrap}) med ugyldig editToken" ]
+                    [ AccessDenied
+                          $"Du prøvde å gjøre endringer på et arrangement (id {event.Id.Unwrap}) med ugyldig editToken" ]
                     |> Error
         }
 
