@@ -3,13 +3,13 @@
 An F# service for collecting and maintaining data about events.
 
 ## Environments
+
 - Development = https://skjer-dev.bekk.no/
 
 ## Requirements
 
 - .NET Core SDK 3.0
 - SQL server
-- Latest version of Mono
 
 ### Recommended tools
 
@@ -26,13 +26,13 @@ An F# service for collecting and maintaining data about events.
 ### First time setup
 
 - Open the project from the `src` folder in the terminal to avoid error messages in Visual Studio Code
-- You will need to create the database `arrangement-db` on you local SQL server, if it does not already exist. Use the query ```CREATE DATABASE [arrangement-db]```. 
+- You will need to create the database `arrangement-db` on you local SQL server, if it does not already exist. Use the query `CREATE DATABASE [arrangement-db]`. If you dont have a local SQL server -> https://docs.microsoft.com/en-us/sql/linux/quickstart-install-connect-docker?view=sql-server-ver15&pivots=cs1-cmd
 - In `appsettings.json`, make sure your database is running on this address. If this doesn't work you can try to connect to the development database. You can find the address for the development database in the secrets manager on AWS.
 
 ### Run the app
 
 - In the src folder run `$ dotnet watch run`
-- The service runs at  `http://localhost:5000/` (currently no Swagger docs)
+- The service runs at `http://localhost:5000/` (currently no Swagger docs)
 - If everything works, `http://localhost:5000/health` should return 200 OK.
 
 #### 🔥Hot tip🔥
@@ -56,7 +56,7 @@ Create a release from the master branch, and it should deploy to production.
 
 ### Deployment configuration
 
-Deployment configuration can be found in the folder `.circleci`. 
+Deployment configuration can be found in the folder `.circleci`.
 App deployment is done by the `aws-robot.js` which is found at `.circleci/CloudAutomation/aws-robot.js`.
 
 ## Architecture graph
