@@ -46,6 +46,7 @@ type ViewModel =
       MaxParticipants: int option
       StartDate: DateTimeCustom
       EndDate: DateTimeCustom
+      ParticipantQuestions: string list
       OpenForRegistrationTime: int64
       HasWaitingList: bool 
       IsCancelled: bool 
@@ -69,6 +70,7 @@ type WriteModel =
       StartDate: DateTimeCustom
       EndDate: DateTimeCustom
       OpenForRegistrationTime: string
+      ParticipantQuestions: string list
       viewUrl: string option
       editUrlTemplate: string
       HasWaitingList: bool 
@@ -97,6 +99,7 @@ module Models =
         <*> validateDateRange writeModel.StartDate writeModel.EndDate
         <*> OpenForRegistrationTime.Parse writeModel.OpenForRegistrationTime
         <*> Ok editToken
+        <*> ParticipantQuestions.Parse writeModel.ParticipantQuestions
         <*> (writeModel.HasWaitingList |> Ok)
         <*> Ok isCancelled
         <*> (writeModel.IsExternal |> Ok)
@@ -104,6 +107,7 @@ module Models =
         <*> Shortname.Parse writeModel.Shortname
 
     let dbToDomain (dbRecord: DbModel, shortname: string option): Event =
+        // TODO: legg inn participant questions som parameter til denne funksjonen
         { Id = Id dbRecord.Id
           Title = Title dbRecord.Title
           Description = Description dbRecord.Description
@@ -119,6 +123,7 @@ module Models =
           HasWaitingList = dbRecord.HasWaitingList
           IsCancelled = dbRecord.IsCancelled
           IsExternal = dbRecord.IsExternal
+          ParticipantQuestions = ParticipantQuestions []
           OrganizerId = EmployeeId dbRecord.OrganizerId
           Shortname = Shortname shortname
         }
@@ -158,6 +163,7 @@ module Models =
           HasWaitingList = domainModel.HasWaitingList 
           IsCancelled = domainModel.IsCancelled 
           IsExternal = domainModel.IsExternal
+          ParticipantQuestions = domainModel.ParticipantQuestions.Unwrap
           OrganizerId = domainModel.OrganizerId.Unwrap
           Shortname = domainModel.Shortname.Unwrap
         }

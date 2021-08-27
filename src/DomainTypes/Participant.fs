@@ -24,13 +24,15 @@ type Name =
           validateMaxLength 60 (BadInput "Navn kan ha maks 60 tegn") ]
         |> validateAll Name name
 
-type Comment =
-    | Comment of string
+type ParticipantAnswers =
+    | ParticipantAnswers of string list
 
     member this.Unwrap =
         match this with
-        | Comment comment -> comment
+        | ParticipantAnswers answers -> answers
 
-    static member Parse(comment: string) =
-        [ validateMaxLength 500 (BadInput "Kommentar kan ha maks 500 tegn") ]
-        |> validateAll Comment comment
+    static member Parse(participantAnswers: string list) =
+        [ validateMaxLength 1000
+              (BadInput "Svar kan ha maks 1000 tegn")
+          |> every ]
+        |> validateAll ParticipantAnswers participantAnswers

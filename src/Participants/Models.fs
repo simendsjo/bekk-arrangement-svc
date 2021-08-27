@@ -12,7 +12,6 @@ open ArrangementService.DomainModels
 type DbModel =
   { Name: string
     Email: string
-    Comment: string
     RegistrationTime: int64
     EventId: Guid
     CancellationToken: Guid
@@ -22,7 +21,7 @@ type DbModel =
 type ViewModel =
     { Name: string
       Email: string option
-      Comment: string option
+      ParticipantAnswers: string list
       EventId: string
       RegistrationTime: int64
       EmployeeId: int option
@@ -35,7 +34,7 @@ type NewlyCreatedParticipationViewModel =
 
 type WriteModel =
     { name: string
-      comment: string
+      participantAnswers: string list
       cancelUrlTemplate: string 
     }
 
@@ -70,7 +69,7 @@ module Models =
     let dbToDomain (dbRecord: DbModel): Participant =
         { Name = Name dbRecord.Name
           Email = EmailAddress dbRecord.Email
-          Comment = Comment dbRecord.Comment
+          ParticipantAnswers = ParticipantAnswers []
           EventId = Event.Id dbRecord.EventId
           RegistrationTime = TimeStamp dbRecord.RegistrationTime
           CancellationToken = dbRecord.CancellationToken
@@ -81,7 +80,7 @@ module Models =
           Ok Participant.Create 
           <*> Name.Parse writeModel.name
           <*> EmailAddress.Parse email 
-          <*> Comment.Parse writeModel.comment
+          <*> ParticipantAnswers.Parse writeModel.participantAnswers
           <*> (Event.Id eventId |> Ok) 
           <*> (now() |> Ok) 
           <*> (Guid.NewGuid() |> Ok)
@@ -91,7 +90,7 @@ module Models =
     let domainToView (participant: Participant): ViewModel =
         { Name = participant.Name.Unwrap
           Email = Some participant.Email.Unwrap 
-          Comment = Some participant.Comment.Unwrap
+          ParticipantAnswers = []
           EventId = participant.EventId.Unwrap.ToString()
           RegistrationTime = participant.RegistrationTime.Unwrap
           EmployeeId = participant.EmployeeId.Unwrap 
@@ -101,7 +100,6 @@ module Models =
     let domainToDb (participant: Participant): DbModel =
         { Name = participant.Name.Unwrap
           Email = participant.Email.Unwrap
-          Comment = participant.Comment.Unwrap
           EventId = participant.EventId.Unwrap
           RegistrationTime = participant.RegistrationTime.Unwrap
           CancellationToken = participant.CancellationToken

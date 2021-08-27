@@ -85,28 +85,27 @@ module Handlers =
                                          | Ok () -> Ok true
                                          | Error _ -> Ok false
 
-
             return { attendees =
                          Seq.map domainToView participants.attendees
-                         |> Seq.map (fun p -> if not userCanGetInformation then {p with Email = None; Comment = None} else p) 
+                         |> Seq.map (fun p -> if not userCanGetInformation then {p with Email = None; ParticipantAnswers = []} else p) 
                          |> Seq.toList
                      waitingList =
                          if hasWaitingList then
                              Seq.map domainToView
                                  participants.waitingList
-                             |> Seq.map (fun p -> if not userCanGetInformation then {p with Email = None; Comment = None} else p) 
+                             |> Seq.map (fun p -> if not userCanGetInformation then {p with Email = None; ParticipantAnswers = []} else p) 
                              |> Seq.toList
                              |> Some
                          else
                              None }
         }
-    
+
     let getNumberOfParticipantsForEvent id =
         result {
             let! count = Service.getNumberOfParticipantsForEvent (Event.Id id)
             return count.Unwrap
         }
-    
+
     let getWaitinglistSpot (eventId, email) = Service.getWaitinglistSpot (Event.Id eventId) (EmailAddress email) 
 
 

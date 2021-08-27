@@ -20,6 +20,7 @@ type Event =
       OrganizerName: Event.OrganizerName
       OrganizerEmail: Email.EmailAddress
       OpenForRegistrationTime: Event.OpenForRegistrationTime
+      ParticipantQuestions: Event.ParticipantQuestions
       MaxParticipants: Event.MaxParticipants
       EditToken: Guid
       HasWaitingList: bool
@@ -29,7 +30,7 @@ type Event =
       Shortname: Event.Shortname
     }
     static member Create =
-        fun id title description location organizerName organizerEmail maxParticipants (startDate, endDate) openForRegistrationTime editToken hasWaitingList isCancelled isExternal organizerId shortname ->
+        fun id title description location organizerName organizerEmail maxParticipants (startDate, endDate) openForRegistrationTime editToken participantQuestions hasWaitingList isCancelled isExternal organizerId shortname ->
             { Id = id
               Title = title
               Description = description
@@ -41,6 +42,7 @@ type Event =
               EndDate = endDate
               OpenForRegistrationTime = openForRegistrationTime
               EditToken = editToken
+              ParticipantQuestions = participantQuestions
               HasWaitingList = hasWaitingList
               IsCancelled = isCancelled
               IsExternal = isExternal
@@ -51,17 +53,17 @@ type Event =
 type Participant =
     { Name: Participant.Name
       Email: Email.EmailAddress
-      Comment: Participant.Comment
+      ParticipantAnswers: Participant.ParticipantAnswers
       EventId: Event.Id
       RegistrationTime: TimeStamp
       CancellationToken: Guid 
       EmployeeId: Participant.EmployeeId
     }
     static member Create =
-        fun name email comment eventId registrationTime cancellationToken employeeId ->
+        fun name email participantAnswers eventId registrationTime cancellationToken employeeId ->
             { Name = name
               Email = email
-              Comment = comment
+              ParticipantAnswers = participantAnswers
               EventId = eventId
               RegistrationTime = registrationTime
               CancellationToken = cancellationToken

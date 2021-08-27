@@ -454,13 +454,16 @@ module Service =
     
 
     let participantToCSVRow (participant:Participant) =
+        // TODO: vi må ha inn ParticipantAnswers her for å schmekke ut dataen
+        // og kanskje også ParticipantQuestions?
+
         let dobbeltfnuttTilEnkelfnutt character = if character='"' then '\'' else character
         let escapeComma word = $"\"{word}\""
         let cleaning = String.map dobbeltfnuttTilEnkelfnutt >> escapeComma
 
         [participant.Name.Unwrap
          participant.Email.Unwrap
-         participant.Comment.Unwrap] 
+         "HER SKAL VI HA SVAR FRA DELTAKER"] 
         |> List.map cleaning
         |> String.concat ","
 
