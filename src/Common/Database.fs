@@ -42,9 +42,21 @@ module Database =
         |> Async.AwaitTask
         |> Async.RunSynchronously
 
+    let runInnerJoinJoinSelectQuery<'a, 'b, 'c> (ctx: HttpContext) query =
+        let config = getConfig ctx
+        config.currentConnection.SelectAsync<'a, 'b, 'c>(query, config.currentTransaction)
+        |> Async.AwaitTask
+        |> Async.RunSynchronously
+
     let runOuterJoinSelectQuery<'a, 'b> (ctx: HttpContext) query =
         let config = getConfig ctx
         config.currentConnection.SelectAsyncOption<'a, 'b>(query, config.currentTransaction)
+        |> Async.AwaitTask
+        |> Async.RunSynchronously
+
+    let runOuterJoinJoinSelectQuery<'a, 'b, 'c> (ctx: HttpContext) query =
+        let config = getConfig ctx
+        config.currentConnection.SelectAsyncOption<'a, 'b, 'c>(query, config.currentTransaction)
         |> Async.AwaitTask
         |> Async.RunSynchronously
 

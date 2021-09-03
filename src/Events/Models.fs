@@ -11,6 +11,12 @@ open UserMessage
 open ArrangementService.Email
 open ArrangementService.DomainModels
 
+type ParticipantQuestionDbModel = {
+  Id: int
+  EventId: Guid
+  Question: string
+}
+
 type ShortnameDbModel = {
   Shortname: string 
   EventId: Guid
@@ -106,8 +112,7 @@ module Models =
         <*> (EmployeeId organizerId |> Ok)
         <*> Shortname.Parse writeModel.Shortname
 
-    let dbToDomain (dbRecord: DbModel, shortname: string option): Event =
-        // TODO: legg inn participant questions som parameter til denne funksjonen
+    let dbToDomain (dbRecord: DbModel, participantQuestions: string list, shortname: string option): Event =
         { Id = Id dbRecord.Id
           Title = Title dbRecord.Title
           Description = Description dbRecord.Description
@@ -123,7 +128,7 @@ module Models =
           HasWaitingList = dbRecord.HasWaitingList
           IsCancelled = dbRecord.IsCancelled
           IsExternal = dbRecord.IsExternal
-          ParticipantQuestions = ParticipantQuestions []
+          ParticipantQuestions = ParticipantQuestions participantQuestions
           OrganizerId = EmployeeId dbRecord.OrganizerId
           Shortname = Shortname shortname
         }
