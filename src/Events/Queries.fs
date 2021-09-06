@@ -31,6 +31,23 @@ module Queries =
             return Models.dbToDomain (dbModel, event.ParticipantQuestions.Unwrap, event.Shortname.Unwrap)
         }
 
+    let private groupEventAndShortname ls =
+        ls
+        |> Seq.map (fun (event: DbModel, questionDbModel, shortnameDbModel: ShortnameDbModel option) ->
+                        ( event
+                        , questionDbModel 
+                            |> Option.map (fun dbModel -> dbModel.Question)
+                        , shortnameDbModel 
+                            |> Option.map (fun dbModel -> dbModel.Shortname)))
+        |> Seq.groupBy (fun (event, _, _) -> event.Id)
+        |> Seq.map (fun (eventId, listOfQuestions) -> 
+            let event = listOfQuestions |> Seq.head |> fun (event, _, _) -> event
+            let shortname = listOfQuestions |> Seq.head |> fun (_, _, shortname) -> shortname
+            ( event
+            , listOfQuestions |> Seq.collect (fun (_, question, _) -> match question with | Some q -> [ q ] | None -> []) |> List.ofSeq
+            , shortname
+            ))
+
     let getEvents (ctx: HttpContext): Event seq =
         select { table eventsTable
                  leftJoin questionsTable "EventId" "Events.Id"
@@ -38,20 +55,7 @@ module Queries =
                  where (ge "EndDate" DateTime.Now)
                  orderBy "StartDate" Asc }
         |> Database.runOuterJoinJoinSelectQuery<Event.DbModel, ParticipantQuestionDbModel, ShortnameDbModel> ctx
-        |> Seq.map (fun (event, questionDbModel, shortnameDbModel) ->
-                        ( event
-                        , questionDbModel 
-                            |> Option.map (fun dbModel -> dbModel.Question)
-                        , shortnameDbModel 
-                            |> Option.map (fun dbModel -> dbModel.Shortname)))
-        |> Seq.groupBy (fun (event, _, _) -> event.Id)
-        |> Seq.map (fun (eventId, listOfStuff) -> 
-            let event = listOfStuff |> Seq.head |> fun (event, _, _) -> event
-            let shortname = listOfStuff |> Seq.head |> fun (_, _, shortname) -> shortname
-            ( event
-            , listOfStuff |> Seq.collect (fun (_, question, _) -> match question with | Some q -> [ q ] | None -> []) |> List.ofSeq
-            , shortname
-            ))
+        |> groupEventAndShortname
         |> Seq.map Models.dbToDomain
 
     let getPastEvents (ctx: HttpContext): Event seq =
@@ -61,8 +65,7 @@ module Queries =
                  where (lt "EndDate" DateTime.Now + eq "IsCancelled" false)
                  orderBy "StartDate" Desc }
         |> Database.runOuterJoinJoinSelectQuery<Event.DbModel, ParticipantQuestionDbModel, ShortnameDbModel>  ctx
-        // TODO: wtf gjør man med question / questions her, groupe på event??
-        |> Seq.map (fun (event, question, shortnameDbModel) -> (event, [], shortnameDbModel |> Option.map (fun dbModel -> dbModel.Shortname)))
+        |> groupEventAndShortname
         |> Seq.map Models.dbToDomain
 
     let deleteEvent (id: Event.Id) (ctx: HttpContext): Result<Unit, UserMessage list> =
@@ -94,8 +97,7 @@ module Queries =
                  where (eq "Id" eventId.Unwrap)
                }
        |> Database.runOuterJoinJoinSelectQuery<Event.DbModel, ParticipantQuestionDbModel, ShortnameDbModel>  ctx
-       // TODO: wtf gjør man med question / questions her, groupe på event??
-       |> Seq.map (fun (event, question, shortnameDbModel) -> (event, [], shortnameDbModel |> Option.map (fun dbModel -> dbModel.Shortname)))
+       |> groupEventAndShortname
        |> Seq.tryHead
        |> function
        | Some eventWithShortname -> Ok <| Models.dbToDomain eventWithShortname
@@ -108,8 +110,7 @@ module Queries =
                  where (eq "Email" organizerEmail.Unwrap)
                }
        |> Database.runOuterJoinJoinSelectQuery<Event.DbModel, ParticipantQuestionDbModel, ShortnameDbModel>  ctx
-       // TODO: wtf gjør man med question / questions her, groupe på event??
-       |> Seq.map (fun (event, question, shortnameDbModel) -> (event, [], shortnameDbModel |> Option.map (fun dbModel -> dbModel.Shortname)))
+       |> groupEventAndShortname
        |> Seq.map Models.dbToDomain
 
     let queryEventsOrganizedByOrganizerId (organizerId: EmployeeId) ctx: Event seq =
@@ -119,21 +120,21 @@ module Queries =
                  where (eq "OrganizerId" organizerId.Unwrap)
                }
        |> Database.runOuterJoinJoinSelectQuery<Event.DbModel, ParticipantQuestionDbModel, ShortnameDbModel>  ctx
-       // TODO: wtf gjør man med question / questions her, groupe på event??
-       |> Seq.map (fun (event, question, shortnameDbModel) -> (event, [], shortnameDbModel |> Option.map (fun dbModel -> dbModel.Shortname)))
+       |> groupEventAndShortname
        |> Seq.map Models.dbToDomain
 
     let queryEventByShortname (shortname: string) ctx: Result<Event, UserMessage list> =
-        select { table shortnamesTable 
-                 innerJoin questionsTable "EventId" "Id"
+        select { table eventsTable 
+                 leftJoin shortnamesTable "EventId" "Id"
+                 leftJoin questionsTable "EventId" "Id"
                  where (eq "Shortname" shortname)
-                 innerJoin eventsTable "Id" "EventId"
                }
-       |> Database.runInnerJoinJoinSelectQuery<ShortnameDbModel, ParticipantQuestionDbModel, Event.DbModel>  ctx
+       |> Database.runOuterJoinJoinSelectQuery<Event.DbModel, ShortnameDbModel, ParticipantQuestionDbModel>  ctx
+       |> Seq.map (fun (event, shortname, question) -> (event, question, shortname))
+       |> groupEventAndShortname
        |> Seq.tryHead
        |> function
-       // TODO: wtf gjør man med question / questions her, groupe på event??
-       | Some (shortname, question, event) -> Ok <| Models.dbToDomain (event, [], Some shortname.Shortname)
+       | Some eventWithShortname -> Ok <| Models.dbToDomain eventWithShortname
        | None -> Error [ UserMessages.eventNotFound shortname ]
 
     let insertShortname (eventId: Event.Id) (shortname: string) (ctx: HttpContext): Result<Unit, UserMessage list> =
