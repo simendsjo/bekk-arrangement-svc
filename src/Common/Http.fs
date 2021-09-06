@@ -13,10 +13,12 @@ module Http =
     type Handler<'t> = HttpContext -> Result<'t, UserMessage list>
 
     let check (condition: Handler<Unit>) (next: HttpFunc) (context: HttpContext) =
-        Database.createConnection context |> ignore
+        let conn, transaction = Database.createConnection context
         match condition context with
-        | Ok() -> next context
+        | Ok () -> next context
         | Error errorMessage ->
+            transaction.Rollback()
+            conn.Close()
             convertUserMessagesToHttpError errorMessage next context
 
     let setCsvHeaders (filename:Guid) : HttpHandler =
@@ -27,15 +29,20 @@ module Http =
 
     let generalHandle (responseBodyFunc: ('t -> HttpHandler)) (endpoint: Handler<'t>) (next: HttpFunc) (context: HttpContext) =
         let conn, transaction = Database.createConnection context
-        match endpoint context with
-        | Ok result ->
-            transaction.Commit()
-            conn.Close()
-            responseBodyFunc result next context
-        | Error errorMessage ->
+        try
+            match endpoint context with
+            | Ok result ->
+                transaction.Commit()
+                conn.Close()
+                responseBodyFunc result next context
+            | Error errorMessage ->
+                transaction.Rollback()
+                conn.Close()
+                convertUserMessagesToHttpError errorMessage next context
+        with e ->
             transaction.Rollback()
             conn.Close()
-            convertUserMessagesToHttpError errorMessage next context
+            raise e
 
     let csvhandle filename (endpoint: Handler<string>) = setCsvHeaders filename >=> generalHandle setBodyFromString endpoint
     let handle (endpoint: Handler<'t>)= generalHandle json endpoint
