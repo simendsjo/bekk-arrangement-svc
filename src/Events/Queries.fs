@@ -20,7 +20,6 @@ module Queries =
     let shortnamesTable = "Shortnames"
 
     let createEvent employeeId (event: WriteModel)  =
-        // TODO: Legg inn questions i egen tabell når eventet blir oppretta
         result {
             let! event = Models.writeToDomain (Guid.NewGuid()) event (Guid.NewGuid()) false employeeId |> ignoreContext
             let dbModel = Models.domainToDb event
@@ -29,14 +28,6 @@ module Queries =
                        }
                 |> flip Database.runInsertQuery
             return Models.dbToDomain (dbModel, event.ParticipantQuestions.Unwrap, event.Shortname.Unwrap)
-        }
-
-    let setQuestions (eventId: Event.Id) questions =
-        result {
-            do! insert { table questionsTable
-                         values (questions |> List.map (fun question -> {| EventId = eventId.Unwrap; Question = question |}))
-                       } 
-                       |> flip Database.runInsertQuery
         }
 
     let private groupEventAndShortname ls =
@@ -168,3 +159,23 @@ module Queries =
         |> Database.runDeleteQuery ctx
         |> ignore
         Ok ()
+
+
+    let setQuestions (eventId: Event.Id) questions =
+        result {
+            do! insert { table questionsTable
+                         values (questions 
+                                |> List.map (fun question -> 
+                                    {| EventId = eventId.Unwrap; Question = question |}))
+                       } 
+                       |> flip Database.runInsertQuery
+        }
+
+    let deleteQuestions (eventId: Event.Id) =
+        result {
+            do! delete { table questionsTable
+                         where (eq "EventId" eventId.Unwrap)
+                       }
+                       |> flip Database.runDeleteQuery >> Ok >> Result.map ignore
+            return ()
+        }

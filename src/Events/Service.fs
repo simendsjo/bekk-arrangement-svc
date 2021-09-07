@@ -422,6 +422,14 @@ module Service =
             do! Event.Validation.assertValidCapacityChange oldEvent newEvent
             do! Event.Queries.updateEvent newEvent
 
+            if newEvent.ParticipantQuestions <> oldEvent.ParticipantQuestions then
+                let! numberOfParticipants = Participant.Queries.getNumberOfParticipantsForEvent newEvent.Id
+                if numberOfParticipants = 0 then
+                    yield! Queries.deleteQuestions newEvent.Id
+                    yield! Queries.setQuestions newEvent.Id newEvent.ParticipantQuestions.Unwrap
+                else
+                    yield! Ok () |> ignoreContext
+
             if newEvent.Shortname <> oldEvent.Shortname then
                 match oldEvent.Shortname with
                 | Shortname (Some oldShortname) ->
