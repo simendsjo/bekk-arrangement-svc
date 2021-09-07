@@ -31,12 +31,19 @@ module Queries =
             return Models.dbToDomain (dbModel, event.ParticipantQuestions.Unwrap, event.Shortname.Unwrap)
         }
 
+    let setQuestions (eventId: Event.Id) questions =
+        result {
+            do! insert { table questionsTable
+                         values (questions |> List.map (fun question -> {| EventId = eventId.Unwrap; Question = question |}))
+                       } 
+                       |> flip Database.runInsertQuery
+        }
+
     let private groupEventAndShortname ls =
         ls
-        |> Seq.map (fun (event: DbModel, questionDbModel, shortnameDbModel: ShortnameDbModel option) ->
+        |> Seq.map (fun (event: DbModel, questionDbModel: ParticipantQuestionDbModel option, shortnameDbModel: ShortnameDbModel option) ->
                         ( event
                         , questionDbModel 
-                            |> Option.map (fun dbModel -> dbModel.Question)
                         , shortnameDbModel 
                             |> Option.map (fun dbModel -> dbModel.Shortname)))
         |> Seq.groupBy (fun (event, _, _) -> event.Id)
@@ -44,7 +51,11 @@ module Queries =
             let event = listOfQuestions |> Seq.head |> fun (event, _, _) -> event
             let shortname = listOfQuestions |> Seq.head |> fun (_, _, shortname) -> shortname
             ( event
-            , listOfQuestions |> Seq.collect (fun (_, question, _) -> match question with | Some q -> [ q ] | None -> []) |> List.ofSeq
+            , listOfQuestions 
+                |> Seq.collect (fun (_, question, _) -> match question with | Some q -> [ q ] | None -> []) 
+                |> Seq.sortBy (fun q -> q.Id) 
+                |> Seq.map (fun q -> q.Question) 
+                |> List.ofSeq
             , shortname
             ))
 
@@ -60,8 +71,8 @@ module Queries =
 
     let getPastEvents (ctx: HttpContext): Event seq =
         select { table eventsTable
-                 leftJoin questionsTable "EventId" "Id"
-                 leftJoin shortnamesTable "EventId" "Id"
+                 leftJoin questionsTable "EventId" "Events.Id"
+                 leftJoin shortnamesTable "EventId" "Events.Id"
                  where (lt "EndDate" DateTime.Now + eq "IsCancelled" false)
                  orderBy "StartDate" Desc }
         |> Database.runOuterJoinJoinSelectQuery<Event.DbModel, ParticipantQuestionDbModel, ShortnameDbModel>  ctx
@@ -92,9 +103,9 @@ module Queries =
 
     let queryEventByEventId (eventId: Event.Id) ctx: Result<Event, UserMessage list> =
         select { table eventsTable 
-                 leftJoin questionsTable "EventId" "Id"
-                 leftJoin shortnamesTable "EventId" "Id"
-                 where (eq "Id" eventId.Unwrap)
+                 leftJoin questionsTable "EventId" "Events.Id"
+                 leftJoin shortnamesTable "EventId" "Events.Id"
+                 where (eq "Events.Id" eventId.Unwrap)
                }
        |> Database.runOuterJoinJoinSelectQuery<Event.DbModel, ParticipantQuestionDbModel, ShortnameDbModel>  ctx
        |> groupEventAndShortname
@@ -105,8 +116,8 @@ module Queries =
 
     let queryEventsOrganizedByEmail (organizerEmail: EmailAddress) ctx: Event seq =
         select { table eventsTable
-                 leftJoin questionsTable "EventId" "Id"
-                 leftJoin shortnamesTable "EventId" "Id" 
+                 leftJoin questionsTable "EventId" "Events.Id"
+                 leftJoin shortnamesTable "EventId" "Events.Id" 
                  where (eq "Email" organizerEmail.Unwrap)
                }
        |> Database.runOuterJoinJoinSelectQuery<Event.DbModel, ParticipantQuestionDbModel, ShortnameDbModel>  ctx
@@ -115,8 +126,8 @@ module Queries =
 
     let queryEventsOrganizedByOrganizerId (organizerId: EmployeeId) ctx: Event seq =
         select { table eventsTable
-                 leftJoin questionsTable "EventId" "Id"
-                 leftJoin shortnamesTable "EventId" "Id" 
+                 leftJoin questionsTable "EventId" "Events.Id"
+                 leftJoin shortnamesTable "EventId" "Events.Id" 
                  where (eq "OrganizerId" organizerId.Unwrap)
                }
        |> Database.runOuterJoinJoinSelectQuery<Event.DbModel, ParticipantQuestionDbModel, ShortnameDbModel>  ctx
@@ -125,8 +136,8 @@ module Queries =
 
     let queryEventByShortname (shortname: string) ctx: Result<Event, UserMessage list> =
         select { table eventsTable 
-                 leftJoin shortnamesTable "EventId" "Id"
-                 leftJoin questionsTable "EventId" "Id"
+                 leftJoin shortnamesTable "EventId" "Events.Id"
+                 leftJoin questionsTable "EventId" "Events.Id"
                  where (eq "Shortname" shortname)
                }
        |> Database.runOuterJoinJoinSelectQuery<Event.DbModel, ShortnameDbModel, ParticipantQuestionDbModel>  ctx

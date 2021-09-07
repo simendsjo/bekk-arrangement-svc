@@ -94,6 +94,11 @@ module Service =
         result {
             let! newEvent = Queries.createEvent employeeId event
 
+            match event.ParticipantQuestions with
+            | [] -> yield! Ok () |> ignoreContext
+            | questions ->
+                yield! Queries.setQuestions newEvent.Id questions
+
             match event.Shortname with
             | None -> yield! Ok () |> ignoreContext
             | Some shortname ->
