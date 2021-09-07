@@ -81,8 +81,6 @@ module Queries =
         Ok ()
 
     let updateEvent (newEvent: Event) (ctx: HttpContext): Result<Unit, UserMessage list> =
-        // TODO: Her må det potensielt oppdateres spørsmål
-        // eeellleer, kan vere det burde gjøres oppe i servicen?
         let newEventDb = Models.domainToDb newEvent
         update { table eventsTable
                  set newEventDb

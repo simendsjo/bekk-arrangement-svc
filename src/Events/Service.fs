@@ -428,7 +428,13 @@ module Service =
                     yield! Queries.deleteQuestions newEvent.Id
                     yield! Queries.setQuestions newEvent.Id newEvent.ParticipantQuestions.Unwrap
                 else
-                    yield! Ok () |> ignoreContext
+                    let numberOfOldQuestions = oldEvent.ParticipantQuestions.Unwrap |> Seq.length
+                    let newQuestions = newEvent.ParticipantQuestions.Unwrap |> Seq.safeSkip numberOfOldQuestions |> List.ofSeq
+                    let oldQuestions = newEvent.ParticipantQuestions.Unwrap |> Seq.truncate numberOfOldQuestions |> List.ofSeq
+                    if oldQuestions <> oldEvent.ParticipantQuestions.Unwrap then
+                        return! Error [ UserMessages.illegalQuestionsUpdate ]
+                    else
+                        yield! Queries.setQuestions newEvent.Id newQuestions
 
             if newEvent.Shortname <> oldEvent.Shortname then
                 match oldEvent.Shortname with
