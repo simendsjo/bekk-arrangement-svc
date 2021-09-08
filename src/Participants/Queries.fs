@@ -63,7 +63,7 @@ module Queries =
     let queryParticipantByKey (eventId: Event.Id, email: EmailAddress) ctx: Result<Participant, UserMessage list> =
         select { table participantsTable
 
-                 leftJoin answersTable "EventId" "EventId"
+                 leftJoin answersTable "EventId" "Participants.EventId"
                  // Hacky join on multiple columns using where clause:
                  where (eq "ParticipantAnswers.Email" "Participants.Email")
 
@@ -78,7 +78,7 @@ module Queries =
     let queryParticipantionByParticipant (email: EmailAddress) ctx: Participant seq =
         select { table participantsTable
 
-                 leftJoin answersTable "EventId" "EventId"
+                 leftJoin answersTable "EventId" "Participants.EventId"
                  // Hacky join on multiple columns using where clause:
                  where (eq "ParticipantAnswers.Email" "Participants.Email")
 
@@ -90,7 +90,7 @@ module Queries =
     let queryParticipationsByEmployeeId (employeeId: Event.EmployeeId) ctx: Participant seq =
         select { table participantsTable
 
-                 leftJoin answersTable "EventId" "EventId"
+                 leftJoin answersTable "EventId" "Participants.EventId"
                  // Hacky join on multiple columns using where clause:
                  where (eq "ParticipantAnswers.Email" "Participants.Email")
 
@@ -103,14 +103,15 @@ module Queries =
     let queryParticipantsByEventId (eventId: Event.Id) ctx: Participant seq =
         select { table participantsTable
 
-                 leftJoin answersTable "EventId" "EventId"
+                 leftJoin answersTable "EventId" "Participants.EventId"
                  // Hacky join on multiple columns using where clause:
                  where (eq "ParticipantAnswers.Email" "Participants.Email")
 
-                 where (eq "EventId" eventId.Unwrap)
+                 where (eq "Participants.EventId" eventId.Unwrap)
                  orderBy "RegistrationTime" Asc
                }
-        |> Database.runSelectQuery ctx
+        |> Database.runOuterJoinSelectQuery<DbModel, ParticipantAnswerDbModel> ctx
+        |> groupParticipants
         |> Seq.map Models.dbToDomain
     
     let getNumberOfParticipantsForEvent (eventId: Event.Id) (ctx: HttpContext) =
@@ -126,6 +127,10 @@ module Queries =
 
     let setAnswers (participant: Participant) =
         result {
+            if participant.ParticipantAnswers.Unwrap |> Seq.length = 0 then
+                return ()
+            else
+
             let! questions =
                 select {
                   table questionsTable
