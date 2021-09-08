@@ -161,6 +161,10 @@ module Queries =
 
     let setQuestions (eventId: Event.Id) questions =
         result {
+            if questions |> Seq.length = 0 then
+                return ()
+            else
+
             do! insert { table questionsTable
                          values (questions 
                                 |> List.map (fun question -> 
