@@ -9,6 +9,13 @@ open UserMessage
 open ArrangementService.Email
 open ArrangementService.DomainModels
 
+type ParticipantAnswerDbModel = {
+  QuestionId: int
+  EventId: Guid
+  Email: string
+  Answer: string
+}
+
 type DbModel =
   { Name: string
     Email: string
@@ -66,10 +73,10 @@ type ViewModelLocalStorage =
 
 module Models =
 
-    let dbToDomain (dbRecord: DbModel): Participant =
+    let dbToDomain (dbRecord: DbModel, answers): Participant =
         { Name = Name dbRecord.Name
           Email = EmailAddress dbRecord.Email
-          ParticipantAnswers = ParticipantAnswers []
+          ParticipantAnswers = ParticipantAnswers answers
           EventId = Event.Id dbRecord.EventId
           RegistrationTime = TimeStamp dbRecord.RegistrationTime
           CancellationToken = dbRecord.CancellationToken

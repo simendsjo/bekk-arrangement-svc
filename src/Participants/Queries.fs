@@ -10,9 +10,12 @@ open ArrangementService.DomainModels
 open ResultComputationExpression
 open ArrangementService.UserMessage
 open System.Data.SqlClient
+open ArrangementService.Event.Queries
+open ArrangementService.Tools
 
 module Queries =
     let participantsTable = "Participants"
+    let answersTable = "ParticipantAnswers"
 
     let handleAggregateToSqlException (exn:AggregateException) userMessage = 
           let innerException = exn.InnerException
@@ -44,32 +47,66 @@ module Queries =
         |> ignore
         Ok ()
 
+    let private groupParticipants ls =
+        ls
+        |> Seq.groupBy (fun (participant: DbModel, _) -> (participant.EventId, participant.Email))
+        |> Seq.map (fun (_, listOfParticipants) -> 
+            let participant = listOfParticipants |> Seq.head |> fun (participant, _) -> participant
+            ( participant
+            , listOfParticipants 
+                |> Seq.collect (fun (_, answer) -> match answer with | Some a -> [ a ] | None -> []) 
+                |> Seq.sortBy (fun a -> a.QuestionId) 
+                |> Seq.map (fun q -> q.Answer) 
+                |> List.ofSeq
+            ))
+
     let queryParticipantByKey (eventId: Event.Id, email: EmailAddress) ctx: Result<Participant, UserMessage list> =
         select { table participantsTable
-                 where (eq "EventId" eventId.Unwrap + eq "Email" email.Unwrap)}
-        |> Database.runSelectQuery ctx
-        // TODO: Lage en funksjon som gjør dette. Brukes flere plasser, se over.
+
+                 leftJoin answersTable "EventId" "EventId"
+                 // Hacky join on multiple columns using where clause:
+                 where (eq "ParticipantAnswers.Email" "Participants.Email")
+
+                 where (eq "Participants.EventId" eventId.Unwrap + eq "Participants.Email" email.Unwrap)}
+        |> Database.runOuterJoinSelectQuery<DbModel, ParticipantAnswerDbModel> ctx
+        |> groupParticipants
         |> Seq.tryHead
         |> function
-        | Some participant -> Ok <| Models.dbToDomain participant
+        | Some (participant, answers) -> Ok <| Models.dbToDomain (participant, answers)
         | _ -> Error []
 
     let queryParticipantionByParticipant (email: EmailAddress) ctx: Participant seq =
         select { table participantsTable
-                 where (eq "Email" email.Unwrap)
-               }
-       |> Database.runSelectQuery ctx
-       |> Seq.map Models.dbToDomain
+
+                 leftJoin answersTable "EventId" "EventId"
+                 // Hacky join on multiple columns using where clause:
+                 where (eq "ParticipantAnswers.Email" "Participants.Email")
+
+                 where (eq "Participants.Email" email.Unwrap)}
+        |> Database.runOuterJoinSelectQuery<DbModel, ParticipantAnswerDbModel> ctx
+        |> groupParticipants
+        |> Seq.map Models.dbToDomain
 
     let queryParticipationsByEmployeeId (employeeId: Event.EmployeeId) ctx: Participant seq =
         select { table participantsTable
+
+                 leftJoin answersTable "EventId" "EventId"
+                 // Hacky join on multiple columns using where clause:
+                 where (eq "ParticipantAnswers.Email" "Participants.Email")
+
                  where (eq "EmployeeId" employeeId.Unwrap)
                }
-       |> Database.runSelectQuery ctx
-       |> Seq.map Models.dbToDomain
+        |> Database.runOuterJoinSelectQuery<DbModel, ParticipantAnswerDbModel> ctx
+        |> groupParticipants
+        |> Seq.map Models.dbToDomain
 
     let queryParticipantsByEventId (eventId: Event.Id) ctx: Participant seq =
         select { table participantsTable
+
+                 leftJoin answersTable "EventId" "EventId"
+                 // Hacky join on multiple columns using where clause:
+                 where (eq "ParticipantAnswers.Email" "Participants.Email")
+
                  where (eq "EventId" eventId.Unwrap)
                  orderBy "RegistrationTime" Asc
                }
@@ -86,3 +123,26 @@ module Queries =
         |> function
         | Some count -> Ok count.Value
         | None -> Error [UserMessages.getParticipantsCountFailed eventId]
+
+    let setAnswers (participant: Participant) =
+        result {
+            let! questions =
+                select {
+                  table questionsTable
+                  where (eq "EventId" participant.EventId.Unwrap)
+                  orderBy "Id" Asc
+                } |> flip Database.runSelectQuery<Event.ParticipantQuestionDbModel>
+                >> Ok
+
+            do! insert { table answersTable
+                         values (participant.ParticipantAnswers.Unwrap 
+                                |> Seq.zip questions
+                                |> Seq.map (fun (question, answer) -> 
+                                    {| QuestionId = question.Id
+                                       EventId = participant.EventId.Unwrap
+                                       Email = participant.Email.Unwrap
+                                       Answer = answer
+                                    |})
+                                |> List.ofSeq)
+                       } |> flip Database.runInsertQuery
+        }

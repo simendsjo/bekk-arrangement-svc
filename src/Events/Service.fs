@@ -228,6 +228,7 @@ module Service =
         result {
 
             do! Participant.Queries.createParticipant participant
+            do! Participant.Queries.setAnswers participant
 
             yield Service.sendMail (createMail participant)
             return ()

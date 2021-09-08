@@ -6,6 +6,7 @@
     <AssemblyName>arrangementSvc</AssemblyName>
     <OutputType>Exe</OutputType>
     <EnableDefaultContentItems>false</EnableDefaultContentItems>
+    <LangVersion>preview</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -15,7 +16,7 @@
   </ItemGroup>
   
   <ItemGroup>
-    <PackageReference Include="Dapper.FSharp" Version="2.0.0" />
+    <PackageReference Include="Dapper.FSharp" Version="2.3.0" />
     <PackageReference Include="FSharp.Core" Version="5.0.1" />
     <PackageReference Include="FifteenBelow.Json.Core" Version="1.0.0" />
     <PackageReference Include="FSharp.Data" Version="3.3.2" />
