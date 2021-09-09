@@ -196,6 +196,10 @@ module Queries =
 
     let deleteLastQuestions n (eventId: Event.Id) =
         result {
+            if n <= 0 then
+                return ()
+            else
+
             let! questions = getQuestionsForEvent eventId
             let lastNQuestions = questions |> Seq.rev |> Seq.truncate n |> List.ofSeq
             do! delete { table questionsTable

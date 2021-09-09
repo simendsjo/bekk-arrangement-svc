@@ -440,19 +440,14 @@ module Service =
             do! Event.Queries.updateEvent newEvent
 
             if newEvent.ParticipantQuestions <> oldEvent.ParticipantQuestions then
-                let! numberOfParticipants = Participant.Queries.getNumberOfParticipantsForEvent newEvent.Id
-                if numberOfParticipants = 0 then
-                    yield! Queries.deleteAllQuestions newEvent.Id
-                    yield! Queries.insertQuestions newEvent.Id newEvent.ParticipantQuestions.Unwrap
+                let! numberOfAnsweredQuestions = getNumberOfQuestionsThatHaveBeenAnswered newEvent.Id
+                let unansweredQuestions = newEvent.ParticipantQuestions.Unwrap |> Seq.safeSkip numberOfAnsweredQuestions |> List.ofSeq
+                let answeredQuestions = newEvent.ParticipantQuestions.Unwrap |> Seq.truncate numberOfAnsweredQuestions |> List.ofSeq
+                if answeredQuestions <> (oldEvent.ParticipantQuestions.Unwrap |> List.truncate numberOfAnsweredQuestions) then
+                    return! Error [ UserMessages.illegalQuestionsUpdate ]
                 else
-                    let! numberOfOldQuestions = getNumberOfQuestionsThatHaveBeenAnswered newEvent.Id
-                    let newQuestions = newEvent.ParticipantQuestions.Unwrap |> Seq.safeSkip numberOfOldQuestions |> List.ofSeq
-                    let oldQuestions = newEvent.ParticipantQuestions.Unwrap |> Seq.truncate numberOfOldQuestions |> List.ofSeq
-                    if oldQuestions <> (oldEvent.ParticipantQuestions.Unwrap |> List.truncate numberOfOldQuestions) then
-                        return! Error [ UserMessages.illegalQuestionsUpdate ]
-                    else
-                        yield! Queries.deleteLastQuestions ((oldEvent.ParticipantQuestions.Unwrap |> Seq.length) - (oldQuestions |> Seq.length)) newEvent.Id
-                        yield! Queries.insertQuestions newEvent.Id newQuestions
+                    yield! Queries.deleteLastQuestions ((oldEvent.ParticipantQuestions.Unwrap |> Seq.length) - (answeredQuestions |> Seq.length)) newEvent.Id
+                    yield! Queries.insertQuestions newEvent.Id unansweredQuestions
 
             if newEvent.Shortname <> oldEvent.Shortname then
                 match oldEvent.Shortname with
