@@ -56,17 +56,13 @@ module Queries =
             , listOfParticipants 
                 |> Seq.collect (fun (_, answer) -> match answer with | Some a -> [ a ] | None -> []) 
                 |> Seq.sortBy (fun a -> a.QuestionId) 
-                |> Seq.map (fun q -> q.Answer) 
+                |> Seq.map (fun a -> a.Answer) 
                 |> List.ofSeq
             ))
 
     let queryParticipantByKey (eventId: Event.Id, email: EmailAddress) ctx: Result<Participant, UserMessage list> =
         select { table participantsTable
-
-                 leftJoin answersTable "EventId" "Participants.EventId"
-                 // Hacky join on multiple columns using where clause:
-                 where (eq "ParticipantAnswers.Email" "Participants.Email")
-
+                 leftJoin answersTable [ "EventId", "Participants.EventId"; "Email", "Participants.Email" ]
                  where (eq "Participants.EventId" eventId.Unwrap + eq "Participants.Email" email.Unwrap)}
         |> Database.runOuterJoinSelectQuery<DbModel, ParticipantAnswerDbModel> ctx
         |> groupParticipants
@@ -77,11 +73,7 @@ module Queries =
 
     let queryParticipantionByParticipant (email: EmailAddress) ctx: Participant seq =
         select { table participantsTable
-
-                 leftJoin answersTable "EventId" "Participants.EventId"
-                 // Hacky join on multiple columns using where clause:
-                 where (eq "ParticipantAnswers.Email" "Participants.Email")
-
+                 leftJoin answersTable [ "EventId", "Participants.EventId"; "Email", "Participants.Email" ]
                  where (eq "Participants.Email" email.Unwrap)}
         |> Database.runOuterJoinSelectQuery<DbModel, ParticipantAnswerDbModel> ctx
         |> groupParticipants
@@ -89,11 +81,7 @@ module Queries =
 
     let queryParticipationsByEmployeeId (employeeId: Event.EmployeeId) ctx: Participant seq =
         select { table participantsTable
-
-                 leftJoin answersTable "EventId" "Participants.EventId"
-                 // Hacky join on multiple columns using where clause:
-                 where (eq "ParticipantAnswers.Email" "Participants.Email")
-
+                 leftJoin answersTable [ "EventId", "Participants.EventId"; "Email", "Participants.Email" ]
                  where (eq "EmployeeId" employeeId.Unwrap)
                }
         |> Database.runOuterJoinSelectQuery<DbModel, ParticipantAnswerDbModel> ctx
@@ -102,11 +90,7 @@ module Queries =
 
     let queryParticipantsByEventId (eventId: Event.Id) ctx: Participant seq =
         select { table participantsTable
-
-                 leftJoin answersTable "EventId" "Participants.EventId"
-                 // Hacky join on multiple columns using where clause:
-                 where (eq "ParticipantAnswers.Email" "Participants.Email")
-
+                 leftJoin answersTable [ "EventId", "Participants.EventId"; "Email", "Participants.Email" ]
                  where (eq "Participants.EventId" eventId.Unwrap)
                  orderBy "RegistrationTime" Asc
                }
