@@ -97,7 +97,7 @@ module Service =
             match event.ParticipantQuestions with
             | [] -> yield! Ok () |> ignoreContext
             | questions ->
-                yield! Queries.setQuestions newEvent.Id questions
+                yield! Queries.insertQuestions newEvent.Id questions
 
             match event.Shortname with
             | None -> yield! Ok () |> ignoreContext
@@ -405,6 +405,22 @@ module Service =
                     |> Option.defaultValue 0 
         }
 
+    (*
+        We want to know how many of the questions have actually been seen and answered by people
+    *)
+    let getNumberOfQuestionsThatHaveBeenAnswered (eventId: Event.Id) =
+        result {
+            let! participants = Participant.Queries.queryParticipantsByEventId eventId >> Ok
+
+            if participants |> Seq.length = 0 then
+                return 0
+            else
+
+            return participants 
+                        |> Seq.map (fun p -> p.ParticipantAnswers.Unwrap |> Seq.length) 
+                        |> Seq.max
+        }
+
 
     (* 
         This function fetches the event from the database so it fits with our
@@ -426,16 +442,17 @@ module Service =
             if newEvent.ParticipantQuestions <> oldEvent.ParticipantQuestions then
                 let! numberOfParticipants = Participant.Queries.getNumberOfParticipantsForEvent newEvent.Id
                 if numberOfParticipants = 0 then
-                    yield! Queries.deleteQuestions newEvent.Id
-                    yield! Queries.setQuestions newEvent.Id newEvent.ParticipantQuestions.Unwrap
+                    yield! Queries.deleteAllQuestions newEvent.Id
+                    yield! Queries.insertQuestions newEvent.Id newEvent.ParticipantQuestions.Unwrap
                 else
-                    let numberOfOldQuestions = oldEvent.ParticipantQuestions.Unwrap |> Seq.length
+                    let! numberOfOldQuestions = getNumberOfQuestionsThatHaveBeenAnswered newEvent.Id
                     let newQuestions = newEvent.ParticipantQuestions.Unwrap |> Seq.safeSkip numberOfOldQuestions |> List.ofSeq
                     let oldQuestions = newEvent.ParticipantQuestions.Unwrap |> Seq.truncate numberOfOldQuestions |> List.ofSeq
-                    if oldQuestions <> oldEvent.ParticipantQuestions.Unwrap then
+                    if oldQuestions <> (oldEvent.ParticipantQuestions.Unwrap |> List.truncate numberOfOldQuestions) then
                         return! Error [ UserMessages.illegalQuestionsUpdate ]
                     else
-                        yield! Queries.setQuestions newEvent.Id newQuestions
+                        yield! Queries.deleteLastQuestions ((oldEvent.ParticipantQuestions.Unwrap |> Seq.length) - (oldQuestions |> Seq.length)) newEvent.Id
+                        yield! Queries.insertQuestions newEvent.Id newQuestions
 
             if newEvent.Shortname <> oldEvent.Shortname then
                 match oldEvent.Shortname with

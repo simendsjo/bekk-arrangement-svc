@@ -158,8 +158,20 @@ module Queries =
         |> ignore
         Ok ()
 
+    let getQuestionsForEvent (eventId: Event.Id) =
+        result {
+            let! questions = 
+                select {
+                    table questionsTable
+                    where (eq "EventId" eventId.Unwrap)
+                    orderBy "Id" Asc
+                }
+                |> flip Database.runSelectQuery<ParticipantQuestionDbModel>
+                >> Ok
+            return questions
+        }
 
-    let setQuestions (eventId: Event.Id) questions =
+    let insertQuestions (eventId: Event.Id) questions =
         result {
             if questions |> Seq.length = 0 then
                 return ()
@@ -173,10 +185,21 @@ module Queries =
                        |> flip Database.runInsertQuery
         }
 
-    let deleteQuestions (eventId: Event.Id) =
+    let deleteAllQuestions (eventId: Event.Id) =
         result {
             do! delete { table questionsTable
                          where (eq "EventId" eventId.Unwrap)
+                       }
+                       |> flip Database.runDeleteQuery >> Ok >> Result.map ignore
+            return ()
+        }
+
+    let deleteLastQuestions n (eventId: Event.Id) =
+        result {
+            let! questions = getQuestionsForEvent eventId
+            let lastNQuestions = questions |> Seq.rev |> Seq.truncate n |> List.ofSeq
+            do! delete { table questionsTable
+                         where (isIn "Id" (lastNQuestions |> List.map (fun q -> q.Id :> obj)))
                        }
                        |> flip Database.runDeleteQuery >> Ok >> Result.map ignore
             return ()
