@@ -485,7 +485,12 @@ module Service =
         }
     
 
-    let participantToCSVRow (participant:Participant) =
+    let participantToCSVRow (questions: ParticipantQuestions) (participant: Participant) =
+
+        let questions = questions.Unwrap
+        let answers = participant.ParticipantAnswers.Unwrap
+        let qas = Seq.zip questions answers
+                        |> Seq.filter (fun (q, a) -> a <> "")
 
         let dobbeltfnuttTilEnkelfnutt character = if character='"' then '\'' else character
         let escapeComma word = $"\"{word}\""
@@ -493,9 +498,8 @@ module Service =
 
         [participant.Name.Unwrap
          participant.Email.Unwrap
-        // TODO: vi må ha inn ParticipantAnswers her for å schmekke ut dataen
-        // og kanskje også ParticipantQuestions?
-         "HER SKAL VI HA SVAR FRA DELTAKER"] 
+         qas |> Seq.map (fun (q, a) -> $"{q}\n{a}") |> String.concat "\n\n"
+        ] 
         |> List.map cleaning
         |> String.concat ","
 
@@ -503,10 +507,10 @@ module Service =
         let newline="\n"
 
         let attendees = participants.attendees 
-                        |> Seq.map participantToCSVRow 
+                        |> Seq.map (participantToCSVRow event.ParticipantQuestions)
                         |> String.concat newline 
         let waitingList = participants.waitingList 
-                          |> Seq.map participantToCSVRow 
+                          |> Seq.map (participantToCSVRow event.ParticipantQuestions)
                           |> String.concat newline
         let eventName = event.Title.Unwrap 
         let attendeesTitle = "Påmeldte"
