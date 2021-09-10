@@ -27,3 +27,6 @@ module UserMessages =
 
     let shortnameIsInUse shortname: UserMessage = 
         $"Det finnes allerede et pågående arrangement med kortnavn '{shortname}'" |> BadInput
+
+    let illegalQuestionsUpdate: UserMessage = 
+        $"Kan ikke endre på spørsmål som allerede har blitt stilt til deltakere" |> BadInput

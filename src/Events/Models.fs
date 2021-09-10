@@ -11,6 +11,12 @@ open UserMessage
 open ArrangementService.Email
 open ArrangementService.DomainModels
 
+type ParticipantQuestionDbModel = {
+  Id: int
+  EventId: Guid
+  Question: string
+}
+
 type ShortnameDbModel = {
   Shortname: string 
   EventId: Guid
@@ -29,7 +35,6 @@ type DbModel =
       StartTime: TimeSpan
       EndTime: TimeSpan
       OpenForRegistrationTime: int64
-      ParticipantQuestion: string option
       HasWaitingList: bool 
       IsCancelled: bool
       IsExternal: bool 
@@ -47,8 +52,8 @@ type ViewModel =
       MaxParticipants: int option
       StartDate: DateTimeCustom
       EndDate: DateTimeCustom
+      ParticipantQuestions: string list
       OpenForRegistrationTime: int64
-      ParticipantQuestion: string option
       HasWaitingList: bool 
       IsCancelled: bool 
       IsExternal: bool
@@ -71,9 +76,9 @@ type WriteModel =
       StartDate: DateTimeCustom
       EndDate: DateTimeCustom
       OpenForRegistrationTime: string
+      ParticipantQuestions: string list
       viewUrl: string option
       editUrlTemplate: string
-      ParticipantQuestion: string option
       HasWaitingList: bool 
       IsExternal: bool
       Shortname: string option
@@ -100,14 +105,14 @@ module Models =
         <*> validateDateRange writeModel.StartDate writeModel.EndDate
         <*> OpenForRegistrationTime.Parse writeModel.OpenForRegistrationTime
         <*> Ok editToken
-        <*> ParticipantQuestion.Parse writeModel.ParticipantQuestion
+        <*> ParticipantQuestions.Parse writeModel.ParticipantQuestions
         <*> (writeModel.HasWaitingList |> Ok)
         <*> Ok isCancelled
         <*> (writeModel.IsExternal |> Ok)
         <*> (EmployeeId organizerId |> Ok)
         <*> Shortname.Parse writeModel.Shortname
 
-    let dbToDomain (dbRecord: DbModel, shortname: string option): Event =
+    let dbToDomain (dbRecord: DbModel, participantQuestions: string list, shortname: string option): Event =
         { Id = Id dbRecord.Id
           Title = Title dbRecord.Title
           Description = Description dbRecord.Description
@@ -120,10 +125,10 @@ module Models =
           OpenForRegistrationTime =
               OpenForRegistrationTime dbRecord.OpenForRegistrationTime
           EditToken = dbRecord.EditToken
-          ParticipantQuestion = ParticipantQuestion dbRecord.ParticipantQuestion
           HasWaitingList = dbRecord.HasWaitingList
           IsCancelled = dbRecord.IsCancelled
           IsExternal = dbRecord.IsExternal
+          ParticipantQuestions = ParticipantQuestions participantQuestions
           OrganizerId = EmployeeId dbRecord.OrganizerId
           Shortname = Shortname shortname
         }
@@ -142,7 +147,6 @@ module Models =
           EndTime = customToTimeSpan domainModel.EndDate.Time
           OpenForRegistrationTime = domainModel.OpenForRegistrationTime.Unwrap
           EditToken = domainModel.EditToken
-          ParticipantQuestion = domainModel.ParticipantQuestion.Unwrap
           HasWaitingList = domainModel.HasWaitingList
           IsCancelled = domainModel.IsCancelled
           IsExternal = domainModel.IsExternal
@@ -161,10 +165,10 @@ module Models =
           StartDate = domainModel.StartDate
           EndDate = domainModel.EndDate
           OpenForRegistrationTime = domainModel.OpenForRegistrationTime.Unwrap
-          ParticipantQuestion = domainModel.ParticipantQuestion.Unwrap
           HasWaitingList = domainModel.HasWaitingList 
           IsCancelled = domainModel.IsCancelled 
           IsExternal = domainModel.IsExternal
+          ParticipantQuestions = domainModel.ParticipantQuestions.Unwrap
           OrganizerId = domainModel.OrganizerId.Unwrap
           Shortname = domainModel.Shortname.Unwrap
         }

@@ -1,0 +1,8 @@
+BEGIN TRANSACTION
+
+ALTER TABLE [ParticipantAnswers]
+ADD CONSTRAINT FK_Answer_Participants
+FOREIGN KEY (Email, EventId) REFERENCES [Participants] (Email, EventId)
+ON DELETE CASCADE;
+
+COMMIT TRANSACTION

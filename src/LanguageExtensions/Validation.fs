@@ -34,3 +34,11 @@ module Validation =
         match x with
         | None -> Ok ()
         | Some x -> f x
+
+    let rec every f list =
+        match list with
+        | [] -> Ok ()
+        | x :: xs ->
+            match f x with
+            | Error e -> Error e
+            | Ok _ -> every f xs

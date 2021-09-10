@@ -94,6 +94,11 @@ module Service =
         result {
             let! newEvent = Queries.createEvent employeeId event
 
+            match event.ParticipantQuestions with
+            | [] -> yield! Ok () |> ignoreContext
+            | questions ->
+                yield! Queries.insertQuestions newEvent.Id questions
+
             match event.Shortname with
             | None -> yield! Ok () |> ignoreContext
             | Some shortname ->
@@ -223,6 +228,7 @@ module Service =
         result {
 
             do! Participant.Queries.createParticipant participant
+            do! Participant.Queries.setAnswers participant
 
             yield Service.sendMail (createMail participant)
             return ()
@@ -399,6 +405,22 @@ module Service =
                     |> Option.defaultValue 0 
         }
 
+    (*
+        We want to know how many of the questions have actually been seen and answered by people
+    *)
+    let getNumberOfQuestionsThatHaveBeenAnswered (eventId: Event.Id) =
+        result {
+            let! participants = Participant.Queries.queryParticipantsByEventId eventId >> Ok
+
+            if Seq.isEmpty participants then
+                return 0
+            else
+
+            return participants 
+                        |> Seq.map (fun p -> p.ParticipantAnswers.Unwrap |> Seq.length) 
+                        |> Seq.max
+        }
+
 
     (* 
         This function fetches the event from the database so it fits with our
@@ -416,6 +438,16 @@ module Service =
 
             do! Event.Validation.assertValidCapacityChange oldEvent newEvent
             do! Event.Queries.updateEvent newEvent
+
+            if newEvent.ParticipantQuestions <> oldEvent.ParticipantQuestions then
+                let! numberOfAnsweredQuestions = getNumberOfQuestionsThatHaveBeenAnswered newEvent.Id
+                let unansweredQuestions = newEvent.ParticipantQuestions.Unwrap |> Seq.safeSkip numberOfAnsweredQuestions |> List.ofSeq
+                let answeredQuestions = newEvent.ParticipantQuestions.Unwrap |> Seq.truncate numberOfAnsweredQuestions |> List.ofSeq
+                if answeredQuestions <> (oldEvent.ParticipantQuestions.Unwrap |> List.truncate numberOfAnsweredQuestions) then
+                    return! Error [ UserMessages.illegalQuestionsUpdate ]
+                else
+                    yield! Queries.deleteLastQuestions ((oldEvent.ParticipantQuestions.Unwrap |> Seq.length) - (answeredQuestions |> Seq.length)) newEvent.Id
+                    yield! Queries.insertQuestions newEvent.Id unansweredQuestions
 
             if newEvent.Shortname <> oldEvent.Shortname then
                 match oldEvent.Shortname with
@@ -453,14 +485,21 @@ module Service =
         }
     
 
-    let participantToCSVRow (participant:Participant) =
+    let participantToCSVRow (questions: ParticipantQuestions) (participant: Participant) =
+
+        let questions = questions.Unwrap
+        let answers = participant.ParticipantAnswers.Unwrap
+        let qas = Seq.zip questions answers
+                        |> Seq.filter (fun (q, a) -> a <> "")
+
         let dobbeltfnuttTilEnkelfnutt character = if character='"' then '\'' else character
         let escapeComma word = $"\"{word}\""
         let cleaning = String.map dobbeltfnuttTilEnkelfnutt >> escapeComma
 
         [participant.Name.Unwrap
          participant.Email.Unwrap
-         participant.Comment.Unwrap] 
+         qas |> Seq.map (fun (q, a) -> $"{q}\n{a}") |> String.concat "\n\n"
+        ] 
         |> List.map cleaning
         |> String.concat ","
 
@@ -468,10 +507,10 @@ module Service =
         let newline="\n"
 
         let attendees = participants.attendees 
-                        |> Seq.map participantToCSVRow 
+                        |> Seq.map (participantToCSVRow event.ParticipantQuestions)
                         |> String.concat newline 
         let waitingList = participants.waitingList 
-                          |> Seq.map participantToCSVRow 
+                          |> Seq.map (participantToCSVRow event.ParticipantQuestions)
                           |> String.concat newline
         let eventName = event.Title.Unwrap 
         let attendeesTitle = "Påmeldte"
