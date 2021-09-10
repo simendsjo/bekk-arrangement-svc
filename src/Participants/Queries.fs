@@ -52,13 +52,15 @@ module Queries =
         |> Seq.groupBy (fun (participant: DbModel, _) -> (participant.EventId, participant.Email))
         |> Seq.map (fun (_, listOfParticipants) -> 
             let (participant, _) = listOfParticipants |> Seq.head 
-            ( participant
-            , listOfParticipants 
+            let sortedAnswersForParticipant =
+                listOfParticipants 
                 |> Seq.collect (fun (_, answer) -> match answer with | Some a -> [ a ] | None -> []) 
                 |> Seq.sortBy (fun a -> a.QuestionId) 
                 |> Seq.map (fun a -> a.Answer) 
                 |> List.ofSeq
-            ))
+
+            (participant , sortedAnswersForParticipant)
+        )
 
     let queryParticipantByKey (eventId: Event.Id, email: EmailAddress) ctx: Result<Participant, UserMessage list> =
         select { table participantsTable

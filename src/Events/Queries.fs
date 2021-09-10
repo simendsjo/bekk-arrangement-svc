@@ -39,16 +39,16 @@ module Queries =
                             |> Option.map (fun dbModel -> dbModel.Shortname)))
         |> Seq.groupBy (fun (event, _, _) -> event.Id)
         |> Seq.map (fun (eventId, listOfQuestions) -> 
-            let event = listOfQuestions |> Seq.head |> fun (event, _, _) -> event
-            let shortname = listOfQuestions |> Seq.head |> fun (_, _, shortname) -> shortname
-            ( event
-            , listOfQuestions 
+            let (event, _, shortname) = listOfQuestions |> Seq.head
+            let sortedQuestionsForEvent =
+                listOfQuestions 
                 |> Seq.collect (fun (_, question, _) -> match question with | Some q -> [ q ] | None -> []) 
                 |> Seq.sortBy (fun q -> q.Id) 
                 |> Seq.map (fun q -> q.Question) 
                 |> List.ofSeq
-            , shortname
-            ))
+
+            (event, sortedQuestionsForEvent, shortname)
+        )
 
     let getEvents (ctx: HttpContext): Event seq =
         select { table eventsTable
