@@ -113,7 +113,7 @@ module Queries =
 
     let setAnswers (participant: Participant) =
         result {
-            if participant.ParticipantAnswers.Unwrap |> Seq.length = 0 then
+            if Seq.isEmpty participant.ParticipantAnswers.Unwrap then
                 return ()
             else
 

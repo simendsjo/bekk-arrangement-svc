@@ -412,7 +412,7 @@ module Service =
         result {
             let! participants = Participant.Queries.queryParticipantsByEventId eventId >> Ok
 
-            if participants |> Seq.length = 0 then
+            if Seq.isEmpty participants then
                 return 0
             else
 

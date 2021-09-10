@@ -171,7 +171,7 @@ module Queries =
 
     let insertQuestions (eventId: Event.Id) questions =
         result {
-            if questions |> Seq.length = 0 then
+            if Seq.isEmpty questions then
                 return ()
             else
 
