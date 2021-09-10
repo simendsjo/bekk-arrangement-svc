@@ -71,8 +71,6 @@ module Queries =
         |> Seq.map Models.dbToDomain
 
     let deleteEvent (id: Event.Id) (ctx: HttpContext): Result<Unit, UserMessage list> =
-        // TODO: cascade delete på questions her?
-        // obs kva med Shortname
         delete { table eventsTable
                  where (eq "Id" id.Unwrap)
                }
