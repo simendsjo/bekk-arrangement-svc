@@ -51,7 +51,7 @@ module Queries =
         ls
         |> Seq.groupBy (fun (participant: DbModel, _) -> (participant.EventId, participant.Email))
         |> Seq.map (fun (_, listOfParticipants) -> 
-            let participant = listOfParticipants |> Seq.head |> fun (participant, _) -> participant
+            let (participant, _) = listOfParticipants |> Seq.head 
             ( participant
             , listOfParticipants 
                 |> Seq.collect (fun (_, answer) -> match answer with | Some a -> [ a ] | None -> []) 
