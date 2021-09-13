@@ -38,6 +38,7 @@ type DbModel =
       HasWaitingList: bool 
       IsCancelled: bool
       IsExternal: bool 
+      IsHidden: bool
       EditToken: Guid
       OrganizerId: int
     }
@@ -57,6 +58,7 @@ type ViewModel =
       HasWaitingList: bool 
       IsCancelled: bool 
       IsExternal: bool
+      IsHidden: bool
       OrganizerId: int
       Shortname: string option
     }
@@ -81,6 +83,7 @@ type WriteModel =
       editUrlTemplate: string
       HasWaitingList: bool 
       IsExternal: bool
+      IsHidden: bool
       Shortname: string option
     }
 
@@ -109,6 +112,7 @@ module Models =
         <*> (writeModel.HasWaitingList |> Ok)
         <*> Ok isCancelled
         <*> (writeModel.IsExternal |> Ok)
+        <*> (writeModel.IsHidden |> Ok)
         <*> (EmployeeId organizerId |> Ok)
         <*> Shortname.Parse writeModel.Shortname
 
@@ -128,6 +132,7 @@ module Models =
           HasWaitingList = dbRecord.HasWaitingList
           IsCancelled = dbRecord.IsCancelled
           IsExternal = dbRecord.IsExternal
+          IsHidden = dbRecord.IsHidden
           ParticipantQuestions = ParticipantQuestions participantQuestions
           OrganizerId = EmployeeId dbRecord.OrganizerId
           Shortname = Shortname shortname
@@ -150,6 +155,7 @@ module Models =
           HasWaitingList = domainModel.HasWaitingList
           IsCancelled = domainModel.IsCancelled
           IsExternal = domainModel.IsExternal
+          IsHidden = domainModel.IsHidden
           OrganizerId = domainModel.OrganizerId.Unwrap
         }
         
@@ -168,6 +174,7 @@ module Models =
           HasWaitingList = domainModel.HasWaitingList 
           IsCancelled = domainModel.IsCancelled 
           IsExternal = domainModel.IsExternal
+          IsHidden = domainModel.IsHidden
           ParticipantQuestions = domainModel.ParticipantQuestions.Unwrap
           OrganizerId = domainModel.OrganizerId.Unwrap
           Shortname = domainModel.Shortname.Unwrap
