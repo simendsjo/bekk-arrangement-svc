@@ -196,7 +196,7 @@ module Service =
                     "Takk for at du gir beskjed! Vi håper å se deg ved en senere anledning.😊"
                     ]
                     |> String.concat "<br>"
-          To = event.OrganizerEmail
+          To = participant.Email
           CalendarInvite = None 
         }
 
