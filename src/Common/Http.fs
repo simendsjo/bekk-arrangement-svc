@@ -14,12 +14,18 @@ module Http =
 
     let check (condition: Handler<Unit>) (next: HttpFunc) (context: HttpContext) =
         let conn, transaction = Database.createConnection context
-        match condition context with
-        | Ok () -> next context
-        | Error errorMessage ->
+        try
+            match condition context with
+            | Ok () -> next context
+            | Error errorMessage ->
+                transaction.Rollback()
+                conn.Close()
+                convertUserMessagesToHttpError errorMessage next context
+        with e ->
             transaction.Rollback()
             conn.Close()
-            convertUserMessagesToHttpError errorMessage next context
+            raise e
+
 
     let setCsvHeaders (filename:Guid) : HttpHandler =
         fun (next : HttpFunc) (ctx : HttpContext) ->
@@ -67,11 +73,6 @@ module Http =
             try
                 handler next ctx
             with _ ->
-                let config = Config.getConfig ctx
-                config.currentTransaction.Rollback()
-                config.currentConnection.Close()
-                config.currentConnection <- null
-                config.currentTransaction <- null
 
                 let jitter = rnd.NextDouble() + 0.5 // [0.5, 1.5]
                 let delayWithJitter =
