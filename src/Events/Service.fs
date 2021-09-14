@@ -50,17 +50,32 @@ module Service =
           "Del denne kun med personer som du ønsker skal ha redigeringstilgang.🕵️" ]
         |> String.concat "<br>"
 
-    let private createEmail viewUrl createEditUrl (event: Event) =
+    let private organizerAsParticipant (event: Event): Participant =
+        {
+          Name = Participant.Name event.OrganizerName.Unwrap
+          Email = EmailAddress event.OrganizerEmail.Unwrap
+          ParticipantAnswers = Participant.ParticipantAnswers []
+          EventId = event.Id
+          RegistrationTime = TimeStamp.now()
+          CancellationToken = System.Guid.Empty
+          EmployeeId = Participant.EmployeeId (Some event.OrganizerId.Unwrap)
+        }
+
+    let private createEmail viewUrl createEditUrl noReplyMail (event: Event) =
         let message = createdEventMessage viewUrl createEditUrl event
         { Subject = $"Du opprettet {event.Title.Unwrap}"
           Message = message
           To = event.OrganizerEmail
-          CalendarInvite = None }
+          CalendarInvite = 
+              createCalendarAttachment
+                  (event, organizerAsParticipant event, noReplyMail, message, Create) |> Some 
+        }
 
     let private sendNewlyCreatedEventMail viewUrl createEditUrl (event: Event) =
         result {
+            let! config = Config.getConfig >> Ok
             let mail =
-                createEmail viewUrl createEditUrl event
+                createEmail viewUrl createEditUrl (EmailAddress config.noReplyEmail) event
             yield Service.sendMail mail
         }
 
