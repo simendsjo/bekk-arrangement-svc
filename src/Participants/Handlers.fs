@@ -5,7 +5,7 @@ open Giraffe
 open Microsoft.Net.Http.Headers
 open System.Web
 open System
-open System.Collections.Generic
+open System.Collections.Concurrent
 
 open ArrangementService
 open Http
@@ -56,6 +56,7 @@ module Handlers =
 
             let! participantDomainModel = (writeToDomain (eventId, email) writeModel userId) |> ignoreContext
             do! Service.registerParticipant createMailForParticipant participantDomainModel
+
             return domainToViewWithCancelInfo participantDomainModel
         }
 
@@ -112,7 +113,7 @@ module Handlers =
 
     let exportParticipationsDataForEvent eventId = Service.exportParticipationsDataForEvent (Event.Id eventId)
 
-    let registrationLock = new List<Guid>()
+    let mutable registrationLock = new ConcurrentQueue<Guid>()
 
     let routes: HttpHandler =
         choose
@@ -150,4 +151,11 @@ module Handlers =
                             (check (oneCanParticipateOnEvent eventId)
                             >=> (handle << registerForEvent) (eventId, email))
                             |> withRetry
-                            |> withLock registrationLock) ] ]
+                            |> withLock registrationLock
+                            ) ] ]
+
+
+        // let timer = new Diagnostics.Stopwatch()
+        // timer.Start()
+
+        // printfn "Elapsed SELECT Time: %i" timer.ElapsedMilliseconds

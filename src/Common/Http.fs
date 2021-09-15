@@ -9,6 +9,7 @@ open ArrangementService
 open UserMessage
 open System
 open System.Threading
+open System.Collections.Concurrent
 
 module Http =
 
@@ -64,7 +65,6 @@ module Http =
         let rnd = Random(seed)
 
         let rec retry delay amount =
-            printfn "Prøver igjen for %A gang, for seed %A, med delay %A" amount seed delay
             Database.createConnection ctx |> ignore
             try
                 handler next ctx
@@ -84,9 +84,25 @@ module Http =
 
         retry 50.0 10 // retry 10 times with a inital delay seed 150ms
 
-    let withLock (lock: List<Guid>) (handler: HttpHandler) (next: HttpFunc) (ctx: HttpContext): HttpFuncResult =
-        // lock.Add(Guid.NewGuid())
-        handler next ctx
+    let readFirstFromQueue (q: ConcurrentQueue<Guid>) =
+        let mutable result = Guid.Empty
+        if q.TryPeek(&result) then
+            Some result
+        else
+            None
+
+    let withLock (lock: ConcurrentQueue<Guid>) (handler: HttpHandler) (next: HttpFunc) (ctx: HttpContext): HttpFuncResult =
+        let key = Guid.NewGuid()
+        lock.Enqueue(key)
+
+        while readFirstFromQueue lock <> Some key do
+            Thread.Sleep 10
+
+        let res = handler next ctx
+
+        let (_, _) = lock.TryDequeue()
+
+        res
 
     let parseBody<'T> (ctx: HttpContext) =
         let body = 
