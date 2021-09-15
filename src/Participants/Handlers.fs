@@ -5,6 +5,7 @@ open Giraffe
 open Microsoft.Net.Http.Headers
 open System.Web
 open System
+open System.Collections.Generic
 
 open ArrangementService
 open Http
@@ -111,26 +112,33 @@ module Handlers =
 
     let exportParticipationsDataForEvent eventId = Service.exportParticipationsDataForEvent (Event.Id eventId)
 
+    let registrationLock = new List<Guid>()
+
     let routes: HttpHandler =
         choose
             [ GET_HEAD
               >=> choose
                       [ routef "/events/%O/participants" (fun eventId ->
                             check isAuthenticated
-                            >=> (handle << getParticipantsForEvent) eventId)
+                            >=> (handle << getParticipantsForEvent) eventId
+                            |> withTransaction)
 
                         routef "/events/%O/participants/count" (fun eventId -> 
                             check (eventIsExternalOrUserIsAuthenticated eventId)
-                            >=> (handle << getNumberOfParticipantsForEvent) eventId)
+                            >=> (handle << getNumberOfParticipantsForEvent) eventId
+                            |> withTransaction)
                         routef "/events/%O/participants/export" (fun eventId -> 
                             check (userCanEditEvent eventId)
-                            >=> (csvhandle eventId << exportParticipationsDataForEvent) eventId)
+                            >=> (csvhandle eventId << exportParticipationsDataForEvent) eventId
+                            |> withTransaction)
                         routef "/events/%O/participants/%s/waitinglist-spot" (fun (eventId, email) ->
                             check (eventIsExternalOrUserIsAuthenticated eventId)
-                            >=> (handle << getWaitinglistSpot) (eventId, email))
+                            >=> (handle << getWaitinglistSpot) (eventId, email)
+                            |> withTransaction)
                         routef "/participants/%s/events" (fun email ->
                             check isAuthenticated
-                            >=> (handle << getParticipationsForParticipant) email) ]
+                            >=> (handle << getParticipationsForParticipant) email
+                            |> withTransaction) ]
               DELETE
               >=> choose
                       [ routef "/events/%O/participants/%s" (fun parameters ->
@@ -141,4 +149,5 @@ module Handlers =
                       [ routef "/events/%O/participants/%s" (fun (eventId: Guid, email) ->
                             (check (oneCanParticipateOnEvent eventId)
                             >=> (handle << registerForEvent) (eventId, email))
-                            |> withRetry) ] ]
+                            |> withRetry
+                            |> withLock registrationLock) ] ]

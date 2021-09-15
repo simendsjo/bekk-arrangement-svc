@@ -20,15 +20,48 @@ module Database =
     *)
     let createConnection (ctx: HttpContext) = 
         let config = getConfig ctx
-        if config.currentTransaction <> null then
-            config.currentConnection, config.currentTransaction
+        let connection = new SqlConnection(config.databaseConnectionString) :> IDbConnection
+        connection.Open()
+        let transaction = connection.BeginTransaction(IsolationLevel.Serializable)
+
+        config.currentConnection <- connection
+        config.currentTransaction <- transaction
+
+        ()
+
+    let commitTransaction (ctx: HttpContext) = 
+        let config = getConfig ctx
+
+        let t = config.currentTransaction
+        let c = config.currentConnection
+        if isNull t <> isNull c then
+            raise (System.Exception "Dobbel commit bug")
         else
-            let connection = new SqlConnection(config.databaseConnectionString) :> IDbConnection
-            connection.Open()
-            config.currentConnection <- connection
-            let transaction = connection.BeginTransaction(IsolationLevel.Serializable)
-            config.currentTransaction <- transaction
-            connection, transaction
+
+        config.currentTransaction <- null
+        config.currentConnection <- null
+
+        t.Commit()
+        c.Close()
+
+        ()
+
+    let rollbackTransaction (ctx: HttpContext) = 
+        let config = getConfig ctx
+
+        let t = config.currentTransaction
+        let c = config.currentConnection
+        if isNull t <> isNull c then
+            raise (System.Exception "Dobbel commit bug")
+        else
+
+        config.currentTransaction <- null
+        config.currentConnection <- null
+
+        t.Rollback()
+        c.Close()
+
+        ()
 
     let runSelectQuery<'t> (ctx: HttpContext) query =
         let config = getConfig ctx

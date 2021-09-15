@@ -123,24 +123,29 @@ module Handlers =
                       [ route "/events" >=>
                             check isAuthenticated
                             >=> handle getEvents
+                            |> withTransaction
 
                         route "/events/previous" >=>
                             check isAuthenticated
                             >=> handle getPastEvents
+                            |> withTransaction
 
                         routef "/events/%O" (fun eventId -> 
                             check (eventIsExternalOrUserIsAuthenticated eventId)
-                            >=> (handle << getEvent) eventId)
+                            >=> (handle << getEvent) eventId
+                            |> withTransaction)
 
                         routef "/events/organizer/%s" (fun email -> 
                             check isAuthenticated
-                            >=> (handle << getEventsOrganizedBy) email)
+                            >=> (handle << getEventsOrganizedBy) email
+                            |> withTransaction)
 
                         routef "/events-and-participations/%i" (fun id ->
                             check (isAdminOrAuthenticatedAsUser id)
-                            >=> (handle << getEventAndParticipationSummaryForEmployee) id) 
+                            >=> (handle << getEventAndParticipationSummaryForEmployee) id
+                            |> withTransaction) 
                         
-                        route "/events/id" >=> handle getEventIdByShortname
+                        route "/events/id" >=> handle getEventIdByShortname |> withTransaction
                       ]
               DELETE
               >=> choose
