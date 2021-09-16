@@ -3,7 +3,6 @@ namespace ArrangementService
 open Giraffe
 open Microsoft.AspNetCore.Http
 open Microsoft.Net.Http.Headers
-open System.Collections.Generic
 
 open ArrangementService
 open UserMessage
@@ -55,8 +54,7 @@ module Http =
         Database.createConnection ctx |> ignore
         try
             handler next ctx
-        with e ->
-            printfn "%A" e
+        with _ ->
             Database.rollbackTransaction ctx
             convertUserMessagesToHttpError [] next ctx // Default is 500 Internal Server Error
 
@@ -82,9 +80,9 @@ module Http =
                 else
                     convertUserMessagesToHttpError [] next ctx // Default is 500 Internal Server Error
 
-        retry 50.0 10 // retry 10 times with a inital delay seed 150ms
+        retry 50.0 10 // retry 10 times with a inital delay seed 50ms
 
-    let readFirstFromQueue (q: ConcurrentQueue<Guid>) =
+    let private readFirstFromQueue (q: ConcurrentQueue<Guid>) =
         let mutable result = Guid.Empty
         if q.TryPeek(&result) then
             Some result
