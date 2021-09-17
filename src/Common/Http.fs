@@ -94,7 +94,7 @@ module Http =
         lock.Enqueue(key)
 
         while readFirstFromQueue lock <> Some key do
-            Thread.Sleep 10
+            Thread.Sleep 100
 
         let res = handler next ctx
 
