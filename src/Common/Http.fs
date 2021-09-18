@@ -89,16 +89,12 @@ module Http =
         else
             None
 
-    let withLock (lock: ConcurrentQueue<Guid>) (handler: HttpHandler) (next: HttpFunc) (ctx: HttpContext): HttpFuncResult =
-        let key = Guid.NewGuid()
-        lock.Enqueue(key)
-
-        while readFirstFromQueue lock <> Some key do
-            Thread.Sleep 100
+    let withLock (lock: Mutex) (handler: HttpHandler) (next: HttpFunc) (ctx: HttpContext): HttpFuncResult =
+        lock.WaitOne() |> ignore
 
         let res = handler next ctx
 
-        let (_, _) = lock.TryDequeue()
+        lock.ReleaseMutex()
 
         res
 

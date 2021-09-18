@@ -5,7 +5,6 @@ open Giraffe
 open Microsoft.Net.Http.Headers
 open System.Web
 open System
-open System.Collections.Concurrent
 
 open ArrangementService
 open Http
@@ -17,6 +16,7 @@ open ArrangementService.DomainModels
 open ArrangementService.Config
 open ArrangementService.Event.Authorization
 open ArrangementService.Auth
+open System.Threading
 
 module Handlers =
 
@@ -113,7 +113,7 @@ module Handlers =
 
     let exportParticipationsDataForEvent eventId = Service.exportParticipationsDataForEvent (Event.Id eventId)
 
-    let mutable registrationLock = new ConcurrentQueue<Guid>()
+    let registrationLock = new Mutex()
 
     let routes: HttpHandler =
         choose

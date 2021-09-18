@@ -19,6 +19,7 @@ open ArrangementService
 open migrator
 open Logging
 open SendgridApiModels
+open System.Threading
 
 let webApp =
     choose
@@ -92,6 +93,14 @@ let configureServices (services: IServiceCollection) =
         (Thoth.Json.Giraffe.ThothSerializer
             (caseStrategy = CamelCase, extra = extraEncoder, skipNullField = true))
     |> ignore
+
+    let mutable minWorker = 0
+    let mutable minIOC = 0
+
+    ThreadPool.GetMinThreads(&minWorker, &minIOC)  
+    ThreadPool.SetMinThreads(500, minIOC) |> ignore
+
+    ()
 
 
 [<EntryPoint>]
