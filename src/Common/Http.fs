@@ -82,13 +82,6 @@ module Http =
 
         retry 50.0 10 // retry 10 times with a inital delay seed 50ms
 
-    let private readFirstFromQueue (q: ConcurrentQueue<Guid>) =
-        let mutable result = Guid.Empty
-        if q.TryPeek(&result) then
-            Some result
-        else
-            None
-
     let withLock (lock: Mutex) (handler: HttpHandler) (next: HttpFunc) (ctx: HttpContext): HttpFuncResult =
         lock.WaitOne() |> ignore
 
