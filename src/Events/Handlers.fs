@@ -15,14 +15,16 @@ open Giraffe
 open System.Web
 open ArrangementService.Auth
 
+open FSharp.Control.Tasks.V2
+
 module Handlers =
 
     type RemoveEvent = 
         | Cancel
         | Delete
 
-    let getEvents: Handler<ViewModel list> =
-        result {
+    let getEvents: AsyncHandler<ViewModel list> =
+        taskResult {
             let! events = Service.getEvents
             return Seq.map domainToView events |> Seq.toList
         }
@@ -121,9 +123,9 @@ module Handlers =
             [ GET_HEAD
               >=> choose
                       [ route "/events" >=>
-                            check isAuthenticated
-                            >=> handle getEvents
-                            |> withTransaction
+                            checkAsync (isAuthenticated >> fun x -> task {return x})
+                            >=> handleAsync getEvents
+                            |> withTransactionAsync
 
                         route "/events/previous" >=>
                             check isAuthenticated

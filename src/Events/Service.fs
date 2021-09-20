@@ -11,9 +11,9 @@ open ArrangementService.Event
 
 module Service =
 
-    let getEvents: Handler<Event seq> =
-        result {
-            let! events = Event.Queries.getEvents >> Ok
+    let getEvents: AsyncHandler<Event seq> =
+        taskResult {
+            let! events = Event.Queries.getEventsAsync 
             return events
         }
     

@@ -36,6 +36,7 @@
     <Compile Include="Config.fs" />
 
     <Compile Include="LanguageExtensions\Validation.fs" />
+    <Compile Include="LanguageExtensions\Task.fs" />
     <Compile Include="LanguageExtensions\ResultComputationExpression.fs" />
     <Compile Include="LanguageExtensions\Seq.fs" />
     <Compile Include="LanguageExtensions\Option.fs" /> 

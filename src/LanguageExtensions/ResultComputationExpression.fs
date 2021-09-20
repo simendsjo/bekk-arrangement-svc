@@ -1,5 +1,8 @@
 namespace ArrangementService
 
+open FSharp.Control.Tasks.V2
+open System.Threading.Tasks
+
 module ResultComputationExpression =
     // This is the same as `constant`
     // This is used with `let!` when an expression
@@ -55,3 +58,35 @@ module ResultComputationExpression =
             fun ctx -> Result.bind (fun x -> f x ctx) (rx ctx)
 
     let result = ResultBuilder()
+
+    type TaskResultBuild() =
+        member this.Return(x) = fun _ -> task {
+                                            return Ok x
+                                         }
+        member this.ReturnFrom(x) = fun _ -> x
+        member this.Yield(f) = f >> Ok
+        member this.YieldFrom(f) = f
+        member this.Delay(f) = f
+        member this.Run(f) = f()
+        member this.Zero() = this.Return()
+
+        member this.Combine(lhs, rhs) =
+            fun ctx ->
+                match lhs ctx with
+                | Ok _ -> this.Run rhs ctx
+                | Error e -> Error e
+
+        member this.Bind(rx: 'ctx -> Task<Result<'a, 'error>>, f: 'a -> 'ctx -> Task<Result<'b, 'error>>): 'ctx -> Task<Result<'b, 'error>> =
+            fun ctx -> task {
+                let! blah = rx ctx
+                let! yyyy =
+                    match blah with
+                    | Ok x -> f x ctx
+                    | Error e -> 
+                        task {
+                            return Error e
+                        }
+                return yyyy
+            }
+
+    let taskResult = TaskResultBuild()

@@ -8,17 +8,31 @@ open ArrangementService
 open UserMessage
 open System
 open System.Threading
-open System.Collections.Concurrent
+open System.Threading.Tasks
+open FSharp.Control.Tasks.V2
 
 module Http =
 
     type Handler<'t> = HttpContext -> Result<'t, UserMessage list>
+    type AsyncHandler<'t> = HttpContext -> Task<Result<'t, UserMessage list>>
 
     let check (condition: Handler<Unit>) (next: HttpFunc) (context: HttpContext) =
         match condition context with
         | Ok () -> next context
         | Error errorMessage ->
             convertUserMessagesToHttpError errorMessage next context
+
+    let checkAsync (condition: AsyncHandler<Unit>) (next: HttpFunc) (context: HttpContext) =
+        task {
+            let! checkResult = condition context
+            return!
+                match checkResult with
+                | Ok () -> 
+                    next context
+                | Error errorMessage -> 
+                    convertUserMessagesToHttpError errorMessage next context
+        }
+
 
     let setCsvHeaders (filename:Guid) : HttpHandler =
         fun (next : HttpFunc) (ctx : HttpContext) ->
@@ -35,8 +49,24 @@ module Http =
             Database.rollbackTransaction context
             convertUserMessagesToHttpError errorMessage next context
 
+    let generalHandleAsync (responseBodyFunc: ('t -> HttpHandler)) (endpoint: AsyncHandler<'t>) (next: HttpFunc) (context: HttpContext) =
+        task {
+            let! res = endpoint context
+            return! 
+                match res with
+                | Ok result ->
+                    Database.commitTransaction context
+                    responseBodyFunc result next context
+                | Error errorMessage ->
+                    Database.rollbackTransaction context
+                    convertUserMessagesToHttpError errorMessage next context
+        }
+
+
     let csvhandle filename (endpoint: Handler<string>) = setCsvHeaders filename >=> generalHandle setBodyFromString endpoint 
+
     let handle (endpoint: Handler<'t>) = generalHandle json endpoint
+    let handleAsync (endpoint: AsyncHandler<'t>) = generalHandleAsync json endpoint
 
     let getBody<'WriteModel> (context: HttpContext): Result<'WriteModel, UserMessage list>
         =
@@ -51,6 +81,14 @@ module Http =
                 [ BadInput $"Missing query parameter '{param}'" ])
 
     let withTransaction (handler: HttpHandler) (next: HttpFunc) (ctx: HttpContext): HttpFuncResult =
+        Database.createConnection ctx |> ignore
+        try
+            handler next ctx
+        with _ ->
+            Database.rollbackTransaction ctx
+            convertUserMessagesToHttpError [] next ctx // Default is 500 Internal Server Error
+
+    let withTransactionAsync (handler: HttpHandler) (next: HttpFunc) (ctx: HttpContext): HttpFuncResult =
         Database.createConnection ctx |> ignore
         try
             handler next ctx

@@ -12,6 +12,8 @@ open ArrangementService.Event
 open ArrangementService.Email
 open ArrangementService.ResultComputationExpression
 open ArrangementService.Tools
+open FSharp.Control.Tasks.V2
+open System.Threading.Tasks
 
 module Queries =
 
@@ -49,6 +51,18 @@ module Queries =
 
             (event, sortedQuestionsForEvent, shortname)
         )
+
+
+    let getEventsAsync (ctx: HttpContext): Result<Event seq, 'error> Task =
+        select { table eventsTable
+                 leftJoin questionsTable "EventId" "Events.Id"
+                 leftJoin shortnamesTable "EventId" "Events.Id"
+                 where (ge "EndDate" DateTime.Now)
+                 orderBy "StartDate" Asc }
+        |> Database.runOuterJoinJoinSelectQueryAsync<Event.DbModel, ParticipantQuestionDbModel, ShortnameDbModel> ctx
+        |> Task.map groupEventAndShortname
+        |> Task.map (Seq.map Models.dbToDomain >> Ok)
+
 
     let getEvents (ctx: HttpContext): Event seq =
         select { table eventsTable
