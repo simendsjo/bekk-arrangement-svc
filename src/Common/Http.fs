@@ -121,11 +121,14 @@ module Http =
         retry 50.0 10 // retry 10 times with a inital delay seed 50ms
 
     let withLock (lock: Mutex) (handler: HttpHandler) (next: HttpFunc) (ctx: HttpContext): HttpFuncResult =
+        let timer = new Diagnostics.Stopwatch()
+        timer.Start()
         lock.WaitOne() |> ignore
 
         let res = handler next ctx
 
         lock.ReleaseMutex()
+        printfn "%Ams" timer.ElapsedMilliseconds
 
         res
 
