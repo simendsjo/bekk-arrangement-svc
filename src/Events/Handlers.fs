@@ -151,18 +151,22 @@ module Handlers =
               >=> choose
                       [ routef "/events/%O" (fun id ->
                             check (userCanEditEvent id)
-                            >=> (handle << cancelEvent) id)
+                            >=> (handle << cancelEvent) id
+                            |> withTransaction)
                         routef "/events/%O/delete" (fun id -> 
                             check (userCanEditEvent id)
-                            >=> (handle << deleteEvent) id)
+                            >=> (handle << deleteEvent) id
+                            |> withTransaction)
                         ]
               PUT
               >=> choose
                       [ routef "/events/%O" (fun id ->
                             check (userCanEditEvent id)
-                            >=> (handle << updateEvent) id) ]
+                            >=> (handle << updateEvent) id
+                            |> withTransaction) ]
               POST 
               >=> choose 
                     [ route "/events" >=>
                             check isAuthenticated
-                            >=> handle createEvent ] ]
+                            >=> handle createEvent 
+                            |> withTransaction] ]

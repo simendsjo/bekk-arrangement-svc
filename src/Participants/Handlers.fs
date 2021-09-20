@@ -144,7 +144,8 @@ module Handlers =
               >=> choose
                       [ routef "/events/%O/participants/%s" (fun parameters ->
                             check (userCanCancel parameters)
-                            >=> (handle << deleteParticipant) parameters) ]
+                            >=> (handle << deleteParticipant) parameters)
+                            |> withTransaction ]
               POST
               >=> choose
                       [ routef "/events/%O/participants/%s" (fun (eventId: Guid, email) ->
