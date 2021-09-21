@@ -104,28 +104,32 @@ module Http =
             convertUserMessagesToHttpError [] next ctx // Default is 500 Internal Server Error
 
     let withRetry (handler: HttpHandler) (next: HttpFunc) (ctx: HttpContext): HttpFuncResult =
-        let seed = Guid.NewGuid().GetHashCode()
-        let rnd = Random(seed)
+        task {
+            let seed = Guid.NewGuid().GetHashCode()
+            let rnd = Random(seed)
 
-        let rec retry delay amount =
-            Database.createConnection ctx |> ignore
-            try
-                handler next ctx
-            with _ ->
-                Database.rollbackTransaction ctx
+            let rec retry delay amount =
+                task {
+                Database.createConnection ctx |> ignore
+                try
+                    return! handler next ctx
+                with _ ->
+                    Database.rollbackTransaction ctx
 
-                let jitter = rnd.NextDouble() * 5.0 + 1.5 // [1.5, 6.5]
-                let delayWithJitter =
-                    2.0 * delay * jitter + 20.0 * jitter
+                    let jitter = rnd.NextDouble() * 5.0 + 1.5 // [1.5, 6.5]
+                    let delayWithJitter =
+                        2.0 * delay * jitter + 20.0 * jitter
 
-                Thread.Sleep (int delayWithJitter)
+                    Thread.Sleep (int delayWithJitter)
 
-                if amount > 0 then
-                    retry delayWithJitter (amount-1) 
-                else
-                    convertUserMessagesToHttpError [] next ctx // Default is 500 Internal Server Error
+                    if amount > 0 then
+                        return! retry delayWithJitter (amount-1) 
+                    else
+                        return! convertUserMessagesToHttpError [] next ctx 
+                }
 
-        retry 50.0 10 // retry 10 times with a inital delay seed 50ms
+            return! retry 50.0 10 // retry 10 times with a inital delay seed 50ms
+        }
 
     let withLock (lock: SemaphoreSlim) (handler: HttpHandler) (next: HttpFunc) (ctx: HttpContext): HttpFuncResult =
         task {
