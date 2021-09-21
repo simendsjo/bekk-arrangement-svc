@@ -12,7 +12,7 @@ module Validation =
         allowed to decrease number of spots
     *)
     let assertValidCapacityChange (oldEvent: Event) (newEvent: Event) =
-        result {
+        taskResult {
             match oldEvent.MaxParticipants.Unwrap, newEvent.MaxParticipants.Unwrap with
             | _, None ->
                 // Den nye er uendelig, all good
@@ -25,7 +25,7 @@ module Validation =
                     return () 
                 else
                 
-                return! Error [ UserMessages.invalidMaxParticipantValue ]
+                return! Error [ UserMessages.invalidMaxParticipantValue ] |> Task.unit
 
             | Some oldMax, Some newMax -> 
                 // Man kan alltid øke så lenge den forrige
@@ -46,8 +46,8 @@ module Validation =
                 // Derfor vil det være frekt å fjerne ventelista
                 let isRemovingWaitingList = newEvent.HasWaitingList = false && oldEvent.HasWaitingList = true
                 if isRemovingWaitingList then
-                    return! Error [ UserMessages.invalidRemovalOfWaitingList ]
+                    return! Error [ UserMessages.invalidRemovalOfWaitingList ] |> Task.unit
                 else
                 
-                return! Error [ UserMessages.invalidMaxParticipantValue ]
+                return! Error [ UserMessages.invalidMaxParticipantValue ] |> Task.unit
         }

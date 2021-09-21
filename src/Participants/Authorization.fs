@@ -11,7 +11,7 @@ open Http
 module Authorization =
 
     let userHasCancellationToken (eventId, email) =
-        result {
+        taskResult {
             let! cancellationToken = queryParam "cancellationToken"
 
             let! participant = Service.getParticipant
@@ -25,7 +25,7 @@ module Authorization =
             if hasCorrectCancellationToken then
                 return ()
             else
-                return! [ AccessDenied "You cannot delete your participation without your cancellation token" ] |> Error
+                return! [ AccessDenied "You cannot delete your participation without your cancellation token" ] |> Error |> Task.unit
         }
 
     let userCanCancel eventIdAndEmail =
@@ -34,7 +34,7 @@ module Authorization =
               isAdmin ]
 
     let eventHasAvailableSpots (event:DomainModels.Event) =
-        result {
+        taskResult {
             let hasWaitingList = event.HasWaitingList
             let maxParticipants = event.MaxParticipants.Unwrap
             let! participants = Service.getParticipantsForEvent event
@@ -43,21 +43,25 @@ module Authorization =
             then
                 return ()
             else
-                return! [ AccessDenied "Arrangementet er fullt" ] |> Error
+                return! [ AccessDenied "Arrangementet er fullt" ] |> Error |> Task.unit
         }
     let eventIsNotCancelled (event:DomainModels.Event) =  
-        if event.IsCancelled then
-            Error [AccessDenied "Arrangementet er avlyst"]
-        else
-            Ok ()
+        taskResult {
+            if event.IsCancelled then
+                return!
+                    Error [AccessDenied "Arrangementet er avlyst"]
+                    |> Task.unit
+            else
+                return ()
+        }
 
     let oneCanParticipateOnEvent eventIdKey =
-        let eventId = Event.Id eventIdKey
-        result {
+        taskResult {
+            let eventId = Event.Id eventIdKey
             let! event = Service.getEvent eventId
             do! eventHasAvailableSpots event
-            do! Event.Authorization.eventHasNotPassed event |> ignoreContext
-            do! Event.Authorization.eventHasOpenedForRegistration event |> ignoreContext
-            do! eventIsNotCancelled event |> ignoreContext
+            do! Event.Authorization.eventHasNotPassed event 
+            do! Event.Authorization.eventHasOpenedForRegistration event 
+            do! eventIsNotCancelled event 
             do! Event.Authorization.eventIsExternalOrUserIsAuthenticated eventIdKey 
         }

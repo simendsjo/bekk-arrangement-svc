@@ -1,23 +1,17 @@
 namespace ArrangementService
 
+open ArrangementService.ResultComputationExpression
 open Dapper.FSharp.MSSQL
 open Microsoft.AspNetCore.Http
 open System.Data
 open System.Data.SqlClient
 
 open Config
+open UserMessage
+open FSharp.Control.Tasks.Affine
 
 module Database =
 
-    (*
-        `createConnection` is idempotent, i.e. you can call it many times
-        and still get the same transaction.
-
-        This is useful because one (http) request does potentially many "check"s
-        before doing a "handle" of the endpoint. You really want the "are there
-        available spots on Event" to be evaluated in the same transaction as the
-        "add Participant to Event" operation.
-    *)
     let createConnection (ctx: HttpContext) = 
         let config = getConfig ctx
         let connection = new SqlConnection(config.databaseConnectionString) :> IDbConnection
@@ -63,58 +57,61 @@ module Database =
 
         ()
 
-    let runSelectQuery<'t> (ctx: HttpContext) query =
-        let config = getConfig ctx
-        config.currentConnection.SelectAsync<'t>(query, config.currentTransaction)
-        |> Async.AwaitTask
-        |> Async.RunSynchronously
+    let runSelectQuery<'t> query =
+        taskResult {
+            let! config = getConfig >> Ok >> Task.unit
+            return! config.currentConnection.SelectAsync<'t>(query, config.currentTransaction) |> Task.map Ok
+        }
 
-    let runInnerJoinSelectQuery<'a, 'b> (ctx: HttpContext) query =
-        let config = getConfig ctx
-        config.currentConnection.SelectAsync<'a, 'b>(query, config.currentTransaction)
-        |> Async.AwaitTask
-        |> Async.RunSynchronously
+    let runInnerJoinSelectQuery<'a, 'b> query =
+        taskResult {
+            let! config = getConfig >> Ok >> Task.unit
+            return! config.currentConnection.SelectAsync<'a, 'b>(query, config.currentTransaction) |> Task.map Ok
+        }
 
-    let runInnerJoinJoinSelectQuery<'a, 'b, 'c> (ctx: HttpContext) query =
-        let config = getConfig ctx
-        config.currentConnection.SelectAsync<'a, 'b, 'c>(query, config.currentTransaction)
-        |> Async.AwaitTask
-        |> Async.RunSynchronously
+    let runInnerJoinJoinSelectQuery<'a, 'b, 'c> query =
+        taskResult {
+            let! config = getConfig >> Ok >> Task.unit
+            return! config.currentConnection.SelectAsync<'a, 'b, 'c>(query, config.currentTransaction) |> Task.map Ok
+        }
 
-    let runOuterJoinSelectQuery<'a, 'b> (ctx: HttpContext) query =
-        let config = getConfig ctx
-        config.currentConnection.SelectAsyncOption<'a, 'b>(query, config.currentTransaction)
-        |> Async.AwaitTask
-        |> Async.RunSynchronously
+    let runOuterJoinSelectQuery<'a, 'b> query =
+        taskResult {
+            let! config = getConfig >> Ok >> Task.unit
+            return! config.currentConnection.SelectAsyncOption<'a, 'b>(query, config.currentTransaction) |> Task.map Ok
+        }
 
-    let runOuterJoinJoinSelectQuery<'a, 'b, 'c> (ctx: HttpContext) query =
-        let config = getConfig ctx
-        config.currentConnection.SelectAsyncOption<'a, 'b, 'c>(query, config.currentTransaction)
-        |> Async.AwaitTask
-        |> Async.RunSynchronously
+    let runOuterJoinJoinSelectQuery<'a, 'b, 'c> query =
+        taskResult {
+            let! config = getConfig >> Ok >> Task.unit
+            return! config.currentConnection.SelectAsyncOption<'a, 'b, 'c>(query, config.currentTransaction) |> Task.map Ok
+        }
 
-    let runOuterJoinJoinSelectQueryAsync<'a, 'b, 'c> (ctx: HttpContext) query =
-        let config = getConfig ctx
-        config.currentConnection.SelectAsyncOption<'a, 'b, 'c>(query, config.currentTransaction)
+        // TODO slettdenen 
+    let runOuterJoinJoinSelectQueryAsync<'a, 'b, 'c> query =
+        taskResult {
+            let! config = getConfig >> Ok >> Task.unit
+            return! config.currentConnection.SelectAsyncOption<'a, 'b, 'c>(query, config.currentTransaction) |> Task.map Ok
+        }
 
-    let runUpdateQuery (ctx: HttpContext) query =
-        let config = getConfig ctx
-        config.currentConnection.UpdateAsync(query, config.currentTransaction)
-        |> Async.AwaitTask
-        |> Async.RunSynchronously
+    let runUpdateQuery query =
+        taskResult {
+            let! config = getConfig >> Ok >> Task.unit
+            return! config.currentConnection.UpdateAsync(query, config.currentTransaction) |> Task.map Ok
+        }
 
-    let runDeleteQuery (ctx: HttpContext) query =
-        let config = getConfig ctx
-        config.currentConnection.DeleteAsync(query, config.currentTransaction)
-        |> Async.AwaitTask
-        |> Async.RunSynchronously
+    let runDeleteQuery query =
+        taskResult {
+            let! config = getConfig >> Ok >> Task.unit
+            return! config.currentConnection.DeleteAsync(query, config.currentTransaction) |> Task.map Ok
+        }
 
-    let runInsertQuery (ctx: HttpContext) query =
-        let config = getConfig ctx
-        config.currentConnection.InsertAsync(query, config.currentTransaction)
-        |> Async.AwaitTask
-        |> Async.RunSynchronously
-        |> ignore
-        // TODO: Sjekk retur verdi og returner basert på det
+    let runInsertQuery query =
+        taskResult {
+            let! config = getConfig >> Ok >> Task.unit
 
-        Ok ()
+            // TODO: Sjekk retur verdi og returner basert på det
+            let! res = config.currentConnection.InsertAsync(query, config.currentTransaction) |> Task.map Ok |> ignoreContext
+
+            return ()
+        }

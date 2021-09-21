@@ -15,3 +15,8 @@ module Task =
             let! x = t
             return f x
         }
+
+    let unit (x: 'x): 'x Task =
+        task {
+            return x
+        }

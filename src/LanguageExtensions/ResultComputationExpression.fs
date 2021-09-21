@@ -2,6 +2,8 @@ namespace ArrangementService
 
 open FSharp.Control.Tasks.V2
 open System.Threading.Tasks
+open Microsoft.AspNetCore.Http
+open UserMessage
 
 module ResultComputationExpression =
     // This is the same as `constant`
@@ -59,34 +61,50 @@ module ResultComputationExpression =
 
     let result = ResultBuilder()
 
+    type AsyncHandler<'t> = HttpContext -> Task<Result<'t, UserMessage list>>
+
+            // TODO: Bytt ut med denne
+            // og skriv dokumentasjon / forklaring
     type TaskResultBuild() =
-        member this.Return(x) = fun _ -> task {
-                                            return Ok x
-                                         }
+        member this.Return(x: 'a): AsyncHandler<'a> =
+            fun _ -> Ok x |> Task.unit
         member this.ReturnFrom(x) = fun _ -> x
-        member this.Yield(f) = f >> Ok
-        member this.YieldFrom(f) = f
+        member this.Yield(f: HttpContext -> unit): AsyncHandler<unit> = 
+            fun ctx ->
+                async {
+                    do f ctx
+                } 
+                |> Async.Start
+                |> ignore
+                Ok () |> Task.unit
+        member this.YieldFrom(f: AsyncHandler<unit>): AsyncHandler<unit> = f
         member this.Delay(f) = f
         member this.Run(f) = f()
         member this.Zero() = this.Return()
 
-        member this.Combine(lhs, rhs) =
+        member this.For(sequence, body) =
             fun ctx ->
-                match lhs ctx with
-                | Ok _ -> this.Run rhs ctx
-                | Error e -> Error e
+                sequence
+                |> Seq.iter (fun x -> body x ctx |> ignore)
+                Ok () |> Task.unit
 
-        member this.Bind(rx: 'ctx -> Task<Result<'a, 'error>>, f: 'a -> 'ctx -> Task<Result<'b, 'error>>): 'ctx -> Task<Result<'b, 'error>> =
+        member this.Combine(lhs: AsyncHandler<'a>, rhs: unit -> AsyncHandler<'b>): AsyncHandler<'b> =
+            fun ctx ->
+                task {
+                    let! res = lhs ctx 
+                    return!
+                        match res with
+                        | Ok _ -> this.Run rhs ctx
+                        | Error e -> Error e |> Task.unit
+                }
+
+        member this.Bind(rx: AsyncHandler<'a>, f: 'a -> AsyncHandler<'b>): AsyncHandler<'b> =
             fun ctx -> task {
-                let! blah = rx ctx
-                let! yyyy =
-                    match blah with
+                let! result = rx ctx
+                return!
+                    match result with
                     | Ok x -> f x ctx
-                    | Error e -> 
-                        task {
-                            return Error e
-                        }
-                return yyyy
+                    | Error e -> Error e |> Task.unit
             }
 
     let taskResult = TaskResultBuild()

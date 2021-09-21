@@ -29,33 +29,32 @@ module Handlers =
             return Seq.map domainToView events |> Seq.toList
         }
 
-    let getPastEvents: Handler<ViewModel list> =
-        result {
+    let getPastEvents: AsyncHandler<ViewModel list> =
+        taskResult {
             let! events = Service.getPastEvents
             return Seq.map domainToView events |> Seq.toList
         }
 
     let getEventsOrganizedBy organizerEmail =
-        result {
+        taskResult {
             let! events = Service.getEventsOrganizedBy (EmailAddress organizerEmail)
             return Seq.map domainToView events |> Seq.toList
         }
 
     let getEvent id =
-        result {
+        taskResult {
             let! event = Service.getEvent (Id id)
             return domainToView event
         }
 
         
-    let deleteOrCancelEvent (removeEventType:RemoveEvent) id : (HttpContext -> Result<string,UserMessage.UserMessage list>)=
-        result {
-            let! messageToParticipants = getBody<string>
+    let deleteOrCancelEvent (removeEventType:RemoveEvent) id: AsyncHandler<string> =
+        taskResult {
+            let! messageToParticipants = getBody<string> ()
             let! event = Service.getEvent (Id id)
             let! participants = Service.getParticipantsForEvent event
 
-            let! config = getConfig >> Ok
-
+            let! config = getConfig >> Ok >> Task.unit
 
             let! result =  match removeEventType with 
                             | Cancel -> Service.cancelEvent event
@@ -67,20 +66,26 @@ module Handlers =
             return result
         }
 
-    let getEmployeeId = Auth.getUserId // option int
-                            >> Option.map Event.EmployeeId  // option EmployeeId
-                            >> Option.withError [UserMessages.couldNotRetrieveUserId] // Result<EmployeeId, UserMessage list>
+    let getEmployeeId = 
+        taskResult {
+            let! userId = Auth.getUserId 
+
+            return! userId
+                    |> Option.map Event.EmployeeId  // option EmployeeId
+                    |> Option.withError [UserMessages.couldNotRetrieveUserId] // Result<EmployeeId, UserMessage list>
+                    |> Task.unit
+        }
 
     let updateEvent (id:Key) =
-        result {
-            let! writeModel = getBody<WriteModel>
+        taskResult {
+            let! writeModel = getBody<WriteModel> ()
             let! updatedEvent = Service.updateEvent (Id id) writeModel
             return domainToView updatedEvent
         }
 
     let createEvent =
-        result {
-            let! writeModel = getBody<WriteModel>
+        taskResult {
+            let! writeModel = getBody<WriteModel> ()
 
             let redirectUrlTemplate =
                 HttpUtility.UrlDecode writeModel.editUrlTemplate
@@ -104,14 +109,14 @@ module Handlers =
 
 
     let getEventAndParticipationSummaryForEmployee employeeId = 
-        result {
+        taskResult {
             let! events = Service.getEventsOrganizedByOrganizerId (Event.EmployeeId employeeId)
             let! participations = Service.getParticipationsByEmployeeId (Event.EmployeeId employeeId)
             return Participant.Models.domainToLocalStorageView events participations
         }
 
     let getEventIdByShortname =
-        result {
+        taskResult {
             let! shortnameEncoded = queryParam "shortname"
             let shortname = System.Web.HttpUtility.UrlDecode(shortnameEncoded)
             let! event = Service.getEventByShortname shortname
@@ -123,52 +128,52 @@ module Handlers =
             [ GET_HEAD
               >=> choose
                       [ route "/events" >=>
-                            checkAsync (isAuthenticated >> fun x -> task {return x})
+                            checkAsync isAuthenticated
                             >=> handleAsync getEvents
                             |> withTransactionAsync
 
                         route "/events/previous" >=>
-                            check isAuthenticated
-                            >=> handle getPastEvents
+                            checkAsync isAuthenticated
+                            >=> handleAsync getPastEvents
                             |> withTransaction
 
                         routef "/events/%O" (fun eventId -> 
-                            check (eventIsExternalOrUserIsAuthenticated eventId)
-                            >=> (handle << getEvent) eventId
+                            checkAsync (eventIsExternalOrUserIsAuthenticated eventId)
+                            >=> (handleAsync << getEvent) eventId
                             |> withTransaction)
 
                         routef "/events/organizer/%s" (fun email -> 
-                            check isAuthenticated
-                            >=> (handle << getEventsOrganizedBy) email
+                            checkAsync isAuthenticated
+                            >=> (handleAsync << getEventsOrganizedBy) email
                             |> withTransaction)
 
                         routef "/events-and-participations/%i" (fun id ->
-                            check (isAdminOrAuthenticatedAsUser id)
-                            >=> (handle << getEventAndParticipationSummaryForEmployee) id
+                            checkAsync (isAdminOrAuthenticatedAsUser id)
+                            >=> (handleAsync << getEventAndParticipationSummaryForEmployee) id
                             |> withTransaction) 
                         
-                        route "/events/id" >=> handle getEventIdByShortname |> withTransaction
+                        route "/events/id" >=> handleAsync getEventIdByShortname |> withTransaction
                       ]
               DELETE
               >=> choose
                       [ routef "/events/%O" (fun id ->
-                            check (userCanEditEvent id)
-                            >=> (handle << cancelEvent) id
+                            checkAsync (userCanEditEvent id)
+                            >=> (handleAsync << cancelEvent) id
                             |> withTransaction)
                         routef "/events/%O/delete" (fun id -> 
-                            check (userCanEditEvent id)
-                            >=> (handle << deleteEvent) id
+                            checkAsync (userCanEditEvent id)
+                            >=> (handleAsync << deleteEvent) id
                             |> withTransaction)
                         ]
               PUT
               >=> choose
                       [ routef "/events/%O" (fun id ->
-                            check (userCanEditEvent id)
-                            >=> (handle << updateEvent) id
+                            checkAsync (userCanEditEvent id)
+                            >=> (handleAsync << updateEvent) id
                             |> withTransaction) ]
               POST 
               >=> choose 
                     [ route "/events" >=>
-                            check isAuthenticated
-                            >=> handle createEvent 
+                            checkAsync isAuthenticated
+                            >=> handleAsync createEvent 
                             |> withTransaction] ]

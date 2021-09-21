@@ -12,7 +12,6 @@ open ArrangementService.Event
 open ArrangementService.Email
 open ArrangementService.ResultComputationExpression
 open ArrangementService.Tools
-open FSharp.Control.Tasks.V2
 open System.Threading.Tasks
 
 module Queries =
@@ -22,13 +21,13 @@ module Queries =
     let shortnamesTable = "Shortnames"
 
     let createEvent employeeId (event: WriteModel)  =
-        result {
-            let! event = Models.writeToDomain (Guid.NewGuid()) event (Guid.NewGuid()) false employeeId |> ignoreContext
+        taskResult {
+            let! event = Models.writeToDomain (Guid.NewGuid()) event (Guid.NewGuid()) false employeeId |> Task.unit |> ignoreContext
             let dbModel = Models.domainToDb event
             do! insert { table eventsTable
                          value dbModel
                        }
-                |> flip Database.runInsertQuery
+                |> Database.runInsertQuery
             return Models.dbToDomain (dbModel, event.ParticipantQuestions.Unwrap, event.Shortname.Unwrap)
         }
 
@@ -52,139 +51,205 @@ module Queries =
             (event, sortedQuestionsForEvent, shortname)
         )
 
+    let getEventsAsync: AsyncHandler<Event seq> =
+        taskResult {
+            let! events =
+                select { table eventsTable
+                         leftJoin questionsTable "EventId" "Events.Id"
+                         leftJoin shortnamesTable "EventId" "Events.Id"
+                         where (ge "EndDate" DateTime.Now)
+                         orderBy "StartDate" Asc }
+                |> Database.runOuterJoinJoinSelectQueryAsync<Event.DbModel, ParticipantQuestionDbModel, ShortnameDbModel>
 
-    let getEventsAsync (ctx: HttpContext): Result<Event seq, 'error> Task =
-        select { table eventsTable
-                 leftJoin questionsTable "EventId" "Events.Id"
-                 leftJoin shortnamesTable "EventId" "Events.Id"
-                 where (ge "EndDate" DateTime.Now)
-                 orderBy "StartDate" Asc }
-        |> Database.runOuterJoinJoinSelectQueryAsync<Event.DbModel, ParticipantQuestionDbModel, ShortnameDbModel> ctx
-        |> Task.map groupEventAndShortname
-        |> Task.map (Seq.map Models.dbToDomain >> Ok)
+            let groupedEvents =
+                events
+                |> groupEventAndShortname
 
+            return Seq.map Models.dbToDomain groupedEvents
+        }
 
-    let getEvents (ctx: HttpContext): Event seq =
-        select { table eventsTable
-                 leftJoin questionsTable "EventId" "Events.Id"
-                 leftJoin shortnamesTable "EventId" "Events.Id"
-                 where (ge "EndDate" DateTime.Now)
-                 orderBy "StartDate" Asc }
-        |> Database.runOuterJoinJoinSelectQuery<Event.DbModel, ParticipantQuestionDbModel, ShortnameDbModel> ctx
-        |> groupEventAndShortname
-        |> Seq.map Models.dbToDomain
+    let getEvents: AsyncHandler<Event seq> =
+        taskResult {
+            let! events =
+                select { table eventsTable
+                         leftJoin questionsTable "EventId" "Events.Id"
+                         leftJoin shortnamesTable "EventId" "Events.Id"
+                         where (ge "EndDate" DateTime.Now)
+                         orderBy "StartDate" Asc }
+                |> Database.runOuterJoinJoinSelectQuery<Event.DbModel, ParticipantQuestionDbModel, ShortnameDbModel> 
 
-    let getPastEvents (ctx: HttpContext): Event seq =
-        select { table eventsTable
-                 leftJoin questionsTable "EventId" "Events.Id"
-                 leftJoin shortnamesTable "EventId" "Events.Id"
-                 where (lt "EndDate" DateTime.Now + eq "IsCancelled" false)
-                 orderBy "StartDate" Desc }
-        |> Database.runOuterJoinJoinSelectQuery<Event.DbModel, ParticipantQuestionDbModel, ShortnameDbModel>  ctx
-        |> groupEventAndShortname
-        |> Seq.map Models.dbToDomain
+            let groupedEvents =
+                events
+                |> groupEventAndShortname
 
-    let deleteEvent (id: Event.Id) (ctx: HttpContext): Result<Unit, UserMessage list> =
-        delete { table eventsTable
-                 where (eq "Id" id.Unwrap)
-               }
-        |> Database.runDeleteQuery ctx
-        |> ignore
-        Ok ()
+            return Seq.map Models.dbToDomain groupedEvents
+        }
 
-    let updateEvent (newEvent: Event) (ctx: HttpContext): Result<Unit, UserMessage list> =
-        let newEventDb = Models.domainToDb newEvent
-        update { table eventsTable
-                 set newEventDb
-                 where (eq "Id" newEvent.Id.Unwrap)
-               }
-        |> Database.runUpdateQuery ctx
-        |> ignore
-        Ok ()
+    let getPastEvents: AsyncHandler<Event seq> =
+        taskResult {
+            let! events =
+                select { table eventsTable
+                         leftJoin questionsTable "EventId" "Events.Id"
+                         leftJoin shortnamesTable "EventId" "Events.Id"
+                         where (lt "EndDate" DateTime.Now + eq "IsCancelled" false)
+                         orderBy "StartDate" Desc }
+                |> Database.runOuterJoinJoinSelectQuery<Event.DbModel, ParticipantQuestionDbModel, ShortnameDbModel>
+            
+            let groupedEvents =
+                events
+                |> groupEventAndShortname
 
-    let queryEventByEventId (eventId: Event.Id) ctx: Result<Event, UserMessage list> =
-        select { table eventsTable 
-                 leftJoin questionsTable "EventId" "Events.Id"
-                 leftJoin shortnamesTable "EventId" "Events.Id"
-                 where (eq "Events.Id" eventId.Unwrap)
-               }
-       |> Database.runOuterJoinJoinSelectQuery<Event.DbModel, ParticipantQuestionDbModel, ShortnameDbModel>  ctx
-       |> groupEventAndShortname
-       |> Seq.tryHead
-       |> function
-       | Some eventWithShortname -> Ok <| Models.dbToDomain eventWithShortname
-       | None -> Error [ UserMessages.eventNotFound eventId ]
+            return Seq.map Models.dbToDomain groupedEvents
+        }
 
-    let queryEventsOrganizedByEmail (organizerEmail: EmailAddress) ctx: Event seq =
-        select { table eventsTable
-                 leftJoin questionsTable "EventId" "Events.Id"
-                 leftJoin shortnamesTable "EventId" "Events.Id" 
-                 where (eq "Email" organizerEmail.Unwrap)
-               }
-       |> Database.runOuterJoinJoinSelectQuery<Event.DbModel, ParticipantQuestionDbModel, ShortnameDbModel>  ctx
-       |> groupEventAndShortname
-       |> Seq.map Models.dbToDomain
+    let deleteEvent (id: Event.Id): AsyncHandler<unit> =
+        taskResult {
+            let! res =
+                delete { table eventsTable
+                         where (eq "Id" id.Unwrap)
+                       }
+                |> Database.runDeleteQuery
+            return ()
+        }
 
-    let queryEventsOrganizedByOrganizerId (organizerId: EmployeeId) ctx: Event seq =
-        select { table eventsTable
-                 leftJoin questionsTable "EventId" "Events.Id"
-                 leftJoin shortnamesTable "EventId" "Events.Id" 
-                 where (eq "OrganizerId" organizerId.Unwrap)
-               }
-       |> Database.runOuterJoinJoinSelectQuery<Event.DbModel, ParticipantQuestionDbModel, ShortnameDbModel>  ctx
-       |> groupEventAndShortname
-       |> Seq.map Models.dbToDomain
+    let updateEvent (newEvent: Event): AsyncHandler<unit> =
+        taskResult {
+            let newEventDb = Models.domainToDb newEvent
+            let! res =
+                update { table eventsTable
+                         set newEventDb
+                         where (eq "Id" newEvent.Id.Unwrap)
+                       }
+                |> Database.runUpdateQuery
+            return ()
+        }
 
-    let queryEventByShortname (shortname: string) ctx: Result<Event, UserMessage list> =
-        select { table eventsTable 
-                 leftJoin shortnamesTable "EventId" "Events.Id"
-                 leftJoin questionsTable "EventId" "Events.Id"
-                 where (eq "Shortname" shortname)
-               }
-       |> Database.runOuterJoinJoinSelectQuery<Event.DbModel, ShortnameDbModel, ParticipantQuestionDbModel>  ctx
-       |> Seq.map (fun (event, shortname, question) -> (event, question, shortname))
-       |> groupEventAndShortname
-       |> Seq.tryHead
-       |> function
-       | Some eventWithShortname -> Ok <| Models.dbToDomain eventWithShortname
-       | None -> Error [ UserMessages.eventNotFound shortname ]
+    let queryEventByEventId (eventId: Event.Id): AsyncHandler<Event> =
+        taskResult {
+            let! events = 
+                select { table eventsTable 
+                         leftJoin questionsTable "EventId" "Events.Id"
+                         leftJoin shortnamesTable "EventId" "Events.Id"
+                         where (eq "Events.Id" eventId.Unwrap)
+                       }
+               |> Database.runOuterJoinJoinSelectQuery<Event.DbModel, ParticipantQuestionDbModel, ShortnameDbModel> 
 
-    let insertShortname (eventId: Event.Id) (shortname: string) (ctx: HttpContext): Result<Unit, UserMessage list> =
-        try
-            insert { table shortnamesTable
-                     value {| Shortname = shortname; EventId = eventId.Unwrap |}
-                   }
-            |> Database.runInsertQuery ctx
-            |> ignore
-            Ok ()
+            let event = 
+                events
+                |> groupEventAndShortname
+                |> Seq.tryHead
 
-        // Inserten kan feile feks dersom Shortname (PK) allerede finnes
-        with _ -> 
-            Error []
+            return! 
+                match event with
+                | Some eventWithShortname ->
+                    Models.dbToDomain eventWithShortname 
+                    |> Ok |> Task.unit
+                | None -> 
+                    Error [ UserMessages.eventNotFound eventId ] 
+                    |> Task.unit
+        }
 
-    let deleteShortname (shortname: string) (ctx: HttpContext): Result<Unit, UserMessage list> =
-        delete { table shortnamesTable
-                 where (eq "Shortname" shortname)
-               }
-        |> Database.runDeleteQuery ctx
-        |> ignore
-        Ok ()
+    let queryEventsOrganizedByEmail (organizerEmail: EmailAddress): AsyncHandler<Event seq> =
+        taskResult {
+            let! events =
+                select { table eventsTable
+                         leftJoin questionsTable "EventId" "Events.Id"
+                         leftJoin shortnamesTable "EventId" "Events.Id" 
+                         where (eq "Email" organizerEmail.Unwrap)
+                       }
+               |> Database.runOuterJoinJoinSelectQuery<Event.DbModel, ParticipantQuestionDbModel, ShortnameDbModel>
+
+            let groupedEvents =
+                events
+                |> groupEventAndShortname
+
+            return Seq.map Models.dbToDomain groupedEvents
+       }
+
+    let queryEventsOrganizedByOrganizerId (organizerId: EmployeeId): AsyncHandler<Event seq> =
+        taskResult {
+            let! events =
+                select { table eventsTable
+                         leftJoin questionsTable "EventId" "Events.Id"
+                         leftJoin shortnamesTable "EventId" "Events.Id" 
+                         where (eq "OrganizerId" organizerId.Unwrap)
+                       }
+               |> Database.runOuterJoinJoinSelectQuery<Event.DbModel, ParticipantQuestionDbModel, ShortnameDbModel>
+
+            let groupedEvents =
+                events
+                |> groupEventAndShortname
+
+            return Seq.map Models.dbToDomain groupedEvents
+        }
+
+    let queryEventByShortname (shortname: string): AsyncHandler<Event> =
+        taskResult {
+            let! events =
+                select { table eventsTable 
+                         leftJoin questionsTable "EventId" "Events.Id"
+                         leftJoin shortnamesTable "EventId" "Events.Id"
+                         where (eq "Shortname" shortname)
+                       }
+               |> Database.runOuterJoinJoinSelectQuery<Event.DbModel, ParticipantQuestionDbModel, ShortnameDbModel>
+
+            let event = 
+                events
+                |> groupEventAndShortname
+                |> Seq.tryHead
+
+            return!
+                match event with
+                | Some eventWithShortname ->
+                    Models.dbToDomain eventWithShortname
+                    |> Ok
+                    |> Task.unit
+                | None -> 
+                    Error [ UserMessages.eventNotFound shortname ]
+                    |> Task.unit
+        }
+
+    let insertShortname (eventId: Event.Id) (shortname: string): AsyncHandler<unit> =
+        taskResult {
+            let! () =
+                queryEventByShortname shortname
+                >> Task.map (function
+                                | Ok _ -> Error [ UserMessages.shortnameIsInUse shortname ]
+                                | Error _ -> Ok ())
+            let! res =
+                insert { table shortnamesTable
+                         value {| Shortname = shortname; EventId = eventId.Unwrap |}
+                       }
+                |> Database.runInsertQuery
+
+            return ()
+        }
+
+    let deleteShortname (shortname: string): AsyncHandler<unit> =
+        taskResult {
+            let! res =
+                delete { table shortnamesTable
+                         where (eq "Shortname" shortname)
+                       }
+                |> Database.runDeleteQuery
+
+            return ()
+        }
 
     let getQuestionsForEvent (eventId: Event.Id) =
-        result {
+        taskResult {
             let! questions = 
                 select {
                     table questionsTable
                     where (eq "EventId" eventId.Unwrap)
                     orderBy "Id" Asc
                 }
-                |> flip Database.runSelectQuery<ParticipantQuestionDbModel>
-                >> Ok
+                |> Database.runSelectQuery<ParticipantQuestionDbModel>
             return questions
         }
 
     let insertQuestions (eventId: Event.Id) questions =
-        result {
+        taskResult {
             if Seq.isEmpty questions then
                 return ()
             else
@@ -194,29 +259,31 @@ module Queries =
                                 |> List.map (fun question -> 
                                     {| EventId = eventId.Unwrap; Question = question |}))
                        } 
-                       |> flip Database.runInsertQuery
+                       |> Database.runInsertQuery
         }
 
     let deleteAllQuestions (eventId: Event.Id) =
-        result {
-            do! delete { table questionsTable
+        taskResult {
+            let! res = 
+                delete { table questionsTable
                          where (eq "EventId" eventId.Unwrap)
                        }
-                       |> flip Database.runDeleteQuery >> Ok >> Result.map ignore
+                       |> Database.runDeleteQuery
             return ()
         }
 
     let deleteLastQuestions n (eventId: Event.Id) =
-        result {
+        taskResult {
             if n <= 0 then
                 return ()
             else
 
             let! questions = getQuestionsForEvent eventId
             let lastNQuestions = questions |> Seq.rev |> Seq.truncate n |> List.ofSeq
-            do! delete { table questionsTable
+            let! res =
+                delete { table questionsTable
                          where (isIn "Id" (lastNQuestions |> List.map (fun q -> q.Id :> obj)))
                        }
-                       |> flip Database.runDeleteQuery >> Ok >> Result.map ignore
+                       |> Database.runDeleteQuery
             return ()
         }

@@ -14,10 +14,11 @@ open System
 module Authorization =
 
     let userIsOrganizer (event: DomainModels.Event) =
-        result {
-            let! userId = getUserId >> Ok
+        taskResult {
+            let! userId = getUserId
 
-            let isTheOrganizer = userId = Some event.OrganizerId.Unwrap
+            let isTheOrganizer = 
+                userId = Some event.OrganizerId.Unwrap
 
             if isTheOrganizer then
                 return ()
@@ -26,10 +27,11 @@ module Authorization =
                     [ AccessDenied
                           $"Du prøver å endre på et arrangement (id {event.Id.Unwrap}) som du ikke er arrangør av" ]
                     |> Error
+                    |> Task.unit
         }
 
     let userHasCorrectEditToken (event: DomainModels.Event) =
-        result {
+        taskResult {
             let! editToken = queryParam "editToken"
 
             let hasCorrectEditToken = editToken = event.EditToken.ToString()
@@ -41,11 +43,12 @@ module Authorization =
                     [ AccessDenied
                           $"Du prøvde å gjøre endringer på et arrangement (id {event.Id.Unwrap}) med ugyldig editToken" ]
                     |> Error
+                    |> Task.unit
         }
 
 
     let userCanEditEvent eventId =
-        result {
+        taskResult {
             let! event = Service.getEvent (Event.Id eventId)
 
             let! authResult =
@@ -57,29 +60,37 @@ module Authorization =
         }
 
     let eventHasOpenedForRegistration (event: DomainModels.Event) =
-        let openDateTime =
-            DateTimeOffset.FromUnixTimeMilliseconds event.OpenForRegistrationTime.Unwrap
+        taskResult {
+            let openDateTime =
+                DateTimeOffset.FromUnixTimeMilliseconds event.OpenForRegistrationTime.Unwrap
 
-        if openDateTime <= DateTimeOffset.Now then
-            Ok()
-        else
-            Error [ AccessDenied $"Arrangementet åpner for påmelding {openDateTime.ToLocalTime}" ]
+            if openDateTime <= DateTimeOffset.Now then
+                return ()
+            else
+                return!
+                    Error [ AccessDenied $"Arrangementet åpner for påmelding {openDateTime.ToLocalTime}" ]
+                    |> Task.unit
+        }
 
     let eventHasNotPassed (event: DomainModels.Event) =
-        if event.EndDate > now () then
-            Ok()
-        else
-            Error [ AccessDenied "Arrangementet har allerede funnet sted" ]
+        taskResult {
+            if event.EndDate > now () then
+                return ()
+            else
+                return!
+                    Error [ AccessDenied "Arrangementet har allerede funnet sted" ]
+                    |> Task.unit
+        }
 
 
     let eventIsExternal (eventId: Key) =
-        result {
+        taskResult {
             let! event = Service.getEvent (Event.Id eventId)
 
             if event.IsExternal then
                 return ()
             else
-                return! Error [ AccessDenied "Arrangementet er internt" ]
+                return! Error [ AccessDenied "Arrangementet er internt" ] |> Task.unit
         }
 
     let eventIsExternalOrUserIsAuthenticated (eventId: Key) =

@@ -17,35 +17,15 @@ module Queries =
     let participantsTable = "Participants"
     let answersTable = "ParticipantAnswers"
 
-    let handleAggregateToSqlException (exn:AggregateException) userMessage = 
-          let innerException = exn.InnerException
-          match innerException with 
-            | :? SqlException as sqlEx ->
-                match sqlEx.Number with
-                  | 2601 | 2627 ->          // handle constraint error
-                      Error [userMessage]
-                  | _ ->                    // don't handle any other cases, Deadlock will still be raised so it can be catched by withRetry
-                      raise sqlEx
-            | ex -> raise ex
-
-    let createParticipant (participant: Participant) (ctx:HttpContext):Result<unit, UserMessage list> =
-      try
-        insert { table participantsTable
-                 value (Models.domainToDb participant)
-                }
-                |> Database.runInsertQuery ctx
-      with  
-      | :? AggregateException as ex  -> 
-        handleAggregateToSqlException ex (UserMessages.participantDuplicate participant.Email.Unwrap)
-      | ex -> reraise()
-
-    let deleteParticipant (participant: Participant) (ctx: HttpContext): Result<unit, UserMessage list> =
-        delete { table participantsTable
-                 where (eq "EventId" participant.EventId.Unwrap + eq "Email" participant.Email.Unwrap) 
-               }
-        |> Database.runDeleteQuery ctx
-        |> ignore
-        Ok ()
+    let deleteParticipant (participant: Participant): AsyncHandler<unit> =
+        taskResult {
+            let! res =
+                delete { table participantsTable
+                         where (eq "EventId" participant.EventId.Unwrap + eq "Email" participant.Email.Unwrap) 
+                       }
+                |> Database.runDeleteQuery 
+            return ()
+        }
 
     let private groupParticipants ls =
         ls
@@ -62,57 +42,107 @@ module Queries =
             (participant , sortedAnswersForParticipant)
         )
 
-    let queryParticipantByKey (eventId: Event.Id, email: EmailAddress) ctx: Result<Participant, UserMessage list> =
-        select { table participantsTable
-                 leftJoin answersTable [ "EventId", "Participants.EventId"; "Email", "Participants.Email" ]
-                 where (eq "Participants.EventId" eventId.Unwrap + eq "Participants.Email" email.Unwrap)}
-        |> Database.runOuterJoinSelectQuery<DbModel, ParticipantAnswerDbModel> ctx
-        |> groupParticipants
-        |> Seq.tryHead
-        |> function
-        | Some (participant, answers) -> Ok <| Models.dbToDomain (participant, answers)
-        | _ -> Error []
+    let queryParticipantByKey (eventId: Event.Id, email: EmailAddress): AsyncHandler<Participant> =
+        taskResult {
+            let! participants =
+                select { table participantsTable
+                         leftJoin answersTable [ "EventId", "Participants.EventId"; "Email", "Participants.Email" ]
+                         where (eq "Participants.EventId" eventId.Unwrap + eq "Participants.Email" email.Unwrap)}
+                |> Database.runOuterJoinSelectQuery<DbModel, ParticipantAnswerDbModel>
 
-    let queryParticipantionByParticipant (email: EmailAddress) ctx: Participant seq =
-        select { table participantsTable
-                 leftJoin answersTable [ "EventId", "Participants.EventId"; "Email", "Participants.Email" ]
-                 where (eq "Participants.Email" email.Unwrap)}
-        |> Database.runOuterJoinSelectQuery<DbModel, ParticipantAnswerDbModel> ctx
-        |> groupParticipants
-        |> Seq.map Models.dbToDomain
+            let participant =
+                participants
+                |> groupParticipants
+                |> Seq.tryHead
 
-    let queryParticipationsByEmployeeId (employeeId: Event.EmployeeId) ctx: Participant seq =
-        select { table participantsTable
-                 leftJoin answersTable [ "EventId", "Participants.EventId"; "Email", "Participants.Email" ]
-                 where (eq "EmployeeId" employeeId.Unwrap)
-               }
-        |> Database.runOuterJoinSelectQuery<DbModel, ParticipantAnswerDbModel> ctx
-        |> groupParticipants
-        |> Seq.map Models.dbToDomain
+            match participant with
+            | Some (participant, answers) ->
+                return Models.dbToDomain (participant, answers)
+            | _ -> 
+                return! Error [ UserMessages.participationNotFound (eventId, email.Unwrap) ] |> Task.unit
+        }
 
-    let queryParticipantsByEventId (eventId: Event.Id) ctx: Participant seq =
-        select { table participantsTable
-                 leftJoin answersTable [ "EventId", "Participants.EventId"; "Email", "Participants.Email" ]
-                 where (eq "Participants.EventId" eventId.Unwrap)
-                 orderBy "RegistrationTime" Asc
-               }
-        |> Database.runOuterJoinSelectQuery<DbModel, ParticipantAnswerDbModel> ctx
-        |> groupParticipants
-        |> Seq.map Models.dbToDomain
+    let createParticipant (participant: Participant): AsyncHandler<unit> =
+        taskResult {
+            let! () =
+                queryParticipantByKey (participant.EventId, participant.Email)
+                >> Task.map (function
+                                | Ok _ -> Error [ UserMessages.participantDuplicate participant.Email.Unwrap ]
+                                | Error _ -> Ok ())
+
+            do! insert { table participantsTable
+                         value (Models.domainToDb participant)
+                       }
+                    |> Database.runInsertQuery 
+        }
+
+    let queryParticipantionByParticipant (email: EmailAddress): AsyncHandler<Participant seq> =
+        taskResult {
+            let! participants =
+                select { table participantsTable
+                         leftJoin answersTable [ "EventId", "Participants.EventId"; "Email", "Participants.Email" ]
+                         where (eq "Participants.Email" email.Unwrap)}
+                |> Database.runOuterJoinSelectQuery<DbModel, ParticipantAnswerDbModel>
+
+            let groupedParticipants =
+                participants
+                |> groupParticipants
+            
+            return Seq.map Models.dbToDomain groupedParticipants
+        }
+
+    let queryParticipationsByEmployeeId (employeeId: Event.EmployeeId): AsyncHandler<Participant seq> =
+        taskResult {
+            let! participants =
+                select { table participantsTable
+                         leftJoin answersTable [ "EventId", "Participants.EventId"; "Email", "Participants.Email" ]
+                         where (eq "EmployeeId" employeeId.Unwrap)
+                       }
+                |> Database.runOuterJoinSelectQuery<DbModel, ParticipantAnswerDbModel> 
+
+            let groupedParticipants =
+                participants
+                |> groupParticipants
+
+            return Seq.map Models.dbToDomain groupedParticipants
+        }
+
+    let queryParticipantsByEventId (eventId: Event.Id): AsyncHandler<Participant seq> =
+        taskResult {
+            let! participants =
+                select { table participantsTable
+                         leftJoin answersTable [ "EventId", "Participants.EventId"; "Email", "Participants.Email" ]
+                         where (eq "Participants.EventId" eventId.Unwrap)
+                         orderBy "RegistrationTime" Asc
+                       }
+                |> Database.runOuterJoinSelectQuery<DbModel, ParticipantAnswerDbModel> 
+
+            let groupedParticipants =
+                participants
+                |> groupParticipants
+
+            return Seq.map Models.dbToDomain groupedParticipants
+        }
     
-    let getNumberOfParticipantsForEvent (eventId: Event.Id) (ctx: HttpContext) =
-        select { table participantsTable
-                 count "*" "Value"
-                 where (eq "EventId" eventId.Unwrap)
-               }
-        |> Database.runSelectQuery<{| Value : int |}> ctx
-        |> Seq.tryHead
-        |> function
-        | Some count -> Ok count.Value
-        | None -> Error [UserMessages.getParticipantsCountFailed eventId]
+    let getNumberOfParticipantsForEvent (eventId: Event.Id): AsyncHandler<int> =
+        taskResult {
+            let! participants =
+                select { table participantsTable
+                         count "*" "Value"
+                         where (eq "EventId" eventId.Unwrap)
+                       }
+                |> Database.runSelectQuery<{| Value : int |}>
+            
+            let count = Seq.tryHead participants
+            match count with
+            | Some count -> 
+                return count.Value
+            | None -> 
+                return! Error [UserMessages.getParticipantsCountFailed eventId] |> Task.unit
+        }
 
     let setAnswers (participant: Participant) =
-        result {
+        taskResult {
             if Seq.isEmpty participant.ParticipantAnswers.Unwrap then
                 return ()
             else
@@ -122,8 +152,7 @@ module Queries =
                   table questionsTable
                   where (eq "EventId" participant.EventId.Unwrap)
                   orderBy "Id" Asc
-                } |> flip Database.runSelectQuery<Event.ParticipantQuestionDbModel>
-                >> Ok
+                } |> Database.runSelectQuery<Event.ParticipantQuestionDbModel>
 
             do! insert { table answersTable
                          values (participant.ParticipantAnswers.Unwrap 
@@ -135,5 +164,5 @@ module Queries =
                                        Answer = answer
                                     |})
                                 |> List.ofSeq)
-                       } |> flip Database.runInsertQuery
+                       } |> Database.runInsertQuery
         }

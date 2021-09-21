@@ -5,16 +5,15 @@ open Microsoft.AspNetCore.Http
 open Microsoft.Net.Http.Headers
 
 open ArrangementService
+open ArrangementService.ResultComputationExpression
 open UserMessage
 open System
 open System.Threading
-open System.Threading.Tasks
 open FSharp.Control.Tasks.V2
 
 module Http =
 
     type Handler<'t> = HttpContext -> Result<'t, UserMessage list>
-    type AsyncHandler<'t> = HttpContext -> Task<Result<'t, UserMessage list>>
 
     let check (condition: Handler<Unit>) (next: HttpFunc) (context: HttpContext) =
         match condition context with
@@ -64,21 +63,29 @@ module Http =
 
 
     let csvhandle filename (endpoint: Handler<string>) = setCsvHeaders filename >=> generalHandle setBodyFromString endpoint 
+    let csvhandleAsync filename (endpoint: AsyncHandler<string>) = setCsvHeaders filename >=> generalHandleAsync setBodyFromString endpoint 
 
     let handle (endpoint: Handler<'t>) = generalHandle json endpoint
     let handleAsync (endpoint: AsyncHandler<'t>) = generalHandleAsync json endpoint
 
-    let getBody<'WriteModel> (context: HttpContext): Result<'WriteModel, UserMessage list>
-        =
-        try
-            Ok(context.BindJsonAsync<'WriteModel>().Result)
-        with _ -> Error [ "Feilformatert writemodel" |> BadInput ]
+    let getBody<'WriteModel> (): AsyncHandler<'WriteModel> =
+        fun ctx ->
+            try
+                Ok(ctx.BindJsonAsync<'WriteModel>().Result) |> Task.unit
+            with _ ->
+                Error [ "Feilformatert writemodel" |> BadInput ] |> Task.unit
 
-    let queryParam param (ctx: HttpContext) =
-        ctx.GetQueryStringValue param
-        |> Result.mapError
-            (fun _ ->
-                [ BadInput $"Missing query parameter '{param}'" ])
+    let queryParam param =
+        taskResult {
+            let! res =
+                fun ctx ->
+                    ctx.GetQueryStringValue param
+                    |> Result.mapError
+                        (fun _ ->
+                            [ BadInput $"Missing query parameter '{param}'" ])
+                    |> Task.unit
+            return res
+        }
 
     let withTransaction (handler: HttpHandler) (next: HttpFunc) (ctx: HttpContext): HttpFuncResult =
         Database.createConnection ctx |> ignore
@@ -132,13 +139,19 @@ module Http =
 
         res
 
-    let parseBody<'T> (ctx: HttpContext) =
-        let body = 
-            ctx.ReadBodyBufferedFromRequestAsync()
-            |> Async.AwaitTask
-            |> Async.RunSynchronously
+    let parseBody<'T> =
+        taskResult {
+            let! body = 
+                fun ctx ->
+                    ctx.ReadBodyBufferedFromRequestAsync()
+                    |> Task.map Ok
 
-        Thoth.Json.Net.Decode.Auto.fromString<'T> body
-        |> function
-        | Ok x -> Ok x
-        | Error _ -> Error [ BadInput $"Kunne ikke parse body: {body}" ]
+            let res = Thoth.Json.Net.Decode.Auto.fromString<'T> body
+            match res with
+            | Ok x ->
+                return x
+            | Error _ ->
+                return!
+                    Error [ BadInput $"Kunne ikke parse body: {body}" ]
+                    |> Task.unit
+        }

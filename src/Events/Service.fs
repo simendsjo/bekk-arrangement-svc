@@ -8,6 +8,7 @@ open Http
 open DateTime
 open CalendarInvite
 open ArrangementService.Event
+open Microsoft.AspNetCore.Http
 
 module Service =
 
@@ -17,25 +18,26 @@ module Service =
             return events
         }
     
-    let getPastEvents: Handler<Event seq> =
-        result {
-            let! events = Event.Queries.getPastEvents >> Ok
+    let getPastEvents: AsyncHandler<Event seq> =
+        taskResult {
+            let! events = Event.Queries.getPastEvents
             return events
         }
 
     let getEventsOrganizedBy organizerEmail =
-        result {
-            let! eventsByOrganizer = Event.Queries.queryEventsOrganizedByEmail organizerEmail >> Ok
+        taskResult {
+            let! eventsByOrganizer = Event.Queries.queryEventsOrganizedByEmail organizerEmail 
             return eventsByOrganizer
         }
+
     let getEventsOrganizedByOrganizerId (organizerId:Event.EmployeeId) =
-        result {
-            let! eventsByOrganizer = Event.Queries.queryEventsOrganizedByOrganizerId organizerId >> Ok
+        taskResult {
+            let! eventsByOrganizer = Event.Queries.queryEventsOrganizedByOrganizerId organizerId
             return eventsByOrganizer
         }
 
     let getEvent id =
-        result {
+        taskResult {
             let! event = Event.Queries.queryEventByEventId id
             return event
         }
@@ -71,51 +73,50 @@ module Service =
                   (event, organizerAsParticipant event, noReplyMail, message, Create) |> Some 
         }
 
-    let private sendNewlyCreatedEventMail viewUrl createEditUrl (event: Event) =
-        result {
-            let! config = Config.getConfig >> Ok
-            let mail =
-                createEmail viewUrl createEditUrl (EmailAddress config.noReplyEmail) event
-            yield Service.sendMail mail
-        }
+    let private sendNewlyCreatedEventMail viewUrl createEditUrl (event: Event) (ctx: HttpContext) =
+        let config = Config.getConfig ctx
+        let mail =
+            createEmail viewUrl createEditUrl (EmailAddress config.noReplyEmail) event
+        Service.sendMail mail ctx
 
     type EventWithShortname =
         | EventExistsWithShortname of Event
         | UnusedShortname
 
     let private setShortname eventId shortname =
-        result {
+        taskResult {
             let! shortnameExists =
                     Queries.queryEventByShortname shortname
-                    >> function
+                    >> Task.map (function
                     | Ok event -> EventExistsWithShortname event |> Ok
-                    | Error _ -> UnusedShortname |> Ok
+                    | Error _ -> UnusedShortname |> Ok)
 
             match shortnameExists with
             | UnusedShortname ->
-                yield! Ok () |> ignoreContext
+                yield! taskResult.Zero()
 
             | EventExistsWithShortname event ->
                 if event.EndDate >= DateTime.now() then
-                    return! Error [ UserMessages.shortnameIsInUse shortname ]
+                    return! Error [ UserMessages.shortnameIsInUse shortname ] |> Task.unit
                 else
                     yield! Queries.deleteShortname shortname
 
             yield! Queries.insertShortname eventId shortname
-            return ()
         }
 
     let createEvent viewUrl createEditUrl employeeId event =
-        result {
+        taskResult {
             let! newEvent = Queries.createEvent employeeId event
 
             match event.ParticipantQuestions with
-            | [] -> yield! Ok () |> ignoreContext
+            | [] -> 
+                yield! taskResult.Zero()
             | questions ->
                 yield! Queries.insertQuestions newEvent.Id questions
 
             match event.Shortname with
-            | None -> yield! Ok () |> ignoreContext
+            | None -> 
+                yield! taskResult.Zero()
             | Some shortname ->
                 yield! setShortname newEvent.Id shortname
 
@@ -125,13 +126,13 @@ module Service =
         }
 
     let cancelEvent event =
-        result {
-            do! Event.Queries.updateEvent {event with IsCancelled=true}
+        taskResult {
+            do! Event.Queries.updateEvent { event with IsCancelled = true }
             return Event.UserMessages.eventSuccessfullyCancelled event.Title
         }
     
     let deleteEvent id =
-        result {
+        taskResult {
             do! Event.Queries.deleteEvent id
             return Event.UserMessages.eventSuccessfullyDeleted id
         }
@@ -240,7 +241,7 @@ module Service =
         }
 
     let registerParticipant createMail participant =
-        result {
+        taskResult {
 
             do! Participant.Queries.createParticipant participant
             do! Participant.Queries.setAnswers participant
@@ -251,17 +252,16 @@ module Service =
         }
 
     let getParticipant (eventId, email: EmailAddress) =
-        result {
+        taskResult {
             let! participant = Participant.Queries.queryParticipantByKey (eventId, email)
 
             return participant
         }
 
-    let getParticipantsForEvent (event: Event): Handler<Participant.ParticipantsWithWaitingList> =
-        result {
+    let getParticipantsForEvent (event: Event): AsyncHandler<Participant.ParticipantsWithWaitingList> =
+        taskResult {
             let! participantsForEvent =
                 Participant.Queries.queryParticipantsByEventId event.Id
-                >> Ok
             
             match event.MaxParticipants.Unwrap with
             // Max participants = None means participants = infinity 
@@ -284,15 +284,14 @@ module Service =
                 }
 
     let getParticipationsForParticipant email =
-        result {
-            
-            let! participantsByMail = Participant.Queries.queryParticipantionByParticipant email >> Ok
-
+        taskResult {
+            let! participantsByMail = Participant.Queries.queryParticipantionByParticipant email 
             return participantsByMail
         }
+
     let getParticipationsByEmployeeId employeeId =
-        result {
-            let! participations = Participant.Queries.queryParticipationsByEmployeeId employeeId >> Ok
+        taskResult {
+            let! participations = Participant.Queries.queryParticipationsByEmployeeId employeeId
             return participations
         }
 
@@ -300,31 +299,24 @@ module Service =
         (event: Event)
         (waitingList: Participant seq)
         =
-        result {
-            let personWhoGotIt = Seq.tryHead waitingList
-            match personWhoGotIt with
-            | None -> return ()
-            | Some participant ->
-                yield Service.sendMail
-                          (createFreeSpotAvailableMail event participant)
-        }
+        let personWhoGotIt = Seq.tryHead waitingList
+        match personWhoGotIt with
+        | None -> 
+            ignoreContext ()
+        | Some participant ->
+            Service.sendMail
+                      (createFreeSpotAvailableMail event participant)
 
     let private sendMailToOrganizerAboutCancellation event participant =
-        result {
-            let mail = createCancelledParticipationMailToOrganizer event participant
-
-            yield Service.sendMail mail
-        }
+        let mail = createCancelledParticipationMailToOrganizer event participant
+        Service.sendMail mail
 
     let private sendMailWithCancellationConfirmation event participant =
-        result {
-            let mail = createCancelledParticipationMailToAttendee event participant
-
-            yield Service.sendMail mail
-        }
+        let mail = createCancelledParticipationMailToAttendee event participant
+        Service.sendMail mail
 
     let private sendParticipantCancelMails event email =
-        result {
+        taskResult {
             let! participants = getParticipantsForEvent event
 
             let attendingParticipant =
@@ -332,7 +324,8 @@ module Service =
                 |> Seq.tryFind (fun attendee -> attendee.Email = email)
 
             match attendingParticipant with
-            | None -> return ()
+            | None -> 
+                return ()
             | Some participant ->
                 yield sendMailToOrganizerAboutCancellation event
                           participant
@@ -346,8 +339,8 @@ module Service =
         }
 
     let deleteParticipant (event, email) =
-        result {
-            yield sendParticipantCancelMails event email
+        taskResult {
+            yield! sendParticipantCancelMails event email
             let! participant = getParticipant (event.Id, email)
 
             do! Participant.Queries.deleteParticipant participant
@@ -389,16 +382,16 @@ module Service =
 
         participants |> Seq.iter sendMailToParticipant
 
-        Ok()
+        ()
     
     let getNumberOfParticipantsForEvent eventId =
-        result {
+        taskResult {
             let! count = Participant.Queries.getNumberOfParticipantsForEvent eventId
             return Event.NumberOfParticipants count
         }
     
     let getWaitinglistSpot eventId email =
-        result {
+        taskResult {
             let! event = getEvent eventId
 
             let! { attendees = attendees
@@ -409,7 +402,7 @@ module Service =
                 |> Seq.exists (fun y -> y.Email = email)
 
             if not isParticipant then
-                return! Error [ Participant.UserMessages.participantNotFound email ]
+                return! Error [ Participant.UserMessages.participantNotFound email ] |> Task.unit
 
             else
                 let waitingListIndex = 
@@ -425,8 +418,8 @@ module Service =
         We want to know how many of the questions have actually been seen and answered by people
     *)
     let getNumberOfQuestionsThatHaveBeenAnswered (eventId: Event.Id) =
-        result {
-            let! participants = Participant.Queries.queryParticipantsByEventId eventId >> Ok
+        taskResult {
+            let! participants = Participant.Queries.queryParticipantsByEventId eventId
 
             if Seq.isEmpty participants then
                 return 0
@@ -446,9 +439,9 @@ module Service =
         -- Summer intern 2021
     *)
     let updateEvent (id: Event.Id) writeModel =
-        result {
+        taskResult {
             let! oldEvent = Event.Queries.queryEventByEventId id
-            let! newEvent = Event.Models.writeToDomain id.Unwrap writeModel oldEvent.EditToken oldEvent.IsCancelled oldEvent.OrganizerId.Unwrap |> ignoreContext
+            let! newEvent = Event.Models.writeToDomain id.Unwrap writeModel oldEvent.EditToken oldEvent.IsCancelled oldEvent.OrganizerId.Unwrap |> Task.unit |> ignoreContext
 
             let! { waitingList = oldWaitingList } = getParticipantsForEvent oldEvent
 
@@ -460,7 +453,7 @@ module Service =
                 let unansweredQuestions = newEvent.ParticipantQuestions.Unwrap |> Seq.safeSkip numberOfAnsweredQuestions |> List.ofSeq
                 let answeredQuestions = newEvent.ParticipantQuestions.Unwrap |> Seq.truncate numberOfAnsweredQuestions |> List.ofSeq
                 if answeredQuestions <> (oldEvent.ParticipantQuestions.Unwrap |> List.truncate numberOfAnsweredQuestions) then
-                    return! Error [ UserMessages.illegalQuestionsUpdate ]
+                    return! Error [ UserMessages.illegalQuestionsUpdate ] |> Task.unit
                 else
                     yield! Queries.deleteLastQuestions ((oldEvent.ParticipantQuestions.Unwrap |> Seq.length) - (answeredQuestions |> Seq.length)) newEvent.Id
                     yield! Queries.insertQuestions newEvent.Id unansweredQuestions
@@ -470,13 +463,13 @@ module Service =
                 | Shortname (Some oldShortname) ->
                     yield! Queries.deleteShortname oldShortname
                 | Shortname None ->
-                    yield! Ok () |> ignoreContext
+                    yield! taskResult.Zero()
 
                 match newEvent.Shortname with
                 | Shortname (Some shortname) ->
                     yield! setShortname newEvent.Id shortname
                 | Shortname None ->
-                    yield! Ok () |> ignoreContext
+                    yield! taskResult.Zero()
 
             let numberOfNewPeople =
                 match oldEvent.MaxParticipants.Unwrap, newEvent.MaxParticipants.Unwrap with
@@ -495,7 +488,7 @@ module Service =
         }
 
     let getEventByShortname shortname = 
-        result {
+        taskResult {
             let! event = Event.Queries.queryEventByShortname shortname
             return event
         }
@@ -543,7 +536,7 @@ module Service =
         ] |> String.concat newline
 
     let exportParticipationsDataForEvent (id: Event.Id) =
-        result {
+        taskResult {
             let! event = Event.Queries.queryEventByEventId id
             let! participants = getParticipantsForEvent event
             let str = createExportEventString event participants

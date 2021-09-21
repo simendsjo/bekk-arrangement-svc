@@ -34,6 +34,7 @@
 
   <ItemGroup>
     <Compile Include="Config.fs" />
+    <Compile Include="Common\UserMessage.fs" />
 
     <Compile Include="LanguageExtensions\Validation.fs" />
     <Compile Include="LanguageExtensions\Task.fs" />
@@ -41,8 +42,6 @@
     <Compile Include="LanguageExtensions\Seq.fs" />
     <Compile Include="LanguageExtensions\Option.fs" /> 
     <Compile Include="LanguageExtensions\Tools.fs" /> 
-
-    <Compile Include="Common\UserMessage.fs" />
 
     <Compile Include="Common\Database.fs" /> 
     <Compile Include="Common\Http.fs" /> 
