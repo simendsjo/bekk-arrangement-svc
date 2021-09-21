@@ -128,14 +128,14 @@ module Handlers =
             [ GET_HEAD
               >=> choose
                       [ route "/events" >=>
-                            checkAsync isAuthenticated
+                            (checkAsync isAuthenticated
                             >=> handleAsync getEvents
-                            |> withTransactionAsync
+                            |> withTransactionAsync)
 
                         route "/events/previous" >=>
-                            checkAsync isAuthenticated
+                            (checkAsync isAuthenticated
                             >=> handleAsync getPastEvents
-                            |> withTransaction
+                            |> withTransaction)
 
                         routef "/events/%O" (fun eventId -> 
                             checkAsync (eventIsExternalOrUserIsAuthenticated eventId)
@@ -152,7 +152,7 @@ module Handlers =
                             >=> (handleAsync << getEventAndParticipationSummaryForEmployee) id
                             |> withTransaction) 
                         
-                        route "/events/id" >=> handleAsync getEventIdByShortname |> withTransaction
+                        route "/events/id" >=> (handleAsync getEventIdByShortname |> withTransaction)
                       ]
               DELETE
               >=> choose
@@ -174,6 +174,6 @@ module Handlers =
               POST 
               >=> choose 
                     [ route "/events" >=>
-                            checkAsync isAuthenticated
+                            (checkAsync isAuthenticated
                             >=> handleAsync createEvent 
-                            |> withTransaction] ]
+                            |> withTransaction)] ]

@@ -127,17 +127,20 @@ module Http =
 
         retry 50.0 10 // retry 10 times with a inital delay seed 50ms
 
-    let withLock (lock: Mutex) (handler: HttpHandler) (next: HttpFunc) (ctx: HttpContext): HttpFuncResult =
-        let timer = new Diagnostics.Stopwatch()
-        timer.Start()
-        lock.WaitOne() |> ignore
+    let withLock (lock: SemaphoreSlim) (handler: HttpHandler) (next: HttpFunc) (ctx: HttpContext): HttpFuncResult =
+        task {
+            do! lock.WaitAsync() 
 
-        let res = handler next ctx
+            let timer = new Diagnostics.Stopwatch()
+            timer.Start()
 
-        lock.ReleaseMutex()
-        printfn "%Ams" timer.ElapsedMilliseconds
+            let! res = handler next ctx
 
-        res
+            printfn "%Ams" timer.ElapsedMilliseconds
+            lock.Release() |> ignore
+
+            return res
+        }
 
     let parseBody<'T> =
         taskResult {

@@ -94,11 +94,15 @@ let configureServices (services: IServiceCollection) =
             (caseStrategy = CamelCase, extra = extraEncoder, skipNullField = true))
     |> ignore
 
-    let mutable minWorker = 0
-    let mutable minIOC = 0
+    // let mutable minWorker = 0
+    // let mutable minIOC = 0
 
-    ThreadPool.GetMinThreads(&minWorker, &minIOC)  
-    ThreadPool.SetMinThreads(500, minIOC) |> ignore
+    // ThreadPool.GetMinThreads(&minWorker, &minIOC)  
+    // ThreadPool.SetMinThreads(500, minIOC) |> ignore
+
+    // let conn = new SqlConnection(config.databaseConnectionString) :> IDbConnection
+    // conn.Open()
+    // conn.Close()
 
     ()
 

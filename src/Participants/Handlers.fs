@@ -114,7 +114,7 @@ module Handlers =
 
     let exportParticipationsDataForEvent eventId = Service.exportParticipationsDataForEvent (Event.Id eventId)
 
-    let registrationLock = new Mutex()
+    let registrationLock = new SemaphoreSlim(1,1)
 
     let routes: HttpHandler =
         choose
@@ -124,7 +124,6 @@ module Handlers =
                             checkAsync isAuthenticated
                             >=> (handleAsync << getParticipantsForEvent) eventId
                             |> withTransaction)
-
                         routef "/events/%O/participants/count" (fun eventId -> 
                             checkAsync (eventIsExternalOrUserIsAuthenticated eventId)
                             >=> (handleAsync << getNumberOfParticipantsForEvent) eventId
