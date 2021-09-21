@@ -54,7 +54,7 @@ module Handlers =
             let! event = Service.getEvent (Id id)
             let! participants = Service.getParticipantsForEvent event
 
-            let! config = getConfig >> Ok >> Task.unit
+            let! config = getConfig >> Ok >> Task.wrap
 
             let! result =  match removeEventType with 
                             | Cancel -> Service.cancelEvent event
@@ -73,7 +73,7 @@ module Handlers =
             return! userId
                     |> Option.map Event.EmployeeId  // option EmployeeId
                     |> Option.withError [UserMessages.couldNotRetrieveUserId] // Result<EmployeeId, UserMessage list>
-                    |> Task.unit
+                    |> Task.wrap
         }
 
     let updateEvent (id:Key) =

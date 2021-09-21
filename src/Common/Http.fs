@@ -71,9 +71,9 @@ module Http =
     let getBody<'WriteModel> (): AsyncHandler<'WriteModel> =
         fun ctx ->
             try
-                Ok(ctx.BindJsonAsync<'WriteModel>().Result) |> Task.unit
+                Ok(ctx.BindJsonAsync<'WriteModel>().Result) |> Task.wrap
             with _ ->
-                Error [ "Feilformatert writemodel" |> BadInput ] |> Task.unit
+                Error [ "Feilformatert writemodel" |> BadInput ] |> Task.wrap
 
     let queryParam param =
         taskResult {
@@ -83,7 +83,7 @@ module Http =
                     |> Result.mapError
                         (fun _ ->
                             [ BadInput $"Missing query parameter '{param}'" ])
-                    |> Task.unit
+                    |> Task.wrap
             return res
         }
 
@@ -160,5 +160,5 @@ module Http =
             | Error _ ->
                 return!
                     Error [ BadInput $"Kunne ikke parse body: {body}" ]
-                    |> Task.unit
+                    |> Task.wrap
         }

@@ -25,7 +25,7 @@ module Authorization =
             if hasCorrectCancellationToken then
                 return ()
             else
-                return! [ AccessDenied "You cannot delete your participation without your cancellation token" ] |> Error |> Task.unit
+                return! [ AccessDenied "You cannot delete your participation without your cancellation token" ] |> Error |> Task.wrap
         }
 
     let userCanCancel eventIdAndEmail =
@@ -43,14 +43,14 @@ module Authorization =
             then
                 return ()
             else
-                return! [ AccessDenied "Arrangementet er fullt" ] |> Error |> Task.unit
+                return! [ AccessDenied "Arrangementet er fullt" ] |> Error |> Task.wrap
         }
     let eventIsNotCancelled (event:DomainModels.Event) =  
         taskResult {
             if event.IsCancelled then
                 return!
                     Error [AccessDenied "Arrangementet er avlyst"]
-                    |> Task.unit
+                    |> Task.wrap
             else
                 return ()
         }

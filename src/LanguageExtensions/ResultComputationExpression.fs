@@ -67,7 +67,7 @@ module ResultComputationExpression =
             // og skriv dokumentasjon / forklaring
     type TaskResultBuild() =
         member this.Return(x: 'a): AsyncHandler<'a> =
-            fun _ -> Ok x |> Task.unit
+            fun _ -> Ok x |> Task.wrap
         member this.ReturnFrom(x) = fun _ -> x
         member this.Yield(f: HttpContext -> unit): AsyncHandler<unit> = 
             fun ctx ->
@@ -76,7 +76,7 @@ module ResultComputationExpression =
                 } 
                 |> Async.Start
                 |> ignore
-                Ok () |> Task.unit
+                Ok () |> Task.wrap
         member this.YieldFrom(f: AsyncHandler<unit>): AsyncHandler<unit> = f
         member this.Delay(f) = f
         member this.Run(f) = f()
@@ -86,7 +86,7 @@ module ResultComputationExpression =
             fun ctx ->
                 sequence
                 |> Seq.iter (fun x -> body x ctx |> ignore)
-                Ok () |> Task.unit
+                Ok () |> Task.wrap
 
         member this.Combine(lhs: AsyncHandler<'a>, rhs: unit -> AsyncHandler<'b>): AsyncHandler<'b> =
             fun ctx ->
@@ -95,7 +95,7 @@ module ResultComputationExpression =
                     return!
                         match res with
                         | Ok _ -> this.Run rhs ctx
-                        | Error e -> Error e |> Task.unit
+                        | Error e -> Error e |> Task.wrap
                 }
 
         member this.Bind(rx: AsyncHandler<'a>, f: 'a -> AsyncHandler<'b>): AsyncHandler<'b> =
@@ -104,7 +104,7 @@ module ResultComputationExpression =
                 return!
                     match result with
                     | Ok x -> f x ctx
-                    | Error e -> Error e |> Task.unit
+                    | Error e -> Error e |> Task.wrap
             }
 
     let taskResult = TaskResultBuild()

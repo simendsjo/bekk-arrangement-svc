@@ -46,7 +46,7 @@ module Handlers =
                 && participants.attendees
                    |> Seq.length
                    >= event.MaxParticipants.Unwrap.Value
-            let! config = getConfig >> Ok >> Task.unit
+            let! config = getConfig >> Ok >> Task.wrap
             let createMailForParticipant =
                 Service.createNewParticipantMail
                     createCancelUrl event isWaitlisted
@@ -54,7 +54,7 @@ module Handlers =
             
             let! userId = Auth.getUserId 
 
-            let! participantDomainModel = writeToDomain (eventId, email) writeModel userId |> Task.unit |> ignoreContext
+            let! participantDomainModel = writeToDomain (eventId, email) writeModel userId |> Task.wrap |> ignoreContext
             do! Service.registerParticipant createMailForParticipant participantDomainModel
 
             return domainToViewWithCancelInfo participantDomainModel
@@ -62,14 +62,14 @@ module Handlers =
 
     let getParticipationsForParticipant email =
         taskResult {
-            let! emailAddress = EmailAddress.Parse email |> Task.unit |> ignoreContext
+            let! emailAddress = EmailAddress.Parse email |> Task.wrap |> ignoreContext
             let! participants = Service.getParticipationsForParticipant emailAddress
             return Seq.map domainToView participants |> Seq.toList
         }
 
     let deleteParticipant (id, email) =
         taskResult {
-            let! emailAddress = EmailAddress.Parse email |> Task.unit |> ignoreContext
+            let! emailAddress = EmailAddress.Parse email |> Task.wrap |> ignoreContext
             
             let! event = Service.getEvent (Event.Id id)
             let! deleteResult = Service.deleteParticipant (event, emailAddress) 

@@ -30,32 +30,32 @@ module Auth =
                         | Ok() -> []
                         | Error errors -> errors)
                     |> Error
-                    |> Task.unit
+                    |> Task.wrap
         }
 
 
     let private isAuthorized permissionKey permission =
         taskResult {
-            let! user = fun ctx -> ctx.User |> Ok |> Task.unit
+            let! user = fun ctx -> ctx.User |> Ok |> Task.wrap
             if user.HasClaim(permissionKey, permission) then
                 return ()
             else
-                return! [ AccessDenied $"Missing permission <{permission}> in token at '{permissionKey}'" ] |> Error |> Task.unit
+                return! [ AccessDenied $"Missing permission <{permission}> in token at '{permissionKey}'" ] |> Error |> Task.wrap
         }
 
     let isAuthenticated =
         taskResult {
-            let! user = fun ctx -> ctx.User |> Ok |> Task.unit
+            let! user = fun ctx -> ctx.User |> Ok |> Task.wrap
             if user.Identity.IsAuthenticated then
                 return ()
             else
-                return! [ NotLoggedIn $"User not logged in" ] |> Error |> Task.unit
+                return! [ NotLoggedIn $"User not logged in" ] |> Error |> Task.wrap
         }
 
     let isAdmin =
         taskResult {
             do! isAuthenticated
-            let! config = fun ctx -> ctx.GetService<AppConfig>() |> Ok |> Task.unit
+            let! config = fun ctx -> ctx.GetService<AppConfig>() |> Ok |> Task.wrap
 
             let! isAdmin = isAuthorized config.permissionsAndClaimsKey config.adminPermissionClaim
             return isAdmin
@@ -64,7 +64,7 @@ module Auth =
 
     let getUserId: AsyncHandler<int option> =
         taskResult {
-            let! ctx = fun ctx -> ctx |> Ok |> Task.unit
+            let! ctx = fun ctx -> ctx |> Ok |> Task.wrap
             let! res = isAuthenticated 
                             >> Task.map (function
                                                 | Error _ -> None |> Ok 
@@ -78,7 +78,7 @@ module Auth =
             if userId = id then
                 return ()
             else
-                return! [AccessDenied $"User not logged in with id:{id}"] |> Error |> Task.unit
+                return! [AccessDenied $"User not logged in with id:{id}"] |> Error |> Task.wrap
        }
 
     let isAdminOrAuthenticatedAsUser id = anyOf [isAdmin

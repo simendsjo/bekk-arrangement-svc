@@ -27,7 +27,7 @@ module Authorization =
                     [ AccessDenied
                           $"Du prøver å endre på et arrangement (id {event.Id.Unwrap}) som du ikke er arrangør av" ]
                     |> Error
-                    |> Task.unit
+                    |> Task.wrap
         }
 
     let userHasCorrectEditToken (event: DomainModels.Event) =
@@ -43,7 +43,7 @@ module Authorization =
                     [ AccessDenied
                           $"Du prøvde å gjøre endringer på et arrangement (id {event.Id.Unwrap}) med ugyldig editToken" ]
                     |> Error
-                    |> Task.unit
+                    |> Task.wrap
         }
 
 
@@ -69,7 +69,7 @@ module Authorization =
             else
                 return!
                     Error [ AccessDenied $"Arrangementet åpner for påmelding {openDateTime.ToLocalTime}" ]
-                    |> Task.unit
+                    |> Task.wrap
         }
 
     let eventHasNotPassed (event: DomainModels.Event) =
@@ -79,7 +79,7 @@ module Authorization =
             else
                 return!
                     Error [ AccessDenied "Arrangementet har allerede funnet sted" ]
-                    |> Task.unit
+                    |> Task.wrap
         }
 
 
@@ -90,7 +90,7 @@ module Authorization =
             if event.IsExternal then
                 return ()
             else
-                return! Error [ AccessDenied "Arrangementet er internt" ] |> Task.unit
+                return! Error [ AccessDenied "Arrangementet er internt" ] |> Task.wrap
         }
 
     let eventIsExternalOrUserIsAuthenticated (eventId: Key) =

@@ -16,7 +16,7 @@ module Task =
             return f x
         }
 
-    let unit (x: 'x): 'x Task =
+    let wrap (x: 'x): 'x Task =
         task {
             return x
         }

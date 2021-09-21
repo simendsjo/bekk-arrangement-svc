@@ -59,7 +59,7 @@ module Queries =
             | Some (participant, answers) ->
                 return Models.dbToDomain (participant, answers)
             | _ -> 
-                return! Error [ UserMessages.participationNotFound (eventId, email.Unwrap) ] |> Task.unit
+                return! Error [ UserMessages.participationNotFound (eventId, email.Unwrap) ] |> Task.wrap
         }
 
     let createParticipant (participant: Participant): AsyncHandler<unit> =
@@ -138,7 +138,7 @@ module Queries =
             | Some count -> 
                 return count.Value
             | None -> 
-                return! Error [UserMessages.getParticipantsCountFailed eventId] |> Task.unit
+                return! Error [UserMessages.getParticipantsCountFailed eventId] |> Task.wrap
         }
 
     let setAnswers (participant: Participant) =

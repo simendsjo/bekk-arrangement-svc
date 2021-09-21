@@ -25,7 +25,7 @@ module Validation =
                     return () 
                 else
                 
-                return! Error [ UserMessages.invalidMaxParticipantValue ] |> Task.unit
+                return! Error [ UserMessages.invalidMaxParticipantValue ] |> Task.wrap
 
             | Some oldMax, Some newMax -> 
                 // Man kan alltid øke så lenge den forrige
@@ -46,8 +46,8 @@ module Validation =
                 // Derfor vil det være frekt å fjerne ventelista
                 let isRemovingWaitingList = newEvent.HasWaitingList = false && oldEvent.HasWaitingList = true
                 if isRemovingWaitingList then
-                    return! Error [ UserMessages.invalidRemovalOfWaitingList ] |> Task.unit
+                    return! Error [ UserMessages.invalidRemovalOfWaitingList ] |> Task.wrap
                 else
                 
-                return! Error [ UserMessages.invalidMaxParticipantValue ] |> Task.unit
+                return! Error [ UserMessages.invalidMaxParticipantValue ] |> Task.wrap
         }

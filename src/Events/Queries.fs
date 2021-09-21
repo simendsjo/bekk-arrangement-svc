@@ -22,7 +22,7 @@ module Queries =
 
     let createEvent employeeId (event: WriteModel)  =
         taskResult {
-            let! event = Models.writeToDomain (Guid.NewGuid()) event (Guid.NewGuid()) false employeeId |> Task.unit |> ignoreContext
+            let! event = Models.writeToDomain (Guid.NewGuid()) event (Guid.NewGuid()) false employeeId |> Task.wrap |> ignoreContext
             let dbModel = Models.domainToDb event
             do! insert { table eventsTable
                          value dbModel
@@ -143,10 +143,10 @@ module Queries =
                 match event with
                 | Some eventWithShortname ->
                     Models.dbToDomain eventWithShortname 
-                    |> Ok |> Task.unit
+                    |> Ok |> Task.wrap
                 | None -> 
                     Error [ UserMessages.eventNotFound eventId ] 
-                    |> Task.unit
+                    |> Task.wrap
         }
 
     let queryEventsOrganizedByEmail (organizerEmail: EmailAddress): AsyncHandler<Event seq> =
@@ -203,10 +203,10 @@ module Queries =
                 | Some eventWithShortname ->
                     Models.dbToDomain eventWithShortname
                     |> Ok
-                    |> Task.unit
+                    |> Task.wrap
                 | None -> 
                     Error [ UserMessages.eventNotFound shortname ]
-                    |> Task.unit
+                    |> Task.wrap
         }
 
     let insertShortname (eventId: Event.Id) (shortname: string): AsyncHandler<unit> =

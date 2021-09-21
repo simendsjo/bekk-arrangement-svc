@@ -97,7 +97,7 @@ module Service =
 
             | EventExistsWithShortname event ->
                 if event.EndDate >= DateTime.now() then
-                    return! Error [ UserMessages.shortnameIsInUse shortname ] |> Task.unit
+                    return! Error [ UserMessages.shortnameIsInUse shortname ] |> Task.wrap
                 else
                     yield! Queries.deleteShortname shortname
 
@@ -402,7 +402,7 @@ module Service =
                 |> Seq.exists (fun y -> y.Email = email)
 
             if not isParticipant then
-                return! Error [ Participant.UserMessages.participantNotFound email ] |> Task.unit
+                return! Error [ Participant.UserMessages.participantNotFound email ] |> Task.wrap
 
             else
                 let waitingListIndex = 
@@ -441,7 +441,7 @@ module Service =
     let updateEvent (id: Event.Id) writeModel =
         taskResult {
             let! oldEvent = Event.Queries.queryEventByEventId id
-            let! newEvent = Event.Models.writeToDomain id.Unwrap writeModel oldEvent.EditToken oldEvent.IsCancelled oldEvent.OrganizerId.Unwrap |> Task.unit |> ignoreContext
+            let! newEvent = Event.Models.writeToDomain id.Unwrap writeModel oldEvent.EditToken oldEvent.IsCancelled oldEvent.OrganizerId.Unwrap |> Task.wrap |> ignoreContext
 
             let! { waitingList = oldWaitingList } = getParticipantsForEvent oldEvent
 
@@ -453,7 +453,7 @@ module Service =
                 let unansweredQuestions = newEvent.ParticipantQuestions.Unwrap |> Seq.safeSkip numberOfAnsweredQuestions |> List.ofSeq
                 let answeredQuestions = newEvent.ParticipantQuestions.Unwrap |> Seq.truncate numberOfAnsweredQuestions |> List.ofSeq
                 if answeredQuestions <> (oldEvent.ParticipantQuestions.Unwrap |> List.truncate numberOfAnsweredQuestions) then
-                    return! Error [ UserMessages.illegalQuestionsUpdate ] |> Task.unit
+                    return! Error [ UserMessages.illegalQuestionsUpdate ] |> Task.wrap
                 else
                     yield! Queries.deleteLastQuestions ((oldEvent.ParticipantQuestions.Unwrap |> Seq.length) - (answeredQuestions |> Seq.length)) newEvent.Id
                     yield! Queries.insertQuestions newEvent.Id unansweredQuestions
