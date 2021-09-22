@@ -71,11 +71,12 @@ module ResultComputationExpression =
         member this.ReturnFrom(x) = fun _ -> x
         member this.Yield(f: HttpContext -> unit): AsyncHandler<unit> = 
             fun ctx ->
-                async {
-                    do f ctx
-                } 
-                |> Async.Start
-                |> ignore
+                // async {
+                //     do f ctx
+                // } 
+                // |> Async.Start
+                // |> ignore
+                f ctx
                 Ok () |> Task.wrap
         member this.YieldFrom(f: AsyncHandler<unit>): AsyncHandler<unit> = f
         member this.Delay(f) = f
