@@ -14,15 +14,7 @@ open FSharp.Control.Tasks.V2
 
 module Http =
 
-    type Handler<'t> = HttpContext -> Result<'t, UserMessage list>
-
     let check (condition: Handler<Unit>) (next: HttpFunc) (context: HttpContext) =
-        match condition context with
-        | Ok () -> next context
-        | Error errorMessage ->
-            convertUserMessagesToHttpError errorMessage next context
-
-    let checkAsync (condition: AsyncHandler<Unit>) (next: HttpFunc) (context: HttpContext) =
         task {
             let! checkResult = condition context
             return!
@@ -41,15 +33,6 @@ module Http =
             next ctx
 
     let generalHandle (responseBodyFunc: ('t -> HttpHandler)) (endpoint: Handler<'t>) (next: HttpFunc) (context: HttpContext) =
-        match endpoint context with
-        | Ok result ->
-            Database.commitTransaction context
-            responseBodyFunc result next context
-        | Error errorMessage ->
-            Database.rollbackTransaction context
-            convertUserMessagesToHttpError errorMessage next context
-
-    let generalHandleAsync (responseBodyFunc: ('t -> HttpHandler)) (endpoint: AsyncHandler<'t>) (next: HttpFunc) (context: HttpContext) =
         task {
             let! res = endpoint context
             return! 
@@ -63,13 +46,10 @@ module Http =
         }
 
 
-    let csvhandle filename (endpoint: Handler<string>) = setCsvHeaders filename >=> generalHandle setBodyFromString endpoint 
-    let csvhandleAsync filename (endpoint: AsyncHandler<string>) = setCsvHeaders filename >=> generalHandleAsync setBodyFromString endpoint 
-
+    let csvHandle filename (endpoint: Handler<string>) = setCsvHeaders filename >=> generalHandle setBodyFromString endpoint 
     let handle (endpoint: Handler<'t>) = generalHandle json endpoint
-    let handleAsync (endpoint: AsyncHandler<'t>) = generalHandleAsync json endpoint
 
-    let getBody<'WriteModel> (): AsyncHandler<'WriteModel> =
+    let getBody<'WriteModel> (): Handler<'WriteModel> =
         fun ctx ->
             try
                 Ok(ctx.BindJsonAsync<'WriteModel>().Result) |> Task.wrap
@@ -77,7 +57,7 @@ module Http =
                 Error [ "Feilformatert writemodel" |> BadInput ] |> Task.wrap
 
     let queryParam param =
-        taskResult {
+        result {
             let! res =
                 fun ctx ->
                     ctx.GetQueryStringValue param
@@ -148,7 +128,7 @@ module Http =
         }
 
     let parseBody<'T> =
-        taskResult {
+        result {
             let! body = 
                 fun ctx ->
                     ctx.ReadBodyBufferedFromRequestAsync()

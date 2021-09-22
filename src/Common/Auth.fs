@@ -12,8 +12,8 @@ module Auth =
 
     let employeeIdClaim = "https://api.bekk.no/claims/employeeId"
 
-    let anyOf (these: AsyncHandler<unit> list): AsyncHandler<unit> =
-        taskResult {
+    let anyOf (these: Handler<unit> list): Handler<unit> =
+        result {
             let! auths =
                 fun ctx ->
                         these |> List.map (fun authorize -> authorize ctx)
@@ -35,7 +35,7 @@ module Auth =
 
 
     let private isAuthorized permissionKey permission =
-        taskResult {
+        result {
             let! user = fun ctx -> ctx.User |> Ok |> Task.wrap
             if user.HasClaim(permissionKey, permission) then
                 return ()
@@ -44,7 +44,7 @@ module Auth =
         }
 
     let isAuthenticated =
-        taskResult {
+        result {
             let! user = fun ctx -> ctx.User |> Ok |> Task.wrap
             if user.Identity.IsAuthenticated then
                 return ()
@@ -53,7 +53,7 @@ module Auth =
         }
 
     let isAdmin =
-        taskResult {
+        result {
             do! isAuthenticated
             let! config = fun ctx -> ctx.GetService<AppConfig>() |> Ok |> Task.wrap
 
@@ -62,8 +62,8 @@ module Auth =
         }
     
 
-    let getUserId: AsyncHandler<int option> =
-        taskResult {
+    let getUserId: Handler<int option> =
+        result {
             let! ctx = fun ctx -> ctx |> Ok |> Task.wrap
             let! res = isAuthenticated 
                             >> Task.map (function
@@ -73,7 +73,7 @@ module Auth =
         }
 
     let isAuthenticatedAs id =
-        taskResult {
+        result {
             let! userId = getUserId >> Task.map (Result.bind (Option.withError [NotLoggedIn $"Could not retrieve UserId"]))
             if userId = id then
                 return ()

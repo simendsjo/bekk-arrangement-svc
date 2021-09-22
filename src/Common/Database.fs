@@ -58,56 +58,56 @@ module Database =
         ()
 
     let runSelectQuery<'t> query =
-        taskResult {
+        result {
             let! config = getConfig >> Ok >> Task.wrap
             return! config.currentConnection.SelectAsync<'t>(query, config.currentTransaction) |> Task.map Ok
         }
 
     let runInnerJoinSelectQuery<'a, 'b> query =
-        taskResult {
+        result {
             let! config = getConfig >> Ok >> Task.wrap
             return! config.currentConnection.SelectAsync<'a, 'b>(query, config.currentTransaction) |> Task.map Ok
         }
 
     let runInnerJoinJoinSelectQuery<'a, 'b, 'c> query =
-        taskResult {
+        result {
             let! config = getConfig >> Ok >> Task.wrap
             return! config.currentConnection.SelectAsync<'a, 'b, 'c>(query, config.currentTransaction) |> Task.map Ok
         }
 
     let runOuterJoinSelectQuery<'a, 'b> query =
-        taskResult {
+        result {
             let! config = getConfig >> Ok >> Task.wrap
             return! config.currentConnection.SelectAsyncOption<'a, 'b>(query, config.currentTransaction) |> Task.map Ok
         }
 
     let runOuterJoinJoinSelectQuery<'a, 'b, 'c> query =
-        taskResult {
+        result {
             let! config = getConfig >> Ok >> Task.wrap
             return! config.currentConnection.SelectAsyncOption<'a, 'b, 'c>(query, config.currentTransaction) |> Task.map Ok
         }
 
         // TODO slettdenen 
     let runOuterJoinJoinSelectQueryAsync<'a, 'b, 'c> query =
-        taskResult {
+        result {
             let! config = getConfig >> Ok >> Task.wrap
             return! config.currentConnection.SelectAsyncOption<'a, 'b, 'c>(query, config.currentTransaction) |> Task.map Ok
         }
 
     let runUpdateQuery query =
-        taskResult {
+        result {
             let! config = getConfig >> Ok >> Task.wrap
             return! config.currentConnection.UpdateAsync(query, config.currentTransaction) |> Task.map Ok
         }
 
     let runDeleteQuery query =
-        taskResult {
+        result {
             let! config = getConfig >> Ok >> Task.wrap
             return! config.currentConnection.DeleteAsync(query, config.currentTransaction) |> Task.map Ok
         }
 
     let runInsertQuery query =
-        taskResult {
+        result {
             let! config = getConfig >> Ok >> Task.wrap
 
             // TODO: Sjekk retur verdi og returner basert på det

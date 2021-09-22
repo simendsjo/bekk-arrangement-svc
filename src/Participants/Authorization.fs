@@ -12,7 +12,7 @@ open System
 module Authorization =
 
     let userHasCancellationToken (eventId, email) =
-        taskResult {
+        result {
             let! cancellationToken = queryParam "cancellationToken"
 
             let! participant = Service.getParticipant
@@ -35,7 +35,7 @@ module Authorization =
               isAdmin ]
 
     let eventHasAvailableSpots (event:DomainModels.Event) =
-        taskResult {
+        result {
             let hasWaitingList = event.HasWaitingList
             let maxParticipants = event.MaxParticipants.Unwrap
             let! numberOfParticipants = Service.getNumberOfParticipantsForEvent event.Id
@@ -48,7 +48,7 @@ module Authorization =
         }
 
     let eventIsNotCancelled (event:DomainModels.Event) =  
-        taskResult {
+        result {
             if event.IsCancelled then
                 return!
                     Error [AccessDenied "Arrangementet er avlyst"]
@@ -58,7 +58,7 @@ module Authorization =
         }
 
     let oneCanParticipateOnEvent eventIdKey =
-        taskResult {
+        result {
             let eventId = Event.Id eventIdKey
             let! event = Service.getEvent eventId
             do! eventHasAvailableSpots event

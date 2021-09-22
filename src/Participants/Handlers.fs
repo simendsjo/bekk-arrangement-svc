@@ -21,7 +21,7 @@ open System.Threading
 module Handlers =
 
     let registerForEvent (eventId: Guid, email) =
-        taskResult {
+        result {
             // let! () = fun ctx -> Ok () |> Task.wrap
             // let timer = new Diagnostics.Stopwatch()
             // timer.Start()
@@ -63,14 +63,14 @@ module Handlers =
         }
 
     let getParticipationsForParticipant email =
-        taskResult {
+        result {
             let! emailAddress = EmailAddress.Parse email |> Task.wrap |> ignoreContext
             let! participants = Service.getParticipationsForParticipant emailAddress
             return Seq.map domainToView participants |> Seq.toList
         }
 
     let deleteParticipant (id, email) =
-        taskResult {
+        result {
             let! emailAddress = EmailAddress.Parse email |> Task.wrap |> ignoreContext
             
             let! event = Service.getEvent (Event.Id id)
@@ -80,7 +80,7 @@ module Handlers =
         }
 
     let getParticipantsForEvent id =
-        taskResult {
+        result {
             let! event = Service.getEvent (Event.Id id)
             let! participants = Service.getParticipantsForEvent event
             let hasWaitingList = event.HasWaitingList
@@ -106,7 +106,7 @@ module Handlers =
         }
 
     let getNumberOfParticipantsForEvent id =
-        taskResult {
+        result {
             let! count = Service.getNumberOfParticipantsForEvent (Event.Id id)
             return count.Unwrap
         }
@@ -123,36 +123,36 @@ module Handlers =
             [ GET_HEAD
               >=> choose
                       [ routef "/events/%O/participants" (fun eventId ->
-                            checkAsync isAuthenticated
-                            >=> (handleAsync << getParticipantsForEvent) eventId
+                            check isAuthenticated
+                            >=> (handle << getParticipantsForEvent) eventId
                             |> withTransaction)
                         routef "/events/%O/participants/count" (fun eventId -> 
-                            checkAsync (eventIsExternalOrUserIsAuthenticated eventId)
-                            >=> (handleAsync << getNumberOfParticipantsForEvent) eventId
+                            check (eventIsExternalOrUserIsAuthenticated eventId)
+                            >=> (handle << getNumberOfParticipantsForEvent) eventId
                             |> withTransaction)
                         routef "/events/%O/participants/export" (fun eventId -> 
-                            checkAsync (userCanEditEvent eventId)
-                            >=> (csvhandleAsync eventId << exportParticipationsDataForEvent) eventId
+                            check (userCanEditEvent eventId)
+                            >=> (csvHandle eventId << exportParticipationsDataForEvent) eventId
                             |> withTransaction)
                         routef "/events/%O/participants/%s/waitinglist-spot" (fun (eventId, email) ->
-                            checkAsync (eventIsExternalOrUserIsAuthenticated eventId)
-                            >=> (handleAsync << getWaitinglistSpot) (eventId, email)
+                            check (eventIsExternalOrUserIsAuthenticated eventId)
+                            >=> (handle << getWaitinglistSpot) (eventId, email)
                             |> withTransaction)
                         routef "/participants/%s/events" (fun email ->
-                            checkAsync isAuthenticated
-                            >=> (handleAsync << getParticipationsForParticipant) email
+                            check isAuthenticated
+                            >=> (handle << getParticipationsForParticipant) email
                             |> withTransaction) ]
               DELETE
               >=> choose
                       [ routef "/events/%O/participants/%s" (fun parameters ->
-                            checkAsync (userCanCancel parameters)
-                            >=> (handleAsync << deleteParticipant) parameters)
+                            check (userCanCancel parameters)
+                            >=> (handle << deleteParticipant) parameters)
                             |> withTransaction ]
               POST
               >=> choose
                       [ routef "/events/%O/participants/%s" (fun (eventId: Guid, email) ->
-                            (checkAsync (oneCanParticipateOnEvent eventId)
-                            >=> (handleAsync << registerForEvent) (eventId, email))
+                            (check (oneCanParticipateOnEvent eventId)
+                            >=> (handle << registerForEvent) (eventId, email))
                             |> withRetry
                             |> withLock registrationLock
                             ) ] ]

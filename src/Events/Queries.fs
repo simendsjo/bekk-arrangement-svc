@@ -21,7 +21,7 @@ module Queries =
     let shortnamesTable = "Shortnames"
 
     let createEvent employeeId (event: WriteModel)  =
-        taskResult {
+        result {
             let! event = Models.writeToDomain (Guid.NewGuid()) event (Guid.NewGuid()) false employeeId |> Task.wrap |> ignoreContext
             let dbModel = Models.domainToDb event
             do! insert { table eventsTable
@@ -51,8 +51,8 @@ module Queries =
             (event, sortedQuestionsForEvent, shortname)
         )
 
-    let getEventsAsync: AsyncHandler<Event seq> =
-        taskResult {
+    let getEventsAsync: Handler<Event seq> =
+        result {
             let! events =
                 select { table eventsTable
                          leftJoin questionsTable "EventId" "Events.Id"
@@ -68,8 +68,8 @@ module Queries =
             return Seq.map Models.dbToDomain groupedEvents
         }
 
-    let getEvents: AsyncHandler<Event seq> =
-        taskResult {
+    let getEvents: Handler<Event seq> =
+        result {
             let! events =
                 select { table eventsTable
                          leftJoin questionsTable "EventId" "Events.Id"
@@ -85,8 +85,8 @@ module Queries =
             return Seq.map Models.dbToDomain groupedEvents
         }
 
-    let getPastEvents: AsyncHandler<Event seq> =
-        taskResult {
+    let getPastEvents: Handler<Event seq> =
+        result {
             let! events =
                 select { table eventsTable
                          leftJoin questionsTable "EventId" "Events.Id"
@@ -102,8 +102,8 @@ module Queries =
             return Seq.map Models.dbToDomain groupedEvents
         }
 
-    let deleteEvent (id: Event.Id): AsyncHandler<unit> =
-        taskResult {
+    let deleteEvent (id: Event.Id): Handler<unit> =
+        result {
             let! res =
                 delete { table eventsTable
                          where (eq "Id" id.Unwrap)
@@ -112,8 +112,8 @@ module Queries =
             return ()
         }
 
-    let updateEvent (newEvent: Event): AsyncHandler<unit> =
-        taskResult {
+    let updateEvent (newEvent: Event): Handler<unit> =
+        result {
             let newEventDb = Models.domainToDb newEvent
             let! res =
                 update { table eventsTable
@@ -124,8 +124,8 @@ module Queries =
             return ()
         }
 
-    let queryEventByEventId (eventId: Event.Id): AsyncHandler<Event> =
-        taskResult {
+    let queryEventByEventId (eventId: Event.Id): Handler<Event> =
+        result {
             let! events = 
                 select { table eventsTable 
                          leftJoin questionsTable "EventId" "Events.Id"
@@ -149,8 +149,8 @@ module Queries =
                     |> Task.wrap
         }
 
-    let queryEventsOrganizedByEmail (organizerEmail: EmailAddress): AsyncHandler<Event seq> =
-        taskResult {
+    let queryEventsOrganizedByEmail (organizerEmail: EmailAddress): Handler<Event seq> =
+        result {
             let! events =
                 select { table eventsTable
                          leftJoin questionsTable "EventId" "Events.Id"
@@ -166,8 +166,8 @@ module Queries =
             return Seq.map Models.dbToDomain groupedEvents
        }
 
-    let queryEventsOrganizedByOrganizerId (organizerId: EmployeeId): AsyncHandler<Event seq> =
-        taskResult {
+    let queryEventsOrganizedByOrganizerId (organizerId: EmployeeId): Handler<Event seq> =
+        result {
             let! events =
                 select { table eventsTable
                          leftJoin questionsTable "EventId" "Events.Id"
@@ -183,8 +183,8 @@ module Queries =
             return Seq.map Models.dbToDomain groupedEvents
         }
 
-    let queryEventByShortname (shortname: string): AsyncHandler<Event> =
-        taskResult {
+    let queryEventByShortname (shortname: string): Handler<Event> =
+        result {
             let! events =
                 select { table eventsTable 
                          leftJoin questionsTable "EventId" "Events.Id"
@@ -209,8 +209,8 @@ module Queries =
                     |> Task.wrap
         }
 
-    let insertShortname (eventId: Event.Id) (shortname: string): AsyncHandler<unit> =
-        taskResult {
+    let insertShortname (eventId: Event.Id) (shortname: string): Handler<unit> =
+        result {
             let! () =
                 queryEventByShortname shortname
                 >> Task.map (function
@@ -225,8 +225,8 @@ module Queries =
             return ()
         }
 
-    let deleteShortname (shortname: string): AsyncHandler<unit> =
-        taskResult {
+    let deleteShortname (shortname: string): Handler<unit> =
+        result {
             let! res =
                 delete { table shortnamesTable
                          where (eq "Shortname" shortname)
@@ -237,7 +237,7 @@ module Queries =
         }
 
     let getQuestionsForEvent (eventId: Event.Id) =
-        taskResult {
+        result {
             let! questions = 
                 select {
                     table questionsTable
@@ -249,7 +249,7 @@ module Queries =
         }
 
     let insertQuestions (eventId: Event.Id) questions =
-        taskResult {
+        result {
             if Seq.isEmpty questions then
                 return ()
             else
@@ -263,7 +263,7 @@ module Queries =
         }
 
     let deleteAllQuestions (eventId: Event.Id) =
-        taskResult {
+        result {
             let! res = 
                 delete { table questionsTable
                          where (eq "EventId" eventId.Unwrap)
@@ -273,7 +273,7 @@ module Queries =
         }
 
     let deleteLastQuestions n (eventId: Event.Id) =
-        taskResult {
+        result {
             if n <= 0 then
                 return ()
             else

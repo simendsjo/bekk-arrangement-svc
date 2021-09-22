@@ -17,8 +17,8 @@ module Queries =
     let participantsTable = "Participants"
     let answersTable = "ParticipantAnswers"
 
-    let deleteParticipant (participant: Participant): AsyncHandler<unit> =
-        taskResult {
+    let deleteParticipant (participant: Participant): Handler<unit> =
+        result {
             let! res =
                 delete { table participantsTable
                          where (eq "EventId" participant.EventId.Unwrap + eq "Email" participant.Email.Unwrap) 
@@ -42,8 +42,8 @@ module Queries =
             (participant , sortedAnswersForParticipant)
         )
 
-    let queryParticipantByKey (eventId: Event.Id, email: EmailAddress): AsyncHandler<Participant> =
-        taskResult {
+    let queryParticipantByKey (eventId: Event.Id, email: EmailAddress): Handler<Participant> =
+        result {
             let! participants =
                 select { table participantsTable
                          leftJoin answersTable [ "EventId", "Participants.EventId"; "Email", "Participants.Email" ]
@@ -62,8 +62,8 @@ module Queries =
                 return! Error [ UserMessages.participationNotFound (eventId, email.Unwrap) ] |> Task.wrap
         }
 
-    let createParticipant (participant: Participant): AsyncHandler<unit> =
-        taskResult {
+    let createParticipant (participant: Participant): Handler<unit> =
+        result {
             let! () =
                 queryParticipantByKey (participant.EventId, participant.Email)
                 >> Task.map (function
@@ -76,8 +76,8 @@ module Queries =
                     |> Database.runInsertQuery 
         }
 
-    let queryParticipantionByParticipant (email: EmailAddress): AsyncHandler<Participant seq> =
-        taskResult {
+    let queryParticipantionByParticipant (email: EmailAddress): Handler<Participant seq> =
+        result {
             let! participants =
                 select { table participantsTable
                          leftJoin answersTable [ "EventId", "Participants.EventId"; "Email", "Participants.Email" ]
@@ -91,8 +91,8 @@ module Queries =
             return Seq.map Models.dbToDomain groupedParticipants
         }
 
-    let queryParticipationsByEmployeeId (employeeId: Event.EmployeeId): AsyncHandler<Participant seq> =
-        taskResult {
+    let queryParticipationsByEmployeeId (employeeId: Event.EmployeeId): Handler<Participant seq> =
+        result {
             let! participants =
                 select { table participantsTable
                          leftJoin answersTable [ "EventId", "Participants.EventId"; "Email", "Participants.Email" ]
@@ -107,8 +107,8 @@ module Queries =
             return Seq.map Models.dbToDomain groupedParticipants
         }
 
-    let queryParticipantsByEventId (eventId: Event.Id): AsyncHandler<Participant seq> =
-        taskResult {
+    let queryParticipantsByEventId (eventId: Event.Id): Handler<Participant seq> =
+        result {
             let! participants =
                 select { table participantsTable
                          leftJoin answersTable [ "EventId", "Participants.EventId"; "Email", "Participants.Email" ]
@@ -124,8 +124,8 @@ module Queries =
             return Seq.map Models.dbToDomain groupedParticipants
         }
     
-    let queryNumberOfParticipantsForEvent (eventId: Event.Id): AsyncHandler<int> =
-        taskResult {
+    let queryNumberOfParticipantsForEvent (eventId: Event.Id): Handler<int> =
+        result {
             let! participants =
                 select { table participantsTable
                          count "*" "Value"
@@ -142,7 +142,7 @@ module Queries =
         }
 
     let setAnswers (participant: Participant) =
-        taskResult {
+        result {
             if Seq.isEmpty participant.ParticipantAnswers.Unwrap then
                 return ()
             else

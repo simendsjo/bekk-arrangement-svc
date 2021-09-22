@@ -12,7 +12,7 @@ module Validation =
         allowed to decrease number of spots
     *)
     let assertValidCapacityChange (oldEvent: Event) (newEvent: Event) =
-        taskResult {
+        result {
             match oldEvent.MaxParticipants.Unwrap, newEvent.MaxParticipants.Unwrap with
             | _, None ->
                 // Den nye er uendelig, all good

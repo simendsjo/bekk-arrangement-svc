@@ -14,7 +14,7 @@ open System
 module Authorization =
 
     let userIsOrganizer (event: DomainModels.Event) =
-        taskResult {
+        result {
             let! userId = getUserId
 
             let isTheOrganizer = 
@@ -31,7 +31,7 @@ module Authorization =
         }
 
     let userHasCorrectEditToken (event: DomainModels.Event) =
-        taskResult {
+        result {
             let! editToken = queryParam "editToken"
 
             let hasCorrectEditToken = editToken = event.EditToken.ToString()
@@ -48,7 +48,7 @@ module Authorization =
 
 
     let userCanEditEvent eventId =
-        taskResult {
+        result {
             let! event = Service.getEvent (Event.Id eventId)
 
             let! authResult =
@@ -60,7 +60,7 @@ module Authorization =
         }
 
     let eventHasOpenedForRegistration (event: DomainModels.Event) =
-        taskResult {
+        result {
             let openDateTime =
                 DateTimeOffset.FromUnixTimeMilliseconds event.OpenForRegistrationTime.Unwrap
 
@@ -73,7 +73,7 @@ module Authorization =
         }
 
     let eventHasNotPassed (event: DomainModels.Event) =
-        taskResult {
+        result {
             if event.EndDate > now () then
                 return ()
             else
@@ -85,7 +85,7 @@ module Authorization =
 
     // TODO: UNDUPLICATE CODE:
     let eventIsExternal (eventId: Key) =
-        taskResult {
+        result {
             let! event = Service.getEvent (Event.Id eventId)
 
             if event.IsExternal then
@@ -100,7 +100,7 @@ module Authorization =
 
 
     let eventIsExternalEvent (event: Event) =
-        taskResult {
+        result {
             if event.IsExternal then
                 return ()
             else
