@@ -78,16 +78,6 @@ module Http =
                 return! convertUserMessagesToHttpError [] next ctx // Default is 500 Internal Server Error
         }
 
-    let withTransactionAsync (handler: HttpHandler) (next: HttpFunc) (ctx: HttpContext): HttpFuncResult =
-        task {
-            try
-                Database.createConnection ctx |> ignore
-                return! handler next ctx
-            with _ ->
-                Database.rollbackTransaction ctx
-                return! convertUserMessagesToHttpError [] next ctx // Default is 500 Internal Server Error
-        }
-
     let withRetry (handler: HttpHandler) (next: HttpFunc) (ctx: HttpContext): HttpFuncResult =
         task {
             let seed = Guid.NewGuid().GetHashCode()

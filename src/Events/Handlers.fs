@@ -130,7 +130,7 @@ module Handlers =
                       [ route "/events" >=>
                             (check isAuthenticated
                             >=> handle getEvents
-                            |> withTransactionAsync)
+                            |> withTransaction)
 
                         route "/events/previous" >=>
                             (check isAuthenticated
