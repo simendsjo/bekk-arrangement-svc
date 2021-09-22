@@ -83,6 +83,7 @@ module Authorization =
         }
 
 
+    // TODO: UNDUPLICATE CODE:
     let eventIsExternal (eventId: Key) =
         taskResult {
             let! event = Service.getEvent (Event.Id eventId)
@@ -95,4 +96,17 @@ module Authorization =
 
     let eventIsExternalOrUserIsAuthenticated (eventId: Key) =
         anyOf [ eventIsExternal eventId
+                isAuthenticated ]
+
+
+    let eventIsExternalEvent (event: Event) =
+        taskResult {
+            if event.IsExternal then
+                return ()
+            else
+                return! Error [ AccessDenied "Arrangementet er internt" ] |> Task.wrap
+        }
+
+    let eventIsExternalOrUserIsAuthenticatedEvent (event: Event) =
+        anyOf [ eventIsExternalEvent event
                 isAuthenticated ]

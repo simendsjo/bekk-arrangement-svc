@@ -64,7 +64,6 @@ module Queries =
 
     let createParticipant (participant: Participant): AsyncHandler<unit> =
         taskResult {
-            // TODO bedre måte å teste om man finnes på 
             let! () =
                 queryParticipantByKey (participant.EventId, participant.Email)
                 >> Task.map (function

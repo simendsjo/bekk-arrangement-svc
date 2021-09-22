@@ -65,5 +65,5 @@ module Authorization =
             do! Event.Authorization.eventHasNotPassed event 
             do! Event.Authorization.eventHasOpenedForRegistration event 
             do! eventIsNotCancelled event 
-            do! Event.Authorization.eventIsExternalOrUserIsAuthenticated eventIdKey 
+            do! Event.Authorization.eventIsExternalOrUserIsAuthenticatedEvent event 
         }

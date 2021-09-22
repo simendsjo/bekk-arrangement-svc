@@ -9,6 +9,7 @@ open ArrangementService.ResultComputationExpression
 open UserMessage
 open System
 open System.Threading
+open System.Threading.Tasks
 open FSharp.Control.Tasks.V2
 
 module Http =
@@ -23,10 +24,7 @@ module Http =
 
     let checkAsync (condition: AsyncHandler<Unit>) (next: HttpFunc) (context: HttpContext) =
         task {
-            let timer = new Diagnostics.Stopwatch()
-            timer.Start()
             let! checkResult = condition context
-            printfn "CHECK %Ams" timer.ElapsedMilliseconds
             return!
                 match checkResult with
                 | Ok () -> 
@@ -53,10 +51,7 @@ module Http =
 
     let generalHandleAsync (responseBodyFunc: ('t -> HttpHandler)) (endpoint: AsyncHandler<'t>) (next: HttpFunc) (context: HttpContext) =
         task {
-            let timer = new Diagnostics.Stopwatch()
-            timer.Start()
             let! res = endpoint context
-            printfn "HANDLE %Ams" timer.ElapsedMilliseconds
             return! 
                 match res with
                 | Ok result ->
@@ -120,22 +115,22 @@ module Http =
 
             let rec retry delay amount =
                 task {
-                Database.createConnection ctx |> ignore
-                try
-                    return! handler next ctx
-                with _ ->
-                    Database.rollbackTransaction ctx
+                    try
+                        Database.createConnection ctx |> ignore
+                        return! handler next ctx
+                    with _ ->
+                        Database.rollbackTransaction ctx
 
-                    let jitter = rnd.NextDouble() * 5.0 + 1.5 // [1.5, 6.5]
-                    let delayWithJitter =
-                        2.0 * delay * jitter + 20.0 * jitter
+                        let jitter = rnd.NextDouble() * 5.0 + 1.5 // [1.5, 6.5]
+                        let delayWithJitter =
+                            2.0 * delay * jitter + 20.0 * jitter
 
-                    Thread.Sleep (int delayWithJitter)
+                        do! Task.Delay (int delayWithJitter)
 
-                    if amount > 0 then
-                        return! retry delayWithJitter (amount-1) 
-                    else
-                        return! convertUserMessagesToHttpError [] next ctx 
+                        if amount > 0 then
+                            return! retry delayWithJitter (amount-1) 
+                        else
+                            return! convertUserMessagesToHttpError [] next ctx 
                 }
 
             return! retry 50.0 10 // retry 10 times with a inital delay seed 50ms
@@ -145,12 +140,8 @@ module Http =
         task {
             do! lock.WaitAsync() 
 
-            let timer = new Diagnostics.Stopwatch()
-            timer.Start()
-
             let! res = handler next ctx
 
-            printfn "%Ams" timer.ElapsedMilliseconds
             lock.Release() |> ignore
 
             return res
