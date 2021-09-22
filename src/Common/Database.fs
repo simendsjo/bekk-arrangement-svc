@@ -87,13 +87,6 @@ module Database =
             return! config.currentConnection.SelectAsyncOption<'a, 'b, 'c>(query, config.currentTransaction) |> Task.map Ok
         }
 
-        // TODO slettdenen 
-    let runOuterJoinJoinSelectQueryAsync<'a, 'b, 'c> query =
-        result {
-            let! config = getConfig >> Ok >> Task.wrap
-            return! config.currentConnection.SelectAsyncOption<'a, 'b, 'c>(query, config.currentTransaction) |> Task.map Ok
-        }
-
     let runUpdateQuery query =
         result {
             let! config = getConfig >> Ok >> Task.wrap

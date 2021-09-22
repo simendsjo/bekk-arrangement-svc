@@ -51,23 +51,6 @@ module Queries =
             (event, sortedQuestionsForEvent, shortname)
         )
 
-    let getEventsAsync: Handler<Event seq> =
-        result {
-            let! events =
-                select { table eventsTable
-                         leftJoin questionsTable "EventId" "Events.Id"
-                         leftJoin shortnamesTable "EventId" "Events.Id"
-                         where (ge "EndDate" DateTime.Now)
-                         orderBy "StartDate" Asc }
-                |> Database.runOuterJoinJoinSelectQueryAsync<Event.DbModel, ParticipantQuestionDbModel, ShortnameDbModel>
-
-            let groupedEvents =
-                events
-                |> groupEventAndShortname
-
-            return Seq.map Models.dbToDomain groupedEvents
-        }
-
     let getEvents: Handler<Event seq> =
         result {
             let! events =

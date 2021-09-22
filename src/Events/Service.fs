@@ -14,7 +14,7 @@ module Service =
 
     let getEvents: Handler<Event seq> =
         result {
-            let! events = Event.Queries.getEventsAsync 
+            let! events = Event.Queries.getEvents 
             return events
         }
     
