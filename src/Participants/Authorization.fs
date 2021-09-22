@@ -7,6 +7,7 @@ open Auth
 open ResultComputationExpression
 open UserMessage
 open Http
+open System
 
 module Authorization =
 
@@ -37,14 +38,15 @@ module Authorization =
         taskResult {
             let hasWaitingList = event.HasWaitingList
             let maxParticipants = event.MaxParticipants.Unwrap
-            let! participants = Service.getParticipantsForEvent event
+            let! numberOfParticipants = Service.getNumberOfParticipantsForEvent event.Id
             
-            if hasWaitingList || maxParticipants.IsNone || maxParticipants.IsSome && participants.attendees |> Seq.length < maxParticipants.Value
+            if hasWaitingList || maxParticipants.IsNone || numberOfParticipants.Unwrap < maxParticipants.Value
             then
                 return ()
             else
                 return! [ AccessDenied "Arrangementet er fullt" ] |> Error |> Task.wrap
         }
+
     let eventIsNotCancelled (event:DomainModels.Event) =  
         taskResult {
             if event.IsCancelled then

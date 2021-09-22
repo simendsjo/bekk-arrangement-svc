@@ -4,11 +4,11 @@ open ArrangementService
 open ArrangementService.Email
 open ResultComputationExpression
 open ArrangementService.DomainModels
-open Http
 open DateTime
 open CalendarInvite
 open ArrangementService.Event
 open Microsoft.AspNetCore.Http
+open System
 
 module Service =
 
@@ -242,7 +242,6 @@ module Service =
 
     let registerParticipant createMail participant =
         taskResult {
-
             do! Participant.Queries.createParticipant participant
             do! Participant.Queries.setAnswers participant
 

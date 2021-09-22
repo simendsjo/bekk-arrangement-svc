@@ -22,6 +22,9 @@ module Handlers =
 
     let registerForEvent (eventId: Guid, email) =
         taskResult {
+            // let! () = fun ctx -> Ok () |> Task.wrap
+            // let timer = new Diagnostics.Stopwatch()
+            // timer.Start()
             let! writeModel = parseBody<WriteModel>
 
             let redirectUrlTemplate =
@@ -39,12 +42,11 @@ module Handlers =
                                                 ())
 
             let! event = Service.getEvent (Event.Id eventId)
-            let! participants = Service.getParticipantsForEvent event
+            let! participants = Service.getNumberOfParticipantsForEvent event.Id
             let isWaitlisted =
                 event.HasWaitingList
                 && event.MaxParticipants.Unwrap.IsSome
-                && participants.attendees
-                   |> Seq.length
+                && participants.Unwrap
                    >= event.MaxParticipants.Unwrap.Value
             let! config = getConfig >> Ok >> Task.wrap
             let createMailForParticipant =

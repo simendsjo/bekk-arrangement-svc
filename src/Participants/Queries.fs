@@ -64,6 +64,7 @@ module Queries =
 
     let createParticipant (participant: Participant): AsyncHandler<unit> =
         taskResult {
+            // TODO bedre måte å teste om man finnes på 
             let! () =
                 queryParticipantByKey (participant.EventId, participant.Email)
                 >> Task.map (function
@@ -116,6 +117,17 @@ module Queries =
                          orderBy "RegistrationTime" Asc
                        }
                 |> Database.runOuterJoinSelectQuery<DbModel, ParticipantAnswerDbModel> 
+
+                // TODO sjekk SQL
+            // let sql, values = 
+            //     select { table participantsTable
+            //              leftJoin answersTable [ "EventId", "Participants.EventId"; "Email", "Participants.Email" ]
+            //              where (eq "Participants.EventId" eventId.Unwrap)
+            //              orderBy "RegistrationTime" Asc }
+            //              |> Deconstructor.select
+
+            //  printfn "%A" sql
+            //  printfn "%A" values
 
             let groupedParticipants =
                 participants
