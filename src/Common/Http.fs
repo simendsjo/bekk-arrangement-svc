@@ -23,7 +23,10 @@ module Http =
 
     let checkAsync (condition: AsyncHandler<Unit>) (next: HttpFunc) (context: HttpContext) =
         task {
+            let timer = new Diagnostics.Stopwatch()
+            timer.Start()
             let! checkResult = condition context
+            printfn "CHECK %Ams" timer.ElapsedMilliseconds
             return!
                 match checkResult with
                 | Ok () -> 
@@ -50,7 +53,10 @@ module Http =
 
     let generalHandleAsync (responseBodyFunc: ('t -> HttpHandler)) (endpoint: AsyncHandler<'t>) (next: HttpFunc) (context: HttpContext) =
         task {
+            let timer = new Diagnostics.Stopwatch()
+            timer.Start()
             let! res = endpoint context
+            printfn "HANDLE %Ams" timer.ElapsedMilliseconds
             return! 
                 match res with
                 | Ok result ->
@@ -88,20 +94,24 @@ module Http =
         }
 
     let withTransaction (handler: HttpHandler) (next: HttpFunc) (ctx: HttpContext): HttpFuncResult =
-        Database.createConnection ctx |> ignore
-        try
-            handler next ctx
-        with _ ->
-            Database.rollbackTransaction ctx
-            convertUserMessagesToHttpError [] next ctx // Default is 500 Internal Server Error
+        task {
+            try
+                Database.createConnection ctx |> ignore
+                return! handler next ctx
+            with _ ->
+                Database.rollbackTransaction ctx
+                return! convertUserMessagesToHttpError [] next ctx // Default is 500 Internal Server Error
+        }
 
     let withTransactionAsync (handler: HttpHandler) (next: HttpFunc) (ctx: HttpContext): HttpFuncResult =
-        Database.createConnection ctx |> ignore
-        try
-            handler next ctx
-        with _ ->
-            Database.rollbackTransaction ctx
-            convertUserMessagesToHttpError [] next ctx // Default is 500 Internal Server Error
+        task {
+            try
+                Database.createConnection ctx |> ignore
+                return! handler next ctx
+            with _ ->
+                Database.rollbackTransaction ctx
+                return! convertUserMessagesToHttpError [] next ctx // Default is 500 Internal Server Error
+        }
 
     let withRetry (handler: HttpHandler) (next: HttpFunc) (ctx: HttpContext): HttpFuncResult =
         task {
