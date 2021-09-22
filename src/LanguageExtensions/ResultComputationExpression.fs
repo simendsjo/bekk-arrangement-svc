@@ -12,7 +12,6 @@ module ResultComputationExpression =
     // need the ctx
     let ignoreContext r _ctx = r
 
-    // TODO FIX denne:
     (*
 
     This (reader)-result computation expression has two primary goals
@@ -20,20 +19,21 @@ module ResultComputationExpression =
      - 1. To handle failures in an elegant way using the Result type
      - 2. To give access to the context provided by Giraffe, which gives access to the external world
           such as HTTP headers, the DB context, and the apps's config.
+     - 3. To have automatic async functions (through the use of Task, which Giraffe also uses)
 
     The following is the available syntax this computation expression implements.
 
-     - `let! x = ...` binds operations which can fail and needs the context. `x` is then the value of `...` iff `...` evaluates to `Ok x`.
+     - `let! x = ...` binds async operations which can fail and needs the context. `x` is then the value of `...` iff `...` evaluates to `Ok x`.
         If it should fail, the whole expression evaluates to this `Error`. The context is passed in as the last parameter.
 
      - `yield ...` is for side effects, which need access to the context, but cannot fail.
 
-     - `yield! ...` is for side effects which need access to the context and can fail.
+     - `yield! ...` is for async side effects which need access to the context and can fail.
         If the side effect does fail, the whole computation expression evaluates to this `Error`.
 
      - `return ...` takes a regular value and wraps it up.
 
-     - `return! ...` takes a Result value and wraps it up.
+     - `return! ...` takes an async "result value" and wraps it up.
 
     *)
 
@@ -45,11 +45,6 @@ module ResultComputationExpression =
         member this.ReturnFrom(x) = fun _ -> x
         member this.Yield(f: HttpContext -> unit): Handler<unit> = 
             fun ctx ->
-                // async {
-                //     do f ctx
-                // } 
-                // |> Async.Start
-                // |> ignore
                 f ctx
                 Ok () |> Task.wrap
         member this.YieldFrom(f: Handler<unit>): Handler<unit> = f
