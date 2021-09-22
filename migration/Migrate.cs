@@ -105,7 +105,6 @@ namespace migrator
             foreach (var migrationsFile in migrationsFiles)
             {
                 var filename = Path.GetFileName(migrationsFile);
-                Console.WriteLine($"Fant migrasjon: {filename}");
                 var file = File.ReadAllText(migrationsFile);
                 var nameAsArray = filename.Split('-');
                 var success = int.TryParse(nameAsArray[0], out var migrationNumber);
@@ -130,6 +129,11 @@ namespace migrator
             if (distinctMigrationsNames.Count() != migrations.Count())
             {
                 throw new Exception("Du har to migrasjoner med samme navn");
+            }
+
+            foreach (var migration in migrations.OrderBy(p => p.Number))
+            {
+                Console.WriteLine($"Fant migrasjon: {migration.Name}");
             }
 
             return migrations;
