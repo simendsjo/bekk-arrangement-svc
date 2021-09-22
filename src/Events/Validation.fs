@@ -20,7 +20,7 @@ module Validation =
 
             | None, Some newMax ->
                 // Det er plass til alle
-                let! numberOfParticipants = Participant.Queries.getNumberOfParticipantsForEvent newEvent.Id
+                let! numberOfParticipants = Participant.Queries.queryNumberOfParticipantsForEvent newEvent.Id
                 if numberOfParticipants <= newMax then
                     return () 
                 else
@@ -36,7 +36,7 @@ module Validation =
                 else
 
                 // Det er plass til alle
-                let! numberOfParticipants = Participant.Queries.getNumberOfParticipantsForEvent newEvent.Id
+                let! numberOfParticipants = Participant.Queries.queryNumberOfParticipantsForEvent newEvent.Id
                 if numberOfParticipants <= newMax then
                     return () 
                 else

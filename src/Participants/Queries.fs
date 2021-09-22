@@ -117,17 +117,6 @@ module Queries =
                        }
                 |> Database.runOuterJoinSelectQuery<DbModel, ParticipantAnswerDbModel> 
 
-                // TODO sjekk SQL
-            // let sql, values = 
-            //     select { table participantsTable
-            //              leftJoin answersTable [ "EventId", "Participants.EventId"; "Email", "Participants.Email" ]
-            //              where (eq "Participants.EventId" eventId.Unwrap)
-            //              orderBy "RegistrationTime" Asc }
-            //              |> Deconstructor.select
-
-            //  printfn "%A" sql
-            //  printfn "%A" values
-
             let groupedParticipants =
                 participants
                 |> groupParticipants
@@ -135,7 +124,7 @@ module Queries =
             return Seq.map Models.dbToDomain groupedParticipants
         }
     
-    let getNumberOfParticipantsForEvent (eventId: Event.Id): AsyncHandler<int> =
+    let queryNumberOfParticipantsForEvent (eventId: Event.Id): AsyncHandler<int> =
         taskResult {
             let! participants =
                 select { table participantsTable
