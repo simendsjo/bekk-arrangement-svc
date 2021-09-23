@@ -71,3 +71,9 @@ TODO.
 - Delete the file `DbSchema.json`
 - Run `$ dotnet run`
 - The migration should be performed, and generate a new `DbSchema`. If it does not, try to delete the obj and bin folders again, and run or build it one more time.
+
+
+## Tekniske detaljer vedrørende påmelding
+
+Det er en liten semafor-lås på påmeldingsendepunktet for å begrense contention rundt påmelding.
+Denne låsen er prosess-spesifikk selvfølgelig, så to instanser i prod vil kunne deadlocke mot hverandre (og føre til ytelsesproblem ved påmelding, men ikke feil pga retry-mekanismen, så det er ikke krise). Derfor har vi skrudd ned til bare en backend-instans i AWS. Dette ser ut til å fungere bedre og ser ikke ut til å være et problem.
