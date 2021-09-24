@@ -88,6 +88,15 @@ type OpenForRegistrationTime =
 
     static member Parse(time: string) = int64 time |> OpenForRegistrationTime |> Ok
 
+type CloseRegistrationTime =
+    | CloseRegistrationTime of int64 option
+
+    member this.Unwrap =
+        match this with
+        | CloseRegistrationTime time -> time
+
+    static member Parse(time: string option) = Option.map int64 time |> CloseRegistrationTime |> Ok
+
 type ParticipantQuestions =
     | ParticipantQuestions of string list
 

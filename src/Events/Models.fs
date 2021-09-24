@@ -35,6 +35,7 @@ type DbModel =
       StartTime: TimeSpan
       EndTime: TimeSpan
       OpenForRegistrationTime: int64
+      CloseRegistrationTime: int64 option
       HasWaitingList: bool 
       IsCancelled: bool
       IsExternal: bool 
@@ -54,7 +55,8 @@ type ViewModel =
       StartDate: DateTimeCustom
       EndDate: DateTimeCustom
       ParticipantQuestions: string list
-      OpenForRegistrationTime: int64
+      OpenForRegistrationTime: int64 
+      CloseRegistrationTime: int64 option
       HasWaitingList: bool 
       IsCancelled: bool 
       IsExternal: bool
@@ -78,6 +80,7 @@ type WriteModel =
       StartDate: DateTimeCustom
       EndDate: DateTimeCustom
       OpenForRegistrationTime: string
+      CloseRegistrationTime: string option
       ParticipantQuestions: string list
       viewUrl: string option
       editUrlTemplate: string
@@ -107,6 +110,7 @@ module Models =
         <*> MaxParticipants.Parse writeModel.MaxParticipants
         <*> validateDateRange writeModel.StartDate writeModel.EndDate
         <*> OpenForRegistrationTime.Parse writeModel.OpenForRegistrationTime
+        <*> CloseRegistrationTime.Parse writeModel.CloseRegistrationTime
         <*> Ok editToken
         <*> ParticipantQuestions.Parse writeModel.ParticipantQuestions
         <*> (writeModel.HasWaitingList |> Ok)
@@ -128,6 +132,8 @@ module Models =
           EndDate = toCustomDateTime dbRecord.EndDate dbRecord.EndTime
           OpenForRegistrationTime =
               OpenForRegistrationTime dbRecord.OpenForRegistrationTime
+          CloseRegistrationTime =
+              CloseRegistrationTime dbRecord.CloseRegistrationTime
           EditToken = dbRecord.EditToken
           HasWaitingList = dbRecord.HasWaitingList
           IsCancelled = dbRecord.IsCancelled
@@ -151,6 +157,7 @@ module Models =
           EndDate = customToDateTime domainModel.EndDate.Date
           EndTime = customToTimeSpan domainModel.EndDate.Time
           OpenForRegistrationTime = domainModel.OpenForRegistrationTime.Unwrap
+          CloseRegistrationTime = domainModel.CloseRegistrationTime.Unwrap
           EditToken = domainModel.EditToken
           HasWaitingList = domainModel.HasWaitingList
           IsCancelled = domainModel.IsCancelled
@@ -171,6 +178,7 @@ module Models =
           StartDate = domainModel.StartDate
           EndDate = domainModel.EndDate
           OpenForRegistrationTime = domainModel.OpenForRegistrationTime.Unwrap
+          CloseRegistrationTime = domainModel.CloseRegistrationTime.Unwrap
           HasWaitingList = domainModel.HasWaitingList 
           IsCancelled = domainModel.IsCancelled 
           IsExternal = domainModel.IsExternal
