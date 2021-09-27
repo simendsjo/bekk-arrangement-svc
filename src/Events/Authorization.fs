@@ -59,16 +59,21 @@ module Authorization =
             return authResult
         }
 
-    let eventHasOpenedForRegistration (event: DomainModels.Event) =
+    let eventIsOpenForRegistration (event: DomainModels.Event) =
         result {
             let openDateTime =
                 DateTimeOffset.FromUnixTimeMilliseconds event.OpenForRegistrationTime.Unwrap
 
-            if openDateTime <= DateTimeOffset.Now then
+            let closeDateTime = 
+                Option.map DateTimeOffset.FromUnixTimeMilliseconds event.CloseRegistrationTime.Unwrap 
+
+            let never = "aldri"
+
+            if openDateTime <= DateTimeOffset.Now && (if closeDateTime.IsSome then DateTimeOffset.Now <= closeDateTime.Value else true) then
                 return ()
             else
                 return!
-                    Error [ AccessDenied $"Arrangementet åpner for påmelding {openDateTime.ToLocalTime}" ]
+                    Error [ AccessDenied $"Arrangementet åpner for påmelding {openDateTime.ToLocalTime().ToIsoString()} og stenger {if closeDateTime.IsSome then closeDateTime.Value.ToLocalTime().ToIsoString() else never}" ]
                     |> Task.wrap
         }
 

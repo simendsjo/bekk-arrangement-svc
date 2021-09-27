@@ -7,8 +7,7 @@ type Email =
     { Subject: string
       Message: string
       To: Email.EmailAddress
-      CalendarInvite: string option
-    }
+      CalendarInvite: string option }
 
 type Event =
     { Id: Event.Id
@@ -20,6 +19,7 @@ type Event =
       OrganizerName: Event.OrganizerName
       OrganizerEmail: Email.EmailAddress
       OpenForRegistrationTime: Event.OpenForRegistrationTime
+      CloseRegistrationTime: Event.CloseRegistrationTime
       ParticipantQuestions: Event.ParticipantQuestions
       MaxParticipants: Event.MaxParticipants
       EditToken: Guid
@@ -28,10 +28,9 @@ type Event =
       IsExternal: bool
       IsHidden: bool
       OrganizerId: Event.EmployeeId
-      Shortname: Event.Shortname
-    }
+      Shortname: Event.Shortname }
     static member Create =
-        fun id title description location organizerName organizerEmail maxParticipants (startDate, endDate) openForRegistrationTime editToken participantQuestions hasWaitingList isCancelled isExternal isHidden organizerId shortname ->
+        fun id title description location organizerName organizerEmail maxParticipants (startDate, endDate) openForRegistrationTime closeRegistrationTime editToken participantQuestions hasWaitingList isCancelled isExternal isHidden organizerId shortname ->
             { Id = id
               Title = title
               Description = description
@@ -42,6 +41,7 @@ type Event =
               StartDate = startDate
               EndDate = endDate
               OpenForRegistrationTime = openForRegistrationTime
+              CloseRegistrationTime = closeRegistrationTime
               EditToken = editToken
               ParticipantQuestions = participantQuestions
               HasWaitingList = hasWaitingList
@@ -49,8 +49,7 @@ type Event =
               IsExternal = isExternal
               IsHidden = isHidden
               OrganizerId = organizerId
-              Shortname = shortname
-            }
+              Shortname = shortname }
 
 type Participant =
     { Name: Participant.Name
@@ -58,9 +57,8 @@ type Participant =
       ParticipantAnswers: Participant.ParticipantAnswers
       EventId: Event.Id
       RegistrationTime: TimeStamp
-      CancellationToken: Guid 
-      EmployeeId: Participant.EmployeeId
-    }
+      CancellationToken: Guid
+      EmployeeId: Participant.EmployeeId }
     static member Create =
         fun name email participantAnswers eventId registrationTime cancellationToken employeeId ->
             { Name = name
@@ -69,5 +67,4 @@ type Participant =
               EventId = eventId
               RegistrationTime = registrationTime
               CancellationToken = cancellationToken
-              EmployeeId = employeeId
-            }
+              EmployeeId = employeeId }

@@ -63,7 +63,7 @@ module Authorization =
             let! event = Service.getEvent eventId
             do! eventHasAvailableSpots event
             do! Event.Authorization.eventHasNotPassed event 
-            do! Event.Authorization.eventHasOpenedForRegistration event 
+            do! Event.Authorization.eventIsOpenForRegistration event 
             do! eventIsNotCancelled event 
             do! Event.Authorization.eventIsExternalOrUserIsAuthenticatedEvent event 
         }
