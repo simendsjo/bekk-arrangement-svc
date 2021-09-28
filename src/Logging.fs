@@ -52,7 +52,7 @@ module Logging =
             Guid.NewGuid().ToString().Split(Convert.ToChar("-")).[0]
         let userMessage =
             sprintf
-                "Beklager det skjedde en feil! Den er logget med id %s Ta kontakt med Forvaltning om du ønsker videre oppfølging."
+                "Beklager det skjedde en feil! Den er logget med id %s Ta kontakt med Basen om du ønsker videre oppfølging."
         { LogEventId = logEventId
           LogLevel = LogLevel.Error
           ExceptionType = ex.GetType()
