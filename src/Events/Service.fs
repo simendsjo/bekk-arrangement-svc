@@ -18,17 +18,22 @@ module Service =
     let keepOnlyVisibleEvents (events: Event seq) =
         result {
             let! userId = Auth.getUserId
+            let! isAdmin = Auth.isAdmin
+                            >> Task.map (function
+                            | Ok () -> Ok true
+                            | Error _ -> Ok false)
 
             let! participationsForUser =
                 Participant.Queries.queryParticipationsByEmployeeId (userId |> Option.defaultValue -1 |> EmployeeId)
 
-            let hasPermission (event: Event) =
-                not event.IsHidden
+            let hasPermissionToView (event: Event) =
+                isAdmin
+                || not event.IsHidden
                 || Some event.OrganizerId.Unwrap = userId
                 || (participationsForUser |> Seq.map (fun x -> x.EventId) |> Seq.contains event.Id)
 
             return events
-                |> Seq.filter hasPermission
+                |> Seq.filter hasPermissionToView
         }
 
     let getEvents: Handler<Event seq> =
