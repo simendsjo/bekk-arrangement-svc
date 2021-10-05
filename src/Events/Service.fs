@@ -13,24 +13,24 @@ open System
 module Service =
 
     // Arrangement markert som IsHidden skal bare være synlig
-    // om man er arrangør eller deltaker (eller er admin)
+    // om man er arrangør eller deltaker (eller er admin? nei)
     // Unntak er om man har direktelink seff, men det er ikke relevant for denne funksjonen
     let keepOnlyVisibleEvents (events: Event seq) =
         result {
             let! userId = Auth.getUserId
-            let! isAdmin = Auth.isAdmin
-                            >> Task.map (function
-                            | Ok () -> Ok true
-                            | Error _ -> Ok false)
+            // let! isAdmin = Auth.isAdmin
+            //                 >> Task.map (function
+            //                 | Ok () -> Ok true
+            //                 | Error _ -> Ok false)
 
             let! participationsForUser =
                 Participant.Queries.queryParticipationsByEmployeeId (userId |> Option.defaultValue -1 |> EmployeeId)
 
             let hasPermissionToView (event: Event) =
-                isAdmin
-                || not event.IsHidden
+                not event.IsHidden
                 || Some event.OrganizerId.Unwrap = userId
                 || (participationsForUser |> Seq.map (fun x -> x.EventId) |> Seq.contains event.Id)
+                // || isAdmin
 
             return events
                 |> Seq.filter hasPermissionToView
