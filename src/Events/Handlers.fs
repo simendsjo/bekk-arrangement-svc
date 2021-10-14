@@ -123,6 +123,27 @@ module Handlers =
             return event.Id.Unwrap
         }
 
+    let getUnfurl (idOrName: string) =
+        let strSkip n (s: string) =
+            s
+            |> Seq.safeSkip n
+            |> Seq.map string
+            |> String.concat ""
+
+        result {
+            let! event =
+                match System.Guid.TryParse (idOrName |> strSkip ("/events/" |> String.length)) with
+                | true, guid ->
+                    Service.getEvent (Id guid)
+                | false, _ ->
+                    // Vi må hoppe over leading slash (/)
+                    let name = idOrName |> strSkip 1
+                    Service.getEventByShortname name
+
+            let! numberOfParticipants = Service.getNumberOfParticipantsForEvent event.Id
+            return {| event = domainToView event; numberOfParticipants = numberOfParticipants.Unwrap |} 
+        }
+
     let routes: HttpHandler =
         choose
             [ GET_HEAD
@@ -153,6 +174,10 @@ module Handlers =
                             |> withTransaction) 
                         
                         route "/events/id" >=> (handle getEventIdByShortname |> withTransaction)
+
+                        routef "/events/%s/unfurl" (fun idOrName ->
+                            (handle (getUnfurl idOrName)
+                            |> withTransaction))
                       ]
               DELETE
               >=> choose
