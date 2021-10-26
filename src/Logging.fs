@@ -87,3 +87,21 @@ module Logging =
             .MinimumLevel.Warning()
             .WriteTo.Console(JsonFormatter())
             .CreateLogger()
+
+    // 👆 Garbage ferdig her:
+    
+    let log (logLineDescription: string) (data: (string * string) seq) (ctx: HttpContext) =
+        let utcTimeStamp =
+            DateTime.Now.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss")
+            
+        let keyValuePairs: string =
+            data
+            |> Seq.map (fun (k,v) -> $"{k}={v}")
+            |> String.concat " "
+            
+        let logMessage =
+            sprintf "[%sZ] %s %s" utcTimeStamp logLineDescription keyValuePairs
+        
+        let logger = ctx.Logger()
+        logger.Information("{@Logmessage}", logMessage)
+        Ok () |> Task.wrap

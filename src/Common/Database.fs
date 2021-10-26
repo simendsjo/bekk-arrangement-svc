@@ -1,5 +1,6 @@
 namespace ArrangementService
 
+open System.Threading
 open ArrangementService.ResultComputationExpression
 open Dapper.FSharp.MSSQL
 open Microsoft.AspNetCore.Http
@@ -11,8 +12,8 @@ open UserMessage
 open FSharp.Control.Tasks.Affine
 
 module Database =
-
-    let createConnection (ctx: HttpContext) = 
+    
+    let createConnection (ctx: HttpContext) =
         let config = getConfig ctx
         let connection = new SqlConnection(config.databaseConnectionString) :> IDbConnection
         connection.Open()
@@ -20,6 +21,8 @@ module Database =
 
         config.currentConnection <- connection
         config.currentTransaction <- transaction
+                
+        ctx |> Logging.log "Transaction started" [ "test_data", (1296).ToString() ] |> ignore
 
         ()
 
@@ -37,6 +40,8 @@ module Database =
 
         t.Commit()
         c.Close()
+        
+        ctx |> Logging.log "Transaction committed" [ "test_data", (1296).ToString() ] |> ignore
 
         ()
 
@@ -54,6 +59,8 @@ module Database =
 
         t.Rollback()
         c.Close()
+                
+        ctx |> Logging.log "Transaction aborted" [ "test_data", (1296).ToString() ] |> ignore
 
         ()
 

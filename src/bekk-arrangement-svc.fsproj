@@ -41,7 +41,9 @@
     <Compile Include="LanguageExtensions\ResultComputationExpression.fs" />
     <Compile Include="LanguageExtensions\Seq.fs" />
     <Compile Include="LanguageExtensions\Option.fs" /> 
-    <Compile Include="LanguageExtensions\Tools.fs" /> 
+    <Compile Include="LanguageExtensions\Tools.fs" />
+      
+    <Compile Include="Logging.fs" />
 
     <Compile Include="Common\Database.fs" /> 
     <Compile Include="Common\Http.fs" /> 
@@ -79,8 +81,7 @@
     <Compile Include="Events\Handlers.fs" />
     <Compile Include="Participants\Handlers.fs" />
 
-    <Compile Include="Health\Health.fs" />
-    <Compile Include="Logging.fs" /> 
+    <Compile Include="Health\Health.fs" /> 
     <Compile Include="Program.fs" />
   </ItemGroup>
   <ItemGroup>
