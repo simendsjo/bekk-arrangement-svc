@@ -91,13 +91,20 @@ module Logging =
 
     // 👆 Garbage ferdig her:
     
+    let encodeWhitespace (s: string) =
+        s.Replace("%", "%25").Replace(" ", "%20").Replace("=", "%3D")
+    
+    let decodeWhitespace (s: string) =
+        s.Replace("%20", " ").Replace("%3D", "=").Replace("%25", "%")
+    
     let log (logLineDescription: string) (data: (string * string) seq) (ctx: HttpContext) =
         let utcTimeStamp =
             DateTime.Now.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss")
             
         let keyValuePairs: string =
             data
-            |> Seq.map (fun (k,v) -> $"{k}={v}")
+            |> Seq.distinctBy fst
+            |> Seq.map (fun (k,v) -> $"{k}={encodeWhitespace v}")
             |> String.concat " "
             
         let logMessage =
@@ -106,5 +113,7 @@ module Logging =
 //        let logger = ctx.Logger()
 //        logger.ForContext("SourceContext", "log") |> ignore
 //        logger.Information("{@Logmessage}", logMessage)
-        printfn "%s" logMessage
+
+//        printfn "%s" logMessage
+        Console.WriteLine(logMessage)
         Ok () |> Task.wrap
