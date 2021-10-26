@@ -84,6 +84,7 @@ module Logging =
         LoggerConfiguration().Enrich.FromLogContext()
             .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
             .MinimumLevel.Override("System", LogEventLevel.Warning)
+            .MinimumLevel.Override("log", LogEventLevel.Information)
             .MinimumLevel.Warning()
             .WriteTo.Console(JsonFormatter())
             .CreateLogger()
@@ -102,6 +103,8 @@ module Logging =
         let logMessage =
             sprintf "[%sZ] %s %s" utcTimeStamp logLineDescription keyValuePairs
         
-        let logger = ctx.Logger()
-        logger.Information("{@Logmessage}", logMessage)
+//        let logger = ctx.Logger()
+//        logger.ForContext("SourceContext", "log") |> ignore
+//        logger.Information("{@Logmessage}", logMessage)
+        printfn "%s" logMessage
         Ok () |> Task.wrap
