@@ -22,6 +22,7 @@ module Http =
                 | Ok () -> 
                     next context
                 | Error errorMessage -> 
+                    Database.rollbackTransaction context
                     convertUserMessagesToHttpError errorMessage next context
         }
 
@@ -71,11 +72,14 @@ module Http =
     let withTransaction (handler: HttpHandler) (next: HttpFunc) (ctx: HttpContext): HttpFuncResult =
         task {
             try
-                Database.createConnection ctx |> ignore
-                return! handler next ctx
-            with _ ->
-                Database.rollbackTransaction ctx
-                return! convertUserMessagesToHttpError [] next ctx // Default is 500 Internal Server Error
+                try
+                    Database.createConnection ctx 
+                    return! handler next ctx
+                with _ ->
+                    Database.rollbackTransaction ctx
+                    return! convertUserMessagesToHttpError [] next ctx // Default is 500 Internal Server Error
+            finally
+                Logging.canonicalLog ctx
         }
 
     let withRetry (handler: HttpHandler) (next: HttpFunc) (ctx: HttpContext): HttpFuncResult =
@@ -86,7 +90,7 @@ module Http =
             let rec retry delay amount =
                 task {
                     try
-                        Database.createConnection ctx |> ignore
+                        Database.createConnection ctx 
                         return! handler next ctx
                     with _ ->
                         Database.rollbackTransaction ctx

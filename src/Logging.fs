@@ -1,6 +1,7 @@
 namespace ArrangementService
 
 open System
+open System.Threading.Tasks
 open Giraffe
 open Serilog
 open Microsoft.AspNetCore.Http
@@ -84,7 +85,6 @@ module Logging =
         LoggerConfiguration().Enrich.FromLogContext()
             .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
             .MinimumLevel.Override("System", LogEventLevel.Warning)
-            .MinimumLevel.Override("log", LogEventLevel.Information)
             .MinimumLevel.Warning()
             .WriteTo.Console(JsonFormatter())
             .CreateLogger()
@@ -96,8 +96,8 @@ module Logging =
     
     let decodeWhitespace (s: string) =
         s.Replace("%20", " ").Replace("%3D", "=").Replace("%25", "%")
-    
-    let log (logLineDescription: string) (data: (string * string) seq) (ctx: HttpContext) =
+        
+    let logMessage description data =
         let utcTimeStamp =
             DateTime.Now.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss")
             
@@ -107,13 +107,28 @@ module Logging =
             |> Seq.map (fun (k,v) -> $"{k}={encodeWhitespace v}")
             |> String.concat " "
             
-        let logMessage =
-            sprintf "[%sZ] %s %s" utcTimeStamp logLineDescription keyValuePairs
+        sprintf "[%sZ] %s %s" utcTimeStamp description keyValuePairs
+    
+    let log (logLineDescription: string) (data: (string * string) seq) (ctx: HttpContext): Task<Result<unit, 'a>> =
+        try
+            // TODO: Logge med serilog eller?
+            Console.WriteLine(logMessage logLineDescription data)
+            
+            let config = Config.getConfig ctx
+            config.log <- Seq.append config.log data
         
-//        let logger = ctx.Logger()
-//        logger.ForContext("SourceContext", "log") |> ignore
-//        logger.Information("{@Logmessage}", logMessage)
-
-//        printfn "%s" logMessage
-        Console.WriteLine(logMessage)
+        with _ ->
+            ()
+            
         Ok () |> Task.wrap
+
+    let canonicalLog (ctx: HttpContext) =
+        try 
+            let config = Config.getConfig ctx
+            let data = config.log
+            
+            Console.WriteLine(logMessage "canonical-log-line" data)
+        
+        with _ -> 
+            ()
+        ()

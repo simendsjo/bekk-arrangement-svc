@@ -68,6 +68,7 @@ let configureServices (services: IServiceCollection) =
           databaseConnectionString = configuration.["ConnectionStrings:EventDb"]
           currentConnection = null
           currentTransaction = null
+          log = []
         }
     services.AddScoped<AppConfig> (fun _ -> { config with currentConnection = null; currentTransaction = null }) |> ignore // For å sende mail: bytt ut = med <>
     services.AddAuthentication(fun options ->

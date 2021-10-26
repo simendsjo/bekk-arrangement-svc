@@ -13,6 +13,9 @@ open FSharp.Control.Tasks.Affine
 
 module Database =
     
+    let logTransactionId transaction =
+        "transaction_id", transaction.GetHashCode().ToString()
+    
     let createConnection (ctx: HttpContext) =
         let config = getConfig ctx
         let connection = new SqlConnection(config.databaseConnectionString) :> IDbConnection
@@ -22,7 +25,7 @@ module Database =
         config.currentConnection <- connection
         config.currentTransaction <- transaction
                 
-        ctx |> Logging.log "Transaction started" [ "test_data", (1296).ToString() ] |> ignore
+        ctx |> Logging.log "Transaction started" [logTransactionId transaction] |> ignore
 
         ()
 
@@ -41,7 +44,7 @@ module Database =
         t.Commit()
         c.Close()
         
-        ctx |> Logging.log "Transaction committed" [ "test_data", (1296).ToString() ] |> ignore
+        ctx |> Logging.log "Transaction committed" [logTransactionId t] |> ignore
 
         ()
 
@@ -53,14 +56,14 @@ module Database =
         if isNull t <> isNull c then
             raise (System.Exception "Dobbel commit bug")
         else
-
+        
         config.currentTransaction <- null
         config.currentConnection <- null
 
         t.Rollback()
         c.Close()
                 
-        ctx |> Logging.log "Transaction aborted" [ "test_data", (1296).ToString() ] |> ignore
+        ctx |> Logging.log "Transaction aborted" [logTransactionId t] |> ignore
 
         ()
 

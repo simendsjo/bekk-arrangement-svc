@@ -15,6 +15,7 @@ type AppConfig =
       databaseConnectionString: string
       mutable currentConnection: IDbConnection
       mutable currentTransaction: IDbTransaction
+      mutable log: (string * string) seq
     }
 
 module Config =
