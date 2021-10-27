@@ -50,10 +50,10 @@ module Logging =
 
     let createExceptionMessage (ex: Exception) (ctx: HttpContext) =
         let logEventId =
-            Guid.NewGuid().ToString().Split(Convert.ToChar("-")).[0]
+            (Config.getConfig ctx).requestId
         let userMessage =
             sprintf
-                "Beklager det skjedde en feil! Den er logget med id %s Ta kontakt med Basen om du ønsker videre oppfølging."
+                "Beklager det skjedde en feil! Den er logget med id %s, ta kontakt med Basen om du ønsker videre oppfølging."
         { LogEventId = logEventId
           LogLevel = LogLevel.Error
           ExceptionType = ex.GetType()
@@ -97,7 +97,7 @@ module Logging =
     let decodeWhitespace (s: string) =
         s.Replace("%20", " ").Replace("%3D", "=").Replace("%25", "%")
         
-    let logMessage description data =
+    let logMessage id description data =
         let utcTimeStamp =
             DateTime.Now.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss")
             
@@ -106,14 +106,15 @@ module Logging =
             |> Seq.map (fun (k,v) -> $"{k}={encodeWhitespace v}")
             |> String.concat " "
             
-        sprintf "[%sZ] %s %s" utcTimeStamp description keyValuePairs
+        sprintf "[%sZ] [%s] %s %s" utcTimeStamp id description keyValuePairs
     
     let log (logLineDescription: string) (data: (string * string) seq) (ctx: HttpContext): Task<Result<unit, 'a>> =
         try
-            // TODO: Logge med serilog eller?
-            Console.WriteLine(logMessage logLineDescription data)
-            
             let config = Config.getConfig ctx
+            
+            // TODO: Logge med serilog eller?
+            Console.WriteLine(logMessage config.requestId logLineDescription data)
+            
             config.log <- Seq.append config.log data
         
         with _ ->
@@ -126,7 +127,7 @@ module Logging =
             let config = Config.getConfig ctx
             let data = config.log
             
-            Console.WriteLine(logMessage "canonical-log-line" data)
+            Console.WriteLine(logMessage config.requestId "canonical-log-line" data)
         
         with _ -> 
             ()
