@@ -21,7 +21,10 @@ module Http =
                 match checkResult with
                 | Ok () -> 
                     next context
-                | Error errorMessage -> 
+                | Error errorMessage ->
+                    let checkFailure = "check_failure", errorMessage |> Seq.map (fun x -> x.ToString()) |> String.concat ";"
+                    Logging.log "Check failed" [ checkFailure ] context |> ignore
+
                     Database.rollbackTransaction context
                     convertUserMessagesToHttpError errorMessage next context
         }
@@ -35,6 +38,10 @@ module Http =
 
     let generalHandle (responseBodyFunc: ('t -> HttpHandler)) (endpoint: Handler<'t>) (next: HttpFunc) (context: HttpContext) =
         task {
+            let method = context.Request.Method.ToString()
+            let path = context.Request.Path.ToString()
+            Logging.log "Request" [ "method", method; "path", path ] context |> ignore
+
             let! res = endpoint context
             return! 
                 match res with
@@ -42,6 +49,9 @@ module Http =
                     Database.commitTransaction context
                     responseBodyFunc result next context
                 | Error errorMessage ->
+                    let handleFailure = "handle_failure", errorMessage |> Seq.map (fun x -> x.ToString()) |> String.concat ";"
+                    Logging.log "Request failed" [ handleFailure ] context |> ignore
+
                     Database.rollbackTransaction context
                     convertUserMessagesToHttpError errorMessage next context
         }
@@ -84,30 +94,37 @@ module Http =
 
     let withRetry (handler: HttpHandler) (next: HttpFunc) (ctx: HttpContext): HttpFuncResult =
         task {
-            let seed = Guid.NewGuid().GetHashCode()
-            let rnd = Random(seed)
+            try
+                let seed = Guid.NewGuid().GetHashCode()
+                let rnd = Random(seed)
 
-            let rec retry delay amount =
-                task {
-                    try
-                        Database.createConnection ctx 
-                        return! handler next ctx
-                    with _ ->
-                        Database.rollbackTransaction ctx
+                let rec retry delay amount =
+                    task {
+                        try
+                            Database.createConnection ctx 
+                            return! handler next ctx
+                        with _ ->
+                            Logging.log "Transaction failed, retrying..."
+                                [ "retry_attempts_left", amount.ToString()
+                                  "current_retry_delay", delay.ToString() ] ctx |> ignore
+                                
+                            Database.rollbackTransaction ctx
 
-                        let jitter = rnd.NextDouble() * 5.0 + 1.5 // [1.5, 6.5]
-                        let delayWithJitter =
-                            2.0 * delay * jitter + 20.0 * jitter
+                            let jitter = rnd.NextDouble() * 5.0 + 1.5 // [1.5, 6.5]
+                            let delayWithJitter =
+                                2.0 * delay * jitter + 20.0 * jitter
 
-                        do! Task.Delay (int delayWithJitter)
+                            do! Task.Delay (int delayWithJitter)
 
-                        if amount > 0 then
-                            return! retry delayWithJitter (amount-1) 
-                        else
-                            return! convertUserMessagesToHttpError [] next ctx 
-                }
+                            if amount > 0 then
+                                return! retry delayWithJitter (amount-1) 
+                            else
+                                return! convertUserMessagesToHttpError [] next ctx 
+                    }
 
-            return! retry 50.0 10 // retry 10 times with a inital delay seed 50ms
+                return! retry 50.0 10 // retry 10 times with a inital delay seed 50ms
+            finally
+                Logging.canonicalLog ctx
         }
 
     let withLock (lock: SemaphoreSlim) (handler: HttpHandler) (next: HttpFunc) (ctx: HttpContext): HttpFuncResult =

@@ -103,7 +103,6 @@ module Logging =
             
         let keyValuePairs: string =
             data
-            |> Seq.distinctBy fst
             |> Seq.map (fun (k,v) -> $"{k}={encodeWhitespace v}")
             |> String.concat " "
             
