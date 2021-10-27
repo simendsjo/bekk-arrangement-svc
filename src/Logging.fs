@@ -92,11 +92,8 @@ module Logging =
     // 👆 Garbage ferdig her:
     
     let encodeWhitespace (s: string) =
-        s.Replace("%", "%25").Replace(" ", "%20").Replace("=", "%3D")
+        s.Replace(" ", "_").Replace("\n", "")
     
-    let decodeWhitespace (s: string) =
-        s.Replace("%20", " ").Replace("%3D", "=").Replace("%25", "%")
-        
     let logMessage id description data =
         let utcTimeStamp =
             DateTime.Now.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss")

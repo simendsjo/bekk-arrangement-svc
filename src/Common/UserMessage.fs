@@ -31,7 +31,7 @@ module UserMessage =
     let private errorMessagesToUserJson messages =
         { userMessage = messages |> String.concat "\n" }
 
-    let convertUserMessagesToHttpError (errors: UserMessage list) : HttpError =
+    let convertUserMessagesToHttpError (log: int -> unit) (errors: UserMessage list) : HttpError =
         let reduceErrors (errorCode, errorMessages) current =
 
             let hasGreaterOrEqualSeverityThan prev next =
@@ -64,11 +64,20 @@ module UserMessage =
         |> fun (errorCode, errorMessages) -> (errorCode, errorMessagesToUserJson errorMessages)
         |> fun (errorCode, userMessage) ->
             match errorCode with
-            | BadRequest -> RequestErrors.BAD_REQUEST userMessage
-            | Forbidden -> RequestErrors.FORBIDDEN userMessage
-            | ResourceNotFound -> RequestErrors.NOT_FOUND userMessage
-            | Unauthorized -> RequestErrors.UNAUTHORIZED "Bearer" "Access to internal event" userMessage
+            | BadRequest ->
+                log 400
+                RequestErrors.BAD_REQUEST userMessage
+            | Forbidden ->
+                log 403
+                RequestErrors.FORBIDDEN userMessage
+            | ResourceNotFound ->
+                log 404
+                RequestErrors.NOT_FOUND userMessage
+            | Unauthorized ->
+                log 401
+                RequestErrors.UNAUTHORIZED "Bearer" "Access to internal event" userMessage
             | InternalError ->
+                log 500
                 [ "Something has gone wrong" ]
                 |> errorMessagesToUserJson
                 |> ServerErrors.INTERNAL_ERROR
