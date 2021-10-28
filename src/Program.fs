@@ -56,6 +56,7 @@ let configureServices (services: IServiceCollection) =
     |> ignore
     let config =
         { isProd = configuration.["Auth0:Scheduled_Tasks_Audience"] = "https://api.bekk.no"
+          requestId = ""
           permissionsAndClaimsKey = configuration.["Auth0:Permission_Claim_Type"]
           userIdClaimsKey = configuration.["Auth0:UserId_Claim"]
           adminPermissionClaim = configuration.["Auth0:Admin_Claim"]
@@ -70,7 +71,10 @@ let configureServices (services: IServiceCollection) =
           currentTransaction = null
           log = []
         }
-    services.AddScoped<AppConfig> (fun _ -> { config with currentConnection = null; currentTransaction = null }) |> ignore // For å sende mail: bytt ut = med <>
+    services.AddScoped<AppConfig> (fun _ -> { config with
+                                                requestId = Guid.NewGuid().GetHashCode().ToString().[1..6]
+                                                currentConnection = null
+                                                currentTransaction = null }) |> ignore // For å sende mail: bytt ut = med <>
     services.AddAuthentication(fun options ->
             options.DefaultAuthenticateScheme <-
                 JwtBearerDefaults.AuthenticationScheme

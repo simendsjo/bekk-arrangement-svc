@@ -58,6 +58,11 @@ module Handlers =
 
             let! participantDomainModel = writeToDomain (eventId, email) writeModel userId |> Task.wrap |> ignoreContext
             do! Service.registerParticipant createMailForParticipant participantDomainModel
+            
+            do! Logging.log "Participant påmeldt"
+                    [ "eventId", event.Id.Unwrap.ToString()
+                      "number_of_participants", participants.Unwrap.ToString()
+                      "is_waitlisted", if isWaitlisted then "true" else "false" ]
 
             return domainToViewWithCancelInfo participantDomainModel
         }
@@ -75,6 +80,9 @@ module Handlers =
             
             let! event = Service.getEvent (Event.Id id)
             let! deleteResult = Service.deleteParticipant (event, emailAddress) 
+            
+            do! Logging.log "Participant avmeldt"
+                    [ "eventId", event.Id.Unwrap.ToString() ]
             
             return deleteResult
         }

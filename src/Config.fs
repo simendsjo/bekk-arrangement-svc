@@ -6,6 +6,7 @@ open System.Data
 
 type AppConfig =
     { isProd: bool
+      requestId: string
       userIdClaimsKey: string
       permissionsAndClaimsKey: string
       adminPermissionClaim: string
