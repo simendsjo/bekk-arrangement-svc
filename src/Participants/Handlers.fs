@@ -82,7 +82,8 @@ module Handlers =
             let! deleteResult = Service.deleteParticipant (event, emailAddress) 
             
             do! Logging.log "Participant avmeldt"
-                    [ "eventId", event.Id.Unwrap.ToString() ]
+                    [ "eventId", event.Id.Unwrap.ToString()
+                      "participant_email", email ]
             
             return deleteResult
         }
