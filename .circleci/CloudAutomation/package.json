@@ -9,6 +9,6 @@
   "author": "Morten øvrebø",
   "license": "MIT",
   "dependencies": {
-    "aws-sdk": "^2.259.1"
+    "aws-sdk": "^2.814.0"
   }
 }
