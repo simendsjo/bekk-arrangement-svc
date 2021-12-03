@@ -148,19 +148,22 @@ type CustomHexColor =
 
     static member Parse(hexCode: string option) =
         [ validateDoesNotContain "#"
+                // Denne er bare for å hjelpe folk som har misforstått apiet,
+                // de andre begrensningene vil uansett ta denne feilen
               (BadInput "Hex-koden trenger ikke '#', foreksempel holder det med 'ffaa00' for gul")
             |> optionally
 
-          validateMinLength 6 (BadInput "Hex-kode må ha nøyaktig 6 tegn")
+          validateMinLength 6 (BadInput "Hex-koden må ha nøyaktig 6 tegn")
             |> optionally
 
-          validateMaxLength 6 (BadInput "Hex-kode må ha nøyaktig 6 tegn") 
+          validateMaxLength 6 (BadInput "Hex-koden må ha nøyaktig 6 tegn") 
             |> optionally
 
-          // TODO: validate a..f and 0..9 characters only
           validate (
-              fun x -> true
-          ) (BadInput "blablablab feil")
+              fun input ->
+                let legalCharacters = "0123456789abcdef" 
+                input |> Seq.forall (fun c -> legalCharacters |> Seq.contains c)
+          ) (BadInput "Ugyldig tegn, hex-koden må bestå av tegn mellom a..f (ingen store bokstaver!) og 0..9")
             |> optionally
         ]
         |> validateAll CustomHexColor hexCode
