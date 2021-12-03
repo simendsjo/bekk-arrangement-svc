@@ -42,6 +42,7 @@ type DbModel =
       IsHidden: bool
       EditToken: Guid
       OrganizerId: int
+      CustomHexColor: string option
     }
 
 type ViewModel =
@@ -63,6 +64,7 @@ type ViewModel =
       IsHidden: bool
       OrganizerId: int
       Shortname: string option
+      CustomHexColor: string option
     }
 
 type ViewModelWithEditToken =
@@ -88,6 +90,7 @@ type WriteModel =
       IsExternal: bool
       IsHidden: bool
       Shortname: string option
+      CustomHexColor: string option
     }
 
 module Models =
@@ -119,6 +122,7 @@ module Models =
         <*> (writeModel.IsHidden |> Ok)
         <*> (EmployeeId organizerId |> Ok)
         <*> Shortname.Parse writeModel.Shortname
+        <*> CustomHexColor.Parse writeModel.CustomHexColor
 
     let dbToDomain (dbRecord: DbModel, participantQuestions: string list, shortname: string option): Event =
         { Id = Id dbRecord.Id
@@ -142,6 +146,7 @@ module Models =
           ParticipantQuestions = ParticipantQuestions participantQuestions
           OrganizerId = EmployeeId dbRecord.OrganizerId
           Shortname = Shortname shortname
+          CustomHexColor = CustomHexColor dbRecord.CustomHexColor
         }
         
     let domainToDb (domainModel: Event): DbModel =
@@ -164,6 +169,7 @@ module Models =
           IsExternal = domainModel.IsExternal
           IsHidden = domainModel.IsHidden
           OrganizerId = domainModel.OrganizerId.Unwrap
+          CustomHexColor = domainModel.CustomHexColor.Unwrap
         }
         
 
@@ -186,6 +192,7 @@ module Models =
           ParticipantQuestions = domainModel.ParticipantQuestions.Unwrap
           OrganizerId = domainModel.OrganizerId.Unwrap
           Shortname = domainModel.Shortname.Unwrap
+          CustomHexColor = domainModel.CustomHexColor.Unwrap
         }
 
     let domainToViewWithEditInfo (event: Event): ViewModelWithEditToken =

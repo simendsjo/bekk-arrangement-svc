@@ -138,3 +138,29 @@ type Shortname =
           |> optionally
         ]
         |> validateAll Shortname shortname
+
+type CustomHexColor =
+    | CustomHexColor of string option
+
+    member this.Unwrap =
+        match this with
+        | CustomHexColor hexCode -> hexCode
+
+    static member Parse(hexCode: string option) =
+        [ validateDoesNotContain "#"
+              (BadInput "Hex-koden trenger ikke '#', foreksempel holder det med 'ffaa00' for gul")
+            |> optionally
+
+          validateMinLength 6 (BadInput "Hex-kode må ha nøyaktig 6 tegn")
+            |> optionally
+
+          validateMaxLength 6 (BadInput "Hex-kode må ha nøyaktig 6 tegn") 
+            |> optionally
+
+          // TODO: validate a..f and 0..9 characters only
+          validate (
+              fun x -> true
+          ) (BadInput "blablablab feil")
+            |> optionally
+        ]
+        |> validateAll CustomHexColor hexCode

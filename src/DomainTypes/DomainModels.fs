@@ -28,9 +28,10 @@ type Event =
       IsExternal: bool
       IsHidden: bool
       OrganizerId: Event.EmployeeId
-      Shortname: Event.Shortname }
+      Shortname: Event.Shortname 
+      CustomHexColor: Event.CustomHexColor }
     static member Create =
-        fun id title description location organizerName organizerEmail maxParticipants (startDate, endDate) openForRegistrationTime closeRegistrationTime editToken participantQuestions hasWaitingList isCancelled isExternal isHidden organizerId shortname ->
+        fun id title description location organizerName organizerEmail maxParticipants (startDate, endDate) openForRegistrationTime closeRegistrationTime editToken participantQuestions hasWaitingList isCancelled isExternal isHidden organizerId shortname hexCode ->
             { Id = id
               Title = title
               Description = description
@@ -49,7 +50,8 @@ type Event =
               IsExternal = isExternal
               IsHidden = isHidden
               OrganizerId = organizerId
-              Shortname = shortname }
+              Shortname = shortname
+              CustomHexColor = hexCode }
 
 type Participant =
     { Name: Participant.Name
