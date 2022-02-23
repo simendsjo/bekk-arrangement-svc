@@ -18,7 +18,7 @@ module Database =
     
     let createConnection (ctx: HttpContext) =
         let config = getConfig ctx
-        let connection = new SqlConnection(config.databaseConnectionString) :> IDbConnection
+        let connection = new SqlConnection(config.databaseConnectionString)
         connection.Open()
         let transaction = connection.BeginTransaction(IsolationLevel.Serializable)
 

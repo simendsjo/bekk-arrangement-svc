@@ -1,5 +1,6 @@
 namespace ArrangementService
 
+open System.Data.SqlClient
 open Microsoft.AspNetCore.Http
 open Giraffe
 open System.Data
@@ -14,7 +15,7 @@ type AppConfig =
       sendMailInDevEnvWhiteList: string list
       noReplyEmail: string
       databaseConnectionString: string
-      mutable currentConnection: IDbConnection
+      mutable currentConnection: SqlConnection
       mutable currentTransaction: IDbTransaction
       mutable log: (string * string) seq
     }

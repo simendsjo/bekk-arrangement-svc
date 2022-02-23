@@ -1,6 +1,7 @@
 ﻿module ArragementService.App
 
 open System
+open System.Threading.Tasks
 open Giraffe
 open Microsoft.AspNetCore.Builder
 open Microsoft.Extensions.DependencyInjection
@@ -12,14 +13,11 @@ open Microsoft.AspNetCore.Authentication.JwtBearer
 open Microsoft.IdentityModel.Tokens
 open Microsoft.AspNetCore.Hosting
 open Thoth.Json.Net
-open System.Data
-open System.Data.SqlClient
 
 open ArrangementService
 open migrator
 open Logging
 open SendgridApiModels
-open System.Threading
 
 let webApp =
     choose
@@ -37,10 +35,8 @@ let configureCors (builder: CorsPolicyBuilder) =
            .AllowAnyOrigin() |> ignore
 
 let configureApp (app: IApplicationBuilder) =
-    app.Use(fun context next ->
-        context.Request.Path <-
-            context.Request.Path.Value.Replace
-                (configuration.["VIRTUAL_PATH"], "") |> PathString
+    app.Use(fun context (next: Func<Task>) ->
+        context.Request.Path <- context.Request.Path.Value.Replace (configuration.["VIRTUAL_PATH"], "") |> PathString
         next.Invoke())
     |> ignore
     app.UseAuthentication()
@@ -98,16 +94,6 @@ let configureServices (services: IServiceCollection) =
         (Thoth.Json.Giraffe.ThothSerializer
             (caseStrategy = CamelCase, extra = extraEncoder, skipNullField = true))
     |> ignore
-
-    // let mutable minWorker = 0
-    // let mutable minIOC = 0
-
-    // ThreadPool.GetMinThreads(&minWorker, &minIOC)  
-    // ThreadPool.SetMinThreads(500, minIOC) |> ignore
-
-    // let conn = new SqlConnection(config.databaseConnectionString) :> IDbConnection
-    // conn.Open()
-    // conn.Close()
 
     ()
 

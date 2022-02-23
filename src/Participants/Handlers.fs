@@ -161,7 +161,7 @@ module Handlers =
               >=> choose
                       [ routef "/events/%O/participants/%s" (fun (eventId: Guid, email) ->
                             (check (oneCanParticipateOnEvent eventId)
-                            >=> (handle << registerForEvent) (eventId, email))
+                            >=> (registerForEvent >> handle) (eventId, email))
                             |> withRetry
                             |> withLock registrationLock
                             ) ] ]
