@@ -41,8 +41,10 @@ module Database =
         config.currentTransaction <- null
         config.currentConnection <- null
 
-        t.Commit()
-        c.Close()
+        try
+            t.Commit()
+        finally
+            c.Close()
         
         ctx |> Logging.log "Transaction committed" [logTransactionId t] |> ignore
 
@@ -60,8 +62,10 @@ module Database =
         config.currentTransaction <- null
         config.currentConnection <- null
 
-        t.Rollback()
-        c.Close()
+        try
+            t.Rollback()
+        finally
+            c.Close()
                 
         ctx |> Logging.log "Transaction aborted" [logTransactionId t] |> ignore
 
