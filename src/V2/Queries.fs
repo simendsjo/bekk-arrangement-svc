@@ -51,6 +51,8 @@ let getEvent (eventId: Guid) (context: HttpContext) =
             |> Db.setParams parameters
             |> Db.querySingle Event.FromReader
             
+        dbConnection.Close() 
+            
         return
             match result with
             | Ok (Some registration) -> Ok registration
@@ -142,6 +144,8 @@ let registerParticipation (eventId: Guid) email (context: HttpContext) =
             |> Db.newCommand query
             |> Db.setParams parameters
             |> Db.querySingle RegistrationResult.FromReader
+            
+        dbConnection.Close() 
             
         return
             match result with
