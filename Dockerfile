@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:6.0-alpine as build-env
+FROM mcr.microsoft.com/dotnet/sdk:5.0-alpine as build-env
 WORKDIR /app
 
 COPY . ./
