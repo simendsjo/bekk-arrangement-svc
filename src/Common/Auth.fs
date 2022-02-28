@@ -71,6 +71,10 @@ module Auth =
                                                 | Ok _ -> ctx.User.FindFirst(employeeIdClaim).Value |> Tools.tryParseInt |> Ok)
             return res
         }
+        
+    let getUserIdV2 (context: HttpContext) = 
+        context.User.FindFirst(employeeIdClaim).Value |> Tools.tryParseInt
+                
 
     let isAuthenticatedAs id =
         result {

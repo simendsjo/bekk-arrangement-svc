@@ -17,6 +17,7 @@
   
   <ItemGroup>
     <PackageReference Include="Dapper.FSharp" Version="2.4.0" />
+    <PackageReference Include="Donald" Version="7.1.0" />
     <PackageReference Include="FSharp.Core" Version="5.0.1" />
     <PackageReference Include="FifteenBelow.Json.Core" Version="1.0.0" />
     <PackageReference Include="FSharp.Data" Version="3.3.2" />
@@ -77,6 +78,9 @@
 
     <Compile Include="Events\Authorization.fs" />
     <Compile Include="Participants\Authorization.fs" />
+    
+    <Compile Include="V2\Queries.fs" />
+    <Compile Include="V2\Handlers.fs" />
 
     <Compile Include="Events\Handlers.fs" />
     <Compile Include="Participants\Handlers.fs" />

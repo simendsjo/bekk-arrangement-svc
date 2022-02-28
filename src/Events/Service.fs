@@ -67,6 +67,55 @@ module Service =
             let! event = Event.Queries.queryEventByEventId id
             return event
         }
+        
+(*
+    
+       let registerParticipationv2 guid email context =
+        let query =
+            "
+            IF EXISTS(select Id
+                      FROM Events as e
+                               LEFT JOIN (SELECT EventId, count(*) as numParticipants from Participants group by EventId) as part
+                                         on part.EventId = e.Id
+                      WHERE e.Id = (@EventId)
+                        AND e.IsExternal = 1
+                        AND e.OpenForRegistrationTime < (@currentEpoch)
+                        AND (e.CloseRegistrationTime is null OR e.CloseRegistrationTime > (@currentEpoch))
+                        AND (e.MaxParticipants is null OR ((e.HasWaitingList = 0) AND part.numParticipants < e.MaxParticipants)))
+                select 1
+                --insert into Participants
+                --VALUES ('mats.jonassen@bekk.no', '41be0c13-2369-493b-a83e-4e6558ae676a', 1644404400000,
+                --        '17996ddc-d78b-482e-92eb-3a2b76c4304e', 'Mats Jonassen', null)
+            "
+            
+        printfn "Register participation queries.fs" 
+        let foobar = Database.runCreateParticipationCommand guid query context
+        printfn "Foobar"
+        
+            // FOR NOW
+    let runCreateParticipationCommand (eventId: System.Guid) sql (context: HttpContext) =
+        printfn "Hello from Database layer"
+        printfn "Hello from result in DB layer"
+//        let! config = getConfig >> Ok >> Task.wrap
+        printfn "Getting connection"
+        let config = context.GetService<AppConfig>()
+        let connection = new SqlConnection(config.databaseConnectionString)
+        let transaction = connection.BeginTransaction()
+        printfn "Connection"
+        printfn "Creating command"
+        let command = new SqlCommand(sql, connection)
+        printfn "Current epoch"
+        let currentEpoch = System.DateTimeOffset.Now.ToUnixTimeMilliseconds()
+        printfn "Adding valies..."
+        command.Parameters.AddWithValue("@EventId", eventId) |> ignore
+        command.Parameters.AddWithValue("@currentEpoch", currentEpoch) |> ignore
+        printfn "Running query"
+        let foo = command.ExecuteNonQuery ()
+        printfn $"Foo: {foo}"
+        transaction.Commit() 
+    
+    *)
+
 
     let private createdEventMessage (viewUrl: string option) createEditUrl (event: Event) =
         [ $"Hei {event.OrganizerName.Unwrap}! 😄"

@@ -6,6 +6,7 @@ open Dapper.FSharp.MSSQL
 open Microsoft.AspNetCore.Http
 open System.Data
 open System.Data.SqlClient
+open Giraffe
 
 open Config
 open UserMessage
@@ -118,3 +119,6 @@ module Database =
 
             return ()
         }
+        
+        
+

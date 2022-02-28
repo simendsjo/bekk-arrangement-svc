@@ -1,6 +1,7 @@
 namespace ArrangementService.Event
 
 open System
+open System.Data.SqlClient
 open ArrangementService.Participant
 open Dapper.FSharp
 open Microsoft.AspNetCore.Http
@@ -131,7 +132,7 @@ module Queries =
                     Error [ UserMessages.eventNotFound eventId ] 
                     |> Task.wrap
         }
-
+        
     let queryEventsOrganizedByEmail (organizerEmail: EmailAddress): Handler<Event seq> =
         result {
             let! events =
