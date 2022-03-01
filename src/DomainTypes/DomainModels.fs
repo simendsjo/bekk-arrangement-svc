@@ -97,13 +97,13 @@ type Participant =
       EmployeeId: Participant.EmployeeId }
     static member FromReader (rd: IDataReader) =
         {
-            Name = rd.ReadString "Name" |> Participant.Name
             Email = rd.ReadString "Email" |> Email.EmailAddress
-            ParticipantAnswers = [] |> Participant.ParticipantAnswers
             EventId = rd.ReadGuid "EventId" |> Event.Id
             RegistrationTime = rd.ReadInt64 "RegistrationTime" |> TimeStamp
             CancellationToken = rd.ReadGuid "CancellationToken"
+            Name = rd.ReadString "Name" |> Participant.Name
             EmployeeId = rd.ReadInt32Option "EmployeeId" |> Participant.EmployeeId
+            ParticipantAnswers = [] |> Participant.ParticipantAnswers
         }
     static member Create =
         fun name email participantAnswers eventId registrationTime cancellationToken employeeId ->

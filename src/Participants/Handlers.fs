@@ -207,5 +207,5 @@ module Handlers =
                                       |> withLock registrationLock) ]
 
                  POST
-                 >=> choose [ routef "/events/%O/participants/%s/v2" V2.Handlers.registerParticipationHandler ] ]
+                 >=> choose [ routef "/events/%O/participants/%s/v2" V2.Handlers.registerParticipationHandler3 ] ]
 

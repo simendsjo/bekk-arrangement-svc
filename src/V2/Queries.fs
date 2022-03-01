@@ -1,7 +1,6 @@
 module V2.Queries
 
 open System.Data
-open System.Data.SqlClient
 open Giraffe
 
 open Microsoft.AspNetCore.Http
@@ -10,8 +9,9 @@ open Donald
 
 open ArrangementService
 open ArrangementService.DomainModels
+open Microsoft.Data.SqlClient
 
-let getEvent (eventId: Guid) (context: HttpContext) =
+let getEvent (eventId: Guid) (dbConnection: SqlConnection) =
     let query =
         "
         SELECT [Id]
@@ -34,31 +34,108 @@ let getEvent (eventId: Guid) (context: HttpContext) =
               ,[IsHidden]
               ,[OrganizerId]
               ,[CustomHexColor]
-          FROM [arrangement-db].[dbo].[Events]
+          FROM Events
           WHERE Id = @eventId
         "
     let parameters = [
         "eventId", SqlType.Guid eventId
     ]
-    let config = context.GetService<AppConfig>()
-    // TODO: Hvordan gjør vi dette?
-    let dbConnection = new SqlConnection(config.databaseConnectionString)
     
-    task {
-        let result =
-            dbConnection
-            |> Db.newCommand query
-            |> Db.setParams parameters
-            |> Db.querySingle Event.FromReader
-            
-        dbConnection.Close() 
-            
-        return
-            match result with
-            | Ok (Some registration) -> Ok registration
-            | Error e -> Error (e.ToString())
-            | Ok None -> Error "DB query did not return anything"
-    }
+    let result =
+        dbConnection
+        |> Db.newCommand query
+        |> Db.setParams parameters
+        |> Db.querySingle Event.FromReader
+        
+    match result with
+    | Ok (Some event) -> Ok event
+    | Error e -> Error (e.ToString())
+    | Ok None -> Error "DB query did not return anything"
+    
+let getNumberOfParticipantsForEvent (eventId: Guid) (dbConnection: SqlConnection) =
+    let query =
+        "
+        SELECT COUNT(*) AS NumberOfParticipants
+        FROM [arrangement-db].[dbo].[Participants]
+        WHERE EventId = @eventId
+        "
+    let parameters = [
+        "eventId", SqlType.Guid eventId
+    ]
+    
+    dbConnection
+    |> Db.newCommand query
+    |> Db.setParams parameters
+    |> Db.scalar Convert.ToInt32
+        
+    
+let addParticipantToEvent (eventId: Guid) email (dbConnection: SqlConnection) transaction =
+    let query =
+        "
+        INSERT INTO Participants
+        VALUES (@email, @eventId, @currentEpoch, @cancellationToken, @name, @employeeId)
+        "
+        
+    let parameters = [
+        "eventId", SqlType.String (eventId.ToString())
+        "currentEpoch", SqlType.Int64 (DateTimeOffset.Now.ToUnixTimeMilliseconds())
+        "email", SqlType.String email
+        "cancellationToken", SqlType.String (Guid.NewGuid().ToString())
+        "name", SqlType.String "SomeonesName"
+        "employeeId", SqlType.Null
+    ]
+    
+    dbConnection
+    |> Db.newCommand query
+    |> Db.setTransaction transaction
+    |> Db.setParams parameters
+    |> Db.exec
+    |> ignore
+    
+let readParticipantFromEvent (eventId: Guid) email dbConnection =
+    let query =
+        "
+        SELECT [Email]
+              ,[EventId]
+              ,[RegistrationTime]
+              ,[CancellationToken]
+              ,[Name]
+              ,[EmployeeId]
+        FROM [Participants]
+        WHERE Email = @email and EventId = @eventId
+        "
+        
+    let parameters = [
+        "eventId", SqlType.String (eventId.ToString())
+        "email", SqlType.String email
+    ]
+        
+    let result =
+        dbConnection
+        |> Db.newCommand query
+        |> Db.setParams parameters
+        |> Db.querySingle Participant.FromReader
+        
+    match result with
+    | Ok (Some event) -> Ok event
+    | Error e -> Error (e.ToString())
+    | Ok None -> Error "DB query did not return anything"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 // TODO: FLytt denne til et annet sted
