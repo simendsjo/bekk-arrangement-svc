@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <DebugType>portable</DebugType>
     <AssemblyName>arrangementSvc</AssemblyName>
     <OutputType>Exe</OutputType>
@@ -16,6 +16,7 @@
   </ItemGroup>
   
   <ItemGroup>
+    <PackageReference Include="dapper" Version="2.0.123" />
     <PackageReference Include="Dapper.FSharp" Version="2.4.0" />
     <PackageReference Include="FSharp.Core" Version="5.0.1" />
     <PackageReference Include="FifteenBelow.Json.Core" Version="1.0.0" />
@@ -77,11 +78,14 @@
 
     <Compile Include="Events\Authorization.fs" />
     <Compile Include="Participants\Authorization.fs" />
+    
+    <Compile Include="V2\Queries.fs" />
+    <Compile Include="V2\Handlers.fs" />
 
     <Compile Include="Events\Handlers.fs" />
     <Compile Include="Participants\Handlers.fs" />
 
-    <Compile Include="Health\Health.fs" /> 
+    <Compile Include="Health\Health.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
   <ItemGroup>

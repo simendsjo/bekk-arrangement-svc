@@ -1,6 +1,7 @@
 namespace ArrangementService
 
 open Giraffe
+open Microsoft.AspNetCore.CookiePolicy
 open Microsoft.AspNetCore.Http
 
 open ResultComputationExpression
@@ -71,6 +72,13 @@ module Auth =
                                                 | Ok _ -> ctx.User.FindFirst(employeeIdClaim).Value |> Tools.tryParseInt |> Ok)
             return res
         }
+        
+    let getUserIdV2 (context: HttpContext): int option =
+        let value = context.User.FindFirst(employeeIdClaim)
+        if value.Value = null then
+            None
+        else
+            Some (int value.Value)
 
     let isAuthenticatedAs id =
         result {

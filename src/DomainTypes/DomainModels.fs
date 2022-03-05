@@ -70,3 +70,12 @@ type Participant =
               RegistrationTime = registrationTime
               CancellationToken = cancellationToken
               EmployeeId = employeeId }
+    static member CreateFromPrimitives =
+        fun name email participantAnswers eventId registrationTime cancellationToken employeeId ->
+            { Name = name |> Participant.Name
+              Email = email |> Email.EmailAddress
+              ParticipantAnswers = participantAnswers |> Participant.ParticipantAnswers
+              EventId = eventId |> Event.Id
+              RegistrationTime = registrationTime |> TimeStamp
+              CancellationToken = cancellationToken
+              EmployeeId = employeeId |> Participant.EmployeeId }

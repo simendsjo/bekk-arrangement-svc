@@ -40,9 +40,9 @@ type NewlyCreatedParticipationViewModel =
     }
 
 type WriteModel =
-    { name: string
-      participantAnswers: string list
-      cancelUrlTemplate: string 
+    { Name: string
+      ParticipantAnswers: string list
+      CancelUrlTemplate: string 
     }
 
 type ParticipantsWithWaitingList =
@@ -85,9 +85,9 @@ module Models =
 
     let writeToDomain ((eventId, email): Key) (writeModel: WriteModel) (employeeId: int option): Result<Participant, UserMessage list> =
           Ok Participant.Create 
-          <*> Name.Parse writeModel.name
+          <*> Name.Parse writeModel.Name
           <*> EmailAddress.Parse email 
-          <*> ParticipantAnswers.Parse writeModel.participantAnswers
+          <*> ParticipantAnswers.Parse writeModel.ParticipantAnswers
           <*> (Event.Id eventId |> Ok) 
           <*> (now() |> Ok) 
           <*> (Guid.NewGuid() |> Ok)

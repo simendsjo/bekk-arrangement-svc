@@ -4,6 +4,7 @@ open System
 
 open ArrangementService
 
+open ArrangementService.Event
 open Validation
 open DateTime
 open Utils
@@ -21,29 +22,6 @@ type ShortnameDbModel = {
   Shortname: string 
   EventId: Guid
 }
-
-type DbModel = 
-    { Id: Guid
-      Title: string
-      Description: string
-      Location: string
-      OrganizerName: string
-      OrganizerEmail: string
-      MaxParticipants: int option
-      StartDate: DateTime
-      EndDate: DateTime
-      StartTime: TimeSpan
-      EndTime: TimeSpan
-      OpenForRegistrationTime: int64
-      CloseRegistrationTime: int64 option
-      HasWaitingList: bool 
-      IsCancelled: bool
-      IsExternal: bool 
-      IsHidden: bool
-      EditToken: Guid
-      OrganizerId: int
-      CustomHexColor: string option
-    }
 
 type ViewModel =
     { Id: Guid
@@ -92,6 +70,51 @@ type WriteModel =
       Shortname: string option
       CustomHexColor: string option
     }
+    
+type DbModel = 
+    { Id: Guid
+      Title: string
+      Description: string
+      Location: string
+      OrganizerName: string
+      OrganizerEmail: string
+      MaxParticipants: int option
+      StartDate: DateTime
+      EndDate: DateTime
+      StartTime: TimeSpan
+      EndTime: TimeSpan
+      OpenForRegistrationTime: int64
+      CloseRegistrationTime: int64 option
+      HasWaitingList: bool 
+      IsCancelled: bool
+      IsExternal: bool 
+      IsHidden: bool
+      EditToken: Guid
+      OrganizerId: int
+      CustomHexColor: string option
+    }
+    static member CreateFromWrite =
+        fun (employeeId: int, writeModel: WriteModel) ->
+            { Id = Guid.NewGuid()
+              Title = writeModel.Title
+              Description = writeModel.Description
+              Location = writeModel.Location
+              OrganizerName = writeModel.OrganizerName
+              OrganizerEmail = writeModel.OrganizerEmail
+              MaxParticipants = writeModel.MaxParticipants
+              StartDate = customToDateTime writeModel.StartDate.Date
+              EndDate = customToDateTime writeModel.StartDate.Date
+              StartTime = customToTimeSpan writeModel.StartDate.Time
+              EndTime = customToTimeSpan writeModel.EndDate.Time
+              OpenForRegistrationTime = int64 writeModel.OpenForRegistrationTime
+              CloseRegistrationTime = Option.map int64 writeModel.CloseRegistrationTime
+              HasWaitingList = writeModel.HasWaitingList
+              IsCancelled = false
+              IsExternal = writeModel.IsExternal
+              IsHidden = writeModel.IsHidden
+              EditToken = Guid.NewGuid()
+              OrganizerId = employeeId
+              CustomHexColor = writeModel.CustomHexColor }
 
 module Models =
 

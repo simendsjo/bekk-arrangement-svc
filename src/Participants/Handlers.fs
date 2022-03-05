@@ -28,7 +28,7 @@ module Handlers =
             let! writeModel = parseBody<WriteModel>
 
             let redirectUrlTemplate =
-                HttpUtility.UrlDecode writeModel.cancelUrlTemplate
+                HttpUtility.UrlDecode writeModel.CancelUrlTemplate
 
             let createCancelUrl (participant: Participant) =
                 redirectUrlTemplate.Replace("{eventId}",
