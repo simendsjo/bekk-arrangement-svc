@@ -157,17 +157,10 @@ module Handlers =
                             check (userCanCancel parameters)
                             >=> (handle << deleteParticipant) parameters)
                             |> withTransaction ]
+ 
               POST
               >=> choose
-                      [ routef "/events/%O/participants/%s" (fun (eventId: Guid, email) ->
-                            (check (oneCanParticipateOnEvent eventId)
-                            >=> (handle << registerForEvent) (eventId, email))
-                            |> withRetry
-                            |> withLock registrationLock
-                            ) ] ]
+                      [ routef "/events/%O/participants/%s" V2.Handlers.registerParticipationHandler3 ]
+                       ]
 
 
-        // let timer = new Diagnostics.Stopwatch()
-        // timer.Start()
-
-        // printfn "Elapsed SELECT Time: %i" timer.ElapsedMilliseconds

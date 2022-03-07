@@ -71,6 +71,7 @@ type WriteModel =
       CustomHexColor: string option
     }
     
+[<CLIMutable>]
 type DbModel = 
     { Id: Guid
       Title: string

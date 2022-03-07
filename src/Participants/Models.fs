@@ -16,6 +16,7 @@ type ParticipantAnswerDbModel = {
   Answer: string
 }
 
+[<CLIMutable>]
 type DbModel =
   { Name: string
     Email: string

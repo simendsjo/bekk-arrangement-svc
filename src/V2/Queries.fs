@@ -2,7 +2,8 @@ module V2.Queries
 
 open System
 open ArrangementService
-open ArrangementService
+open ArrangementService.Event
+open ArrangementService.Participant
 open Dapper
 open Microsoft.Data.SqlClient
 
@@ -13,33 +14,33 @@ let getEvent (eventId: Guid) (transaction: SqlTransaction) =
               ,[Title]
               ,[Description]
               ,[Location]
+              ,[OrganizerEmail]
               ,[StartDate]
               ,[StartTime]
               ,[EndDate]
               ,[EndTime]
-              ,[OrganizerName]
-              ,[OrganizerEmail]
-              ,[OpenForRegistrationTime]
-              ,[CloseRegistrationTime]
               ,[MaxParticipants]
+              ,[OrganizerName]
+              ,[OpenForRegistrationTime]
               ,[EditToken]
               ,[HasWaitingList]
               ,[IsCancelled]
               ,[IsExternal]
-              ,[IsHidden]
               ,[OrganizerId]
+              ,[IsHidden]
+              ,[CloseRegistrationTime]
               ,[CustomHexColor]
-          FROM Events
+          FROM [Events]
           WHERE Id = @eventId
         "
     let parameters = dict [
-        "eventId", box (eventId.ToString())
+        "eventId", box eventId
     ]
     
     try
         Ok (transaction.Connection.QuerySingle<Event.DbModel>(query, parameters, transaction))
     with
-    | _ -> Error $"Finner ikke arrangement med id: {eventId}"
+    | ex -> Error $"Finner ikke arrangement med id: {eventId}. Feil: {ex}"
     
 let getNumberOfParticipantsForEvent (eventId: Guid) (transaction: SqlTransaction) =
     let query =
@@ -72,37 +73,55 @@ let addParticipantToEvent (eventId: Guid) email (userId: int option) name (trans
         "employeeId", if userId.IsSome then box userId.Value else box null
     ]
     
-    transaction.Connection.QuerySingle<Participant.DbModel>(query, parameters, transaction)
+    try
+        transaction.Connection.QuerySingle<DbModel>(query, parameters, transaction)
+        |> Ok
+    with
+        | ex -> Error $"Kunne ikke legge til deltakeren. Feil {ex}"
     
-//let createParticipantAnswers (eventId: Guid) email participantAnswers (transaction: SqlTransaction) =
-//
-//    let dbModels: Participant.DomainTypes.ParticipantAnswerDbModel list =
-//        participantAnswers
-//        |> List.map (fun (answer: Participant.DomainTypes.Answer) ->
-//            { QuestionId = answer.Id
-//              EventId = eventId
-//              Email = email
-//              Answer = answer.Answer
-//            })
-//    // Loop over og lag alle parameter linjene til SQL querien
-//    let parameters = DynamicParameters()
-//    let values =
-//        dbModels
-//        |> List.mapi (fun n answer ->
-//            // Opprett selve parametrene for Dapper
-//            parameters.Add($"questionId{n}", answer.QuestionId)
-//            parameters.Add($"eventId{n}", eventId)
-//            parameters.Add($"email{n}", email)
-//            parameters.Add($"answer{n}", answer.Answer)
-//            $"(@questionId{n}, @eventId{n}, @email{n}, @answer{n})")
-//        
-//    // Slå sammen querien med parameter linjene
-//    let query =
-//        $"""
-//        INSERT INTO ParticipantAnswers (QuestionId, EventId, Email, Answer)
-//        OUTPUT INSERTED.*
-//        VALUES {String.concat "," values}
-//        """
-//    
-//    transaction.Connection.Query<Participant.DomainTypes.ParticipantAnswerDbModel>(query, parameters, transaction)
-//    |> Seq.toList
+let getEventQuestions eventId (transaction: SqlTransaction) =
+    let query =
+        "
+        SELECT [Id]
+              ,[EventId]
+              ,[Question]
+        FROM [ParticipantQuestions]
+        WHERE EventId = @eventId
+        ORDER BY Id ASC
+        "
+    let parameters = dict [
+        "eventId", box (eventId.ToString())
+    ]
+    
+    transaction.Connection.Query<ParticipantQuestionDbModel>(query, parameters, transaction)
+    |> Seq.toList
+        
+let createParticipantAnswers (participantAnswers: ParticipantAnswerDbModel list) (transaction: SqlTransaction) =
+
+    // Loop over og lag alle parameter linjene til SQL querien
+    let parameters = DynamicParameters()
+    let values =
+        participantAnswers
+        |> List.mapi (fun n answer ->
+            // Opprett selve parametrene for Dapper
+            parameters.Add($"questionId{n}", answer.QuestionId)
+            parameters.Add($"eventId{n}", answer.EventId)
+            parameters.Add($"email{n}", answer.Email)
+            parameters.Add($"answer{n}", answer.Answer)
+            $"(@questionId{n}, @eventId{n}, @email{n}, @answer{n})")
+        
+    // Slå sammen querien med parameter linjene
+    let query =
+        $"""
+        INSERT INTO ParticipantAnswers (QuestionId, EventId, Email, Answer)
+        OUTPUT INSERTED.*
+        VALUES {String.concat "," values}
+        """
+    
+    try
+        transaction.Connection.Query<ParticipantAnswerDbModel>(query, parameters, transaction)
+        |> Seq.toList
+        |> Ok
+    with
+        | ex -> Error $"Kunne ikke legge til svar til deltakeren. Feil {ex}"
+    
