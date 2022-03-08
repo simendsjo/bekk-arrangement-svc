@@ -13,7 +13,7 @@ open ArrangementService.DomainModels
 open ArrangementService.Event
 open ArrangementService.Participant
 
-type ParticipateEvent =
+type private ParticipateEvent =
     | NotExternal 
     | IsCancelled
     | NotOpenForRegistration
@@ -46,7 +46,7 @@ let private participateEvent isBekker numberOfParticipants (event: Event.DbModel
     else
         CanParticipate
         
-let registerParticipationHandler3 (eventId: Guid, email): HttpHandler =
+let registerParticipationHandler (eventId: Guid, email): HttpHandler =
     fun (next: HttpFunc) (context: HttpContext) ->
         task {
             let isBekker = context.User.Identity.IsAuthenticated

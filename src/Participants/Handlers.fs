@@ -151,7 +151,7 @@ module Handlers =
  
               POST
               >=> choose
-                      [ routef "/events/%O/participants/%s" V2.Handlers.registerParticipationHandler3 ]
+                      [ routef "/events/%O/participants/%s" V2.Handlers.registerParticipationHandler ]
                        ]
 
 
