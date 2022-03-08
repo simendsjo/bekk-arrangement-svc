@@ -1,6 +1,7 @@
 namespace ArrangementService.Participant
 
 open System
+open System.Web
 
 open ArrangementService
 open TimeStamp
@@ -71,7 +72,7 @@ type ViewModelLocalStorage =
   { EditableEvents: EditableEventLocalStorage list
     Participations: ParticipationsLocalStorage list
   }
-
+  
 module Models =
 
     let dbToDomain (dbRecord: DbModel, answers): Participant =

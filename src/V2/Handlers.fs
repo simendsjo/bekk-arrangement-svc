@@ -1,18 +1,18 @@
 module V2.Handlers
 
 open System
-open ArrangementService.Event
-open ArrangementService.Participant
+open System.Web
 open Giraffe
 open Microsoft.Data.SqlClient
 open Microsoft.AspNetCore.Http
+open Thoth.Json.Net
 
 open ArrangementService
-open Thoth.Json.Net
 open UserMessage
+open ArrangementService.DomainModels
+open ArrangementService.Event
+open ArrangementService.Participant
         
-// TODO: EPOST
-// TODO: Fiks kommentarene
 // TODO: Error messages
 // TODO: Må jeg stenge DB connectionsa?
 let registerParticipationHandler3 (eventId: Guid, email): HttpHandler =
@@ -50,7 +50,7 @@ let registerParticipationHandler3 (eventId: Guid, email): HttpHandler =
                     else if DateTime.now() > (DateTime.toCustomDateTime event.EndDate event.EndTime) then
                        Error "Eventet tok sted i fortiden"
                     // Eventet har ikke nok ledig plass plass
-                    else if event.MaxParticipants.IsSome && numberOfParticipants = event.MaxParticipants.Value && not event.HasWaitingList then
+                    else if event.MaxParticipants.IsSome && numberOfParticipants >= event.MaxParticipants.Value && not event.HasWaitingList then
                         Error "Eventet har ikke plass"
                     else
                         let insert =    
@@ -78,14 +78,14 @@ let registerParticipationHandler3 (eventId: Guid, email): HttpHandler =
                                     let answers = List.map (fun answer -> answer.Answer) answers
                                     Ok (participant, answers)
                                 | Error e1, Error e2 ->
-                                   $"""Feil med lagring av deltaker og spørsmål.
+                                   $"""Feil med lagring av deltaker og svar.
                                    Deltaker: {e1}.
                                    Spørsmål: {e2}."""
                                    |> Error
                                 | Error e, Ok _ ->
                                     Error $"Feil med lagring av deltaker: {e}"
                                 | Ok _, Error e ->
-                                    Error $"Feil med lagring av deltakerspørsmål: {e}"
+                                    Error $"Feil med lagring av deltakersvar: {e}"
                             with
                             | ex ->
                                 transaction.Rollback()
@@ -93,7 +93,35 @@ let registerParticipationHandler3 (eventId: Guid, email): HttpHandler =
                                 
                         Result.map (fun (participant: DbModel, answers) ->
                             transaction.Commit()
-                            DomainModels.Participant.CreateFromPrimitives participant.Name participant.Email answers participant.EventId participant.RegistrationTime participant.CancellationToken participant.EmployeeId
+                            // FIXME: we need these domain models as the rest of the system all work with these
+                            // Lage domenemodell av participant
+                            let participantDomainModel = DomainModels.Participant.CreateFromPrimitives participant.Name participant.Email answers participant.EventId participant.RegistrationTime participant.CancellationToken participant.EmployeeId
+                            // Lag domenemodell av event
+                            let eventDomainModel = Event.Models.dbToDomain(event, [], None)
+                            // Sende epost
+                            let isWaitlisted = event.MaxParticipants.IsSome && numberOfParticipants >= event.MaxParticipants.Value
+                            let email =
+                                let redirectUrlTemplate =
+                                    HttpUtility.UrlDecode writeModel.CancelUrlTemplate
+
+                                let createCancelUrl (participant: Participant) =
+                                    redirectUrlTemplate.Replace("{eventId}",
+                                                                participant.EventId.Unwrap.ToString
+                                                                    ())
+                                                       .Replace("{email}",
+                                                                participant.Email.Unwrap
+                                                                |> Uri.EscapeDataString)
+                                                       .Replace("{cancellationToken}",
+                                                                participant.CancellationToken.ToString
+                                                                    ())
+                                
+                                Service.createNewParticipantMail
+                                    createCancelUrl eventDomainModel isWaitlisted
+                                    (Email.EmailAddress config.noReplyEmail)
+                                    participantDomainModel
+                            ArrangementService.Email.Service.sendMail email context
+                            
+                            participantDomainModel
                             ) insert
                 | Error e, _ -> Error e
                 | _, Error e -> Error $"Fikk ikke til å parse request body: {e}"
