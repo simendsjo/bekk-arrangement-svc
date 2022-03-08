@@ -12,14 +12,44 @@ open UserMessage
 open ArrangementService.DomainModels
 open ArrangementService.Event
 open ArrangementService.Participant
+
+type ParticipateEvent =
+    | NotExternal 
+    | IsCancelled
+    | NotOpenForRegistration
+    | HasAlreadyTakenPlace
+    | NoRoom
+    | IsWaitListed
+    | CanParticipate
+    
+let private participateEvent isBekker numberOfParticipants (event: Event.DbModel) =
+    let currentEpoch = DateTimeOffset.Now.ToUnixTimeMilliseconds()
+    let hasRoom = event.MaxParticipants.IsNone || event.MaxParticipants.IsSome && numberOfParticipants < event.MaxParticipants.Value
+    // Eventet er ikke ekstern 
+    // Brukeren er ikke en bekker
+    if not event.IsExternal && not isBekker then
+        NotExternal
+    // Eventet er kansellert
+    else if event.IsCancelled then
+        IsCancelled
+    // Eventet er ikke åpent for registrering
+    else if event.OpenForRegistrationTime >= currentEpoch || (event.CloseRegistrationTime.IsSome && event.CloseRegistrationTime.Value < currentEpoch) then
+        NotOpenForRegistration
+    // Eventet har funnet sted
+    else if DateTime.now() > (DateTime.toCustomDateTime event.EndDate event.EndTime) then
+        HasAlreadyTakenPlace
+    // Eventet har ikke nok ledig plass plass
+    else if not hasRoom && not event.HasWaitingList then
+        NoRoom
+    else if hasRoom && event.HasWaitingList then
+        IsWaitListed
+    else
+        CanParticipate
         
-// TODO: Error messages
-// TODO: Må jeg stenge DB connectionsa?
 let registerParticipationHandler3 (eventId: Guid, email): HttpHandler =
     fun (next: HttpFunc) (context: HttpContext) ->
         task {
             let isBekker = context.User.Identity.IsAuthenticated
-            let currentEpoch = DateTimeOffset.Now.ToUnixTimeMilliseconds()
             let userId = Auth.getUserIdV2 context
             
             let config = context.GetService<AppConfig>()
@@ -36,23 +66,25 @@ let registerParticipationHandler3 (eventId: Guid, email): HttpHandler =
             let result =
                 match event, writeModel with
                 | Ok event, Ok writeModel ->
-                    // Nedenfor er en rekke tester som skal feile og gi en feilmelding dersom noen krietier er sanne
-                    // Eventet er ikke ekstern og brukeren er ikke en bekker
-                    if not event.IsExternal && not isBekker then
-                       Error "Eventet er ikke eksternt eller du er ikke autentisert"
-                    // Eventet er kansellert
-                    else if event.IsCancelled then
-                       Error "Eventet er kansellert"
-                    // Eventet er ikke åpent for registrering
-                    else if event.OpenForRegistrationTime >= currentEpoch || (event.CloseRegistrationTime.IsSome && event.CloseRegistrationTime.Value < currentEpoch) then
-                        Error "Eventet er ikke åpen for registering"
-                    // Eventet har funnet sted
-                    else if DateTime.now() > (DateTime.toCustomDateTime event.EndDate event.EndTime) then
-                       Error "Eventet tok sted i fortiden"
-                    // Eventet har ikke nok ledig plass plass
-                    else if event.MaxParticipants.IsSome && numberOfParticipants >= event.MaxParticipants.Value && not event.HasWaitingList then
-                        Error "Eventet har ikke plass"
-                    else
+                    let canParticipate = 
+                        match participateEvent isBekker numberOfParticipants event with
+                            | NotExternal ->
+                                Error "Eventet er ikke eksternt"
+                            | IsCancelled ->
+                                Error "Eventet er kansellert"
+                            | NotOpenForRegistration ->
+                                Error "Eventet er ikke åpen for registering"
+                            | HasAlreadyTakenPlace ->
+                                Error "Eventet tok sted i fortiden"
+                            | NoRoom ->
+                                Error "Eventet har ikke plass"
+                            | IsWaitListed ->
+                                Ok IsWaitListed
+                            | CanParticipate ->
+                                Ok CanParticipate
+                    match canParticipate with
+                    | Error e -> Error e
+                    | Ok participate -> 
                         let insert =    
                             try
                                 let participant = Queries.addParticipantToEvent eventId email userId writeModel.Name transaction
@@ -60,7 +92,7 @@ let registerParticipationHandler3 (eventId: Guid, email): HttpHandler =
                                     if List.isEmpty writeModel.ParticipantAnswers then
                                         Ok []
                                     else
-                                        // FIXME: Here we need to fetch all the questions from the database. This is because we have no question ID related to the answers. This does not feel right and should be fixed.
+                                        // FIXME: Here we need to fetch all the questions from the database. This is because we have no question ID related to the answers. This does not feel right and should be fixed. Does require a frontend fix as well
                                         let eventQuestions = V2.Queries.getEventQuestions eventId transaction
                                         let participantAnswerDbModels: ParticipantAnswerDbModel list =
                                             writeModel.ParticipantAnswers
@@ -99,7 +131,7 @@ let registerParticipationHandler3 (eventId: Guid, email): HttpHandler =
                             // Lag domenemodell av event
                             let eventDomainModel = Event.Models.dbToDomain(event, [], None)
                             // Sende epost
-                            let isWaitlisted = event.MaxParticipants.IsSome && numberOfParticipants >= event.MaxParticipants.Value
+                            let isWaitlisted = participate = IsWaitListed
                             let email =
                                 let redirectUrlTemplate =
                                     HttpUtility.UrlDecode writeModel.CancelUrlTemplate
@@ -133,5 +165,5 @@ let registerParticipationHandler3 (eventId: Guid, email): HttpHandler =
                     json newlyCreatedParticipantViewModel next context
                 | Error e ->
                     context.SetStatusCode 400
-                    json [InternalErrorMessage e] next context
+                    convertUserMessagesToHttpError [BadInput e] next context
         }

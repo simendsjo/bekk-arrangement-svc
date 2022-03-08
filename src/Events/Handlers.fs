@@ -63,11 +63,6 @@ module Handlers =
             yield Service.sendCancellationMailToParticipants
                       messageToParticipants (EmailAddress config.noReplyEmail) participants.attendees event
                       
-            if removeEventType = Cancel then
-                do! Logging.log "Event avlyst"
-                        [ "eventId", id.ToString()
-                          "number_of_participants", (Seq.length participants.attendees + Seq.length participants.waitingList).ToString() ]
-
             return result
         }
 
@@ -85,7 +80,6 @@ module Handlers =
         result {
             let! writeModel = getBody<WriteModel> ()
             let! updatedEvent = Service.updateEvent (Id id) writeModel
-            do! Logging.log "Event edited" [ "eventId", updatedEvent.Id.Unwrap.ToString() ]
             return domainToView updatedEvent
         }
 
@@ -107,10 +101,6 @@ module Handlers =
 
             let! newEvent = Service.createEvent viewUrl createEditUrl employeeId.Unwrap writeModel
             
-            do! Logging.log "Event created"
-                    [ "eventId", newEvent.Id.Unwrap.ToString()
-                      "has_shortname", if newEvent.Shortname.Unwrap.IsSome then "true" else "false" ]
-
             return domainToViewWithEditInfo newEvent
         }
 
@@ -152,10 +142,6 @@ module Handlers =
 
             let! numberOfParticipants = Service.getNumberOfParticipantsForEvent event.Id
             
-            do! Logging.log "Event unfurled"
-                    [ "eventId", event.Id.Unwrap.ToString()
-                      "number_of_participants", numberOfParticipants.Unwrap.ToString() ]
-                    
             return {| event = domainToView event; numberOfParticipants = numberOfParticipants.Unwrap |} 
         }
 

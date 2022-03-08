@@ -75,7 +75,7 @@ module Auth =
         
     let getUserIdV2 (context: HttpContext): int option =
         let value = context.User.FindFirst(employeeIdClaim)
-        if value.Value = null then
+        if value = null then
             None
         else
             Some (int value.Value)
