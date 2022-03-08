@@ -1,12 +1,11 @@
 namespace ArrangementService
 
+open System
 open Giraffe
-open Microsoft.AspNetCore.CookiePolicy
 open Microsoft.AspNetCore.Http
 
 open ResultComputationExpression
 open UserMessage
-open FSharp.Control.Tasks.V2
 
 
 module Auth =
@@ -78,7 +77,11 @@ module Auth =
         if value = null then
             None
         else
-            Some (int value.Value)
+            let parsedSuccessfully, parsedValue = Int32.TryParse(value.Value)
+            if parsedSuccessfully then
+                Some parsedValue
+            else
+                None
 
     let isAuthenticatedAs id =
         result {
