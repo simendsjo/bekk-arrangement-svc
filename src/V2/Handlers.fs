@@ -38,7 +38,7 @@ let private participateEvent isBekker numberOfParticipants (event: Event.DbModel
     // Eventet har funnet sted
     else if DateTime.now() > (DateTime.toCustomDateTime event.EndDate event.EndTime) then
         HasAlreadyTakenPlace
-    // Eventet har ikke nok ledig plass plass
+    // Eventet har ikke nok ledig plass 
     else if not hasRoom && not event.HasWaitingList then
         NoRoom
     else if hasRoom && event.HasWaitingList then
@@ -69,15 +69,15 @@ let registerParticipationHandler (eventId: Guid, email): HttpHandler =
                     let canParticipate = 
                         match participateEvent isBekker numberOfParticipants event with
                             | NotExternal ->
-                                Error "Eventet er ikke eksternt"
+                                Error "Arrangementet er ikke eksternt"
                             | IsCancelled ->
-                                Error "Eventet er kansellert"
+                                Error "Arrangementet er kansellert"
                             | NotOpenForRegistration ->
-                                Error "Eventet er ikke åpen for registering"
+                                Error "Arrangementet er ikke åpent for registering"
                             | HasAlreadyTakenPlace ->
-                                Error "Eventet tok sted i fortiden"
+                                Error "Arrangementet tok sted i fortiden"
                             | NoRoom ->
-                                Error "Eventet har ikke plass"
+                                Error "Arrangementet har ikke plass"
                             | IsWaitListed ->
                                 Ok IsWaitListed
                             | CanParticipate ->
