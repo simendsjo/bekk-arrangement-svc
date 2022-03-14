@@ -31,7 +31,7 @@ let getEvent (eventId: Guid) (transaction: SqlTransaction) =
               ,[CloseRegistrationTime]
               ,[CustomHexColor]
           FROM [Events]
-          WHERE Id = @eventId
+          WHERE Id = @eventId;
         "
     let parameters = dict [
         "eventId", box eventId
@@ -47,7 +47,7 @@ let getNumberOfParticipantsForEvent (eventId: Guid) (transaction: SqlTransaction
         "
         SELECT COUNT(*) AS NumberOfParticipants
         FROM [Participants]
-        WHERE EventId = @eventId
+        WHERE EventId = @eventId;
         "
     let parameters = dict [
         "eventId", box (eventId.ToString())
@@ -61,7 +61,7 @@ let addParticipantToEvent (eventId: Guid) email (userId: int option) name (trans
         "
         INSERT INTO Participants
         OUTPUT INSERTED.*
-        VALUES (@email, @eventId, @currentEpoch, @cancellationToken, @name, @employeeId)
+        VALUES (@email, @eventId, @currentEpoch, @cancellationToken, @name, @employeeId);
         "
         
     let parameters = dict [
@@ -87,7 +87,7 @@ let getEventQuestions eventId (transaction: SqlTransaction) =
               ,[Question]
         FROM [ParticipantQuestions]
         WHERE EventId = @eventId
-        ORDER BY Id ASC
+        ORDER BY Id ASC;
         "
     let parameters = dict [
         "eventId", box (eventId.ToString())
@@ -97,29 +97,29 @@ let getEventQuestions eventId (transaction: SqlTransaction) =
     |> Seq.toList
         
 let createParticipantAnswers (participantAnswers: ParticipantAnswerDbModel list) (transaction: SqlTransaction) =
-
-    // Loop over og lag alle parameter linjene til SQL querien
-    let parameters = DynamicParameters()
-    let values =
-        participantAnswers
-        |> List.mapi (fun n answer ->
-            // Opprett selve parametrene for Dapper
-            parameters.Add($"questionId{n}", answer.QuestionId)
-            parameters.Add($"eventId{n}", answer.EventId)
-            parameters.Add($"email{n}", answer.Email)
-            parameters.Add($"answer{n}", answer.Answer)
-            $"(@questionId{n}, @eventId{n}, @email{n}, @answer{n})")
-        
-    // Slå sammen querien med parameter linjene
-    let query =
-        $"""
+    let answer = List.tryHead participantAnswers
+    match answer with
+    | None -> Ok []
+    | Some answer ->
+    let insertQuery =
+        "
         INSERT INTO ParticipantAnswers (QuestionId, EventId, Email, Answer)
-        OUTPUT INSERTED.*
-        VALUES {String.concat "," values}
-        """
+        VALUES (@QuestionId, @EventId, @Email, @Answer);
+        "
+    let selectQuery =
+        "
+        SELECT * FROM ParticipantAnswers WHERE
+        QuestionId = @questionId AND EventId = @eventId AND Email = @email;
+        "
+    let selectParameters = dict [
+        "questionId", box answer.QuestionId
+        "eventId", box answer.EventId
+        "email", box answer.Email
+    ]
     
     try
-        transaction.Connection.Query<ParticipantAnswerDbModel>(query, parameters, transaction)
+        transaction.Connection.Execute(insertQuery, participantAnswers |> List.toSeq, transaction) |> ignore
+        transaction.Connection.Query<ParticipantAnswerDbModel>(selectQuery, selectParameters, transaction)
         |> Seq.toList
         |> Ok
     with
