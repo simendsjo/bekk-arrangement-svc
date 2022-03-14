@@ -13,6 +13,24 @@ open ArrangementService.DomainModels
 open ArrangementService.Event
 open ArrangementService.Participant
 
+// Flytt disse ut til en hjelpemodul når vi har flere handlers
+let createConnection connectionString =
+    let connection = new SqlConnection(connectionString)
+    connection.Open()
+    connection
+    
+let cleanupConnection (connection: SqlConnection) =
+    connection.Close()
+    connection.Dispose()
+    
+let createTransaction connectionString =
+    let connection = createConnection connectionString
+    let transaction = connection.BeginTransaction()
+    transaction
+    
+let cleanupTransaction (transaction: SqlTransaction) =
+    transaction.Dispose()
+
 type private ParticipateEvent =
     | NotExternal 
     | IsCancelled
@@ -52,16 +70,15 @@ let registerParticipationHandler (eventId: Guid, email): HttpHandler =
             let isBekker = context.User.Identity.IsAuthenticated
             let userId = Auth.getUserIdV2 context
             
+            let! body = context.ReadBodyFromRequestAsync()
+            let writeModel = Decode.Auto.fromString<WriteModel> (body, caseStrategy = CamelCase)
+            
             let config = context.GetService<AppConfig>()
-            use dbConnection = new SqlConnection(config.databaseConnectionString)
-            dbConnection.Open()
-            use transaction = dbConnection.BeginTransaction()
+            
+            let transaction = createTransaction config.databaseConnectionString
             
             let event = Queries.getEvent eventId transaction
             let numberOfParticipants = Queries.getNumberOfParticipantsForEvent eventId transaction
-            
-            let! body = context.ReadBodyFromRequestAsync()
-            let writeModel = Decode.Auto.fromString<WriteModel> (body, caseStrategy = CamelCase)
             
             let result =
                 match event, writeModel with
@@ -104,6 +121,7 @@ let registerParticipationHandler (eventId: Guid, email): HttpHandler =
                                                   Answer = answer
                                                 })
                                         Queries.createParticipantAnswers participantAnswerDbModels transaction
+                                transaction.Commit()
                                         
                                 match participant, answers with
                                 | Ok participant, Ok answers ->
@@ -122,9 +140,9 @@ let registerParticipationHandler (eventId: Guid, email): HttpHandler =
                             | ex ->
                                 transaction.Rollback()
                                 Error ex.Message
+                        cleanupTransaction transaction
                                 
                         Result.map (fun (participant: DbModel, answers) ->
-                            transaction.Commit()
                             // FIXME: we need these domain models as the rest of the system all work with these
                             // Lage domenemodell av participant
                             let participantDomainModel = DomainModels.Participant.CreateFromPrimitives participant.Name participant.Email answers participant.EventId participant.RegistrationTime participant.CancellationToken participant.EmployeeId
