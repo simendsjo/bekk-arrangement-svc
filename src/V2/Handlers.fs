@@ -59,7 +59,7 @@ let private participateEvent isBekker numberOfParticipants (event: Event.DbModel
     // Eventet har ikke nok ledig plass 
     else if not hasRoom && not event.HasWaitingList then
         NoRoom
-    else if hasRoom && event.HasWaitingList then
+    else if not hasRoom && event.HasWaitingList then
         IsWaitListed
     else
         CanParticipate
