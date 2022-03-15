@@ -14,22 +14,22 @@ open ArrangementService.Event
 open ArrangementService.Participant
 
 // Flytt disse ut til en hjelpemodul når vi har flere handlers
-let createConnection connectionString =
-    let connection = new SqlConnection(connectionString)
-    connection.Open()
-    connection
-    
-let cleanupConnection (connection: SqlConnection) =
-    connection.Close()
-    connection.Dispose()
-    
-let createTransaction connectionString =
-    let connection = createConnection connectionString
-    let transaction = connection.BeginTransaction()
-    transaction
-    
-let cleanupTransaction (transaction: SqlTransaction) =
-    transaction.Dispose()
+//let createConnection connectionString =
+//    let connection = new SqlConnection(connectionString)
+//    connection.Open()
+//    connection
+//    
+//let cleanupConnection (connection: SqlConnection) =
+//    connection.Close()
+//    connection.Dispose()
+//    
+//let createTransaction connectionString =
+//    let connection = createConnection connectionString
+//    let transaction = connection.BeginTransaction()
+//    (connection, transaction)
+//    
+//let cleanupTransaction (transaction: SqlTransaction) =
+//    transaction.Dispose()
 
 type private ParticipateEvent =
     | NotExternal 
@@ -75,8 +75,9 @@ let registerParticipationHandler (eventId: Guid, email): HttpHandler =
             
             let config = context.GetService<AppConfig>()
             
-            let transaction = createTransaction config.databaseConnectionString
-            
+            let connection = new SqlConnection(config.databaseConnectionString)
+            connection.Open()
+            let transaction = connection.BeginTransaction()
             let event = Queries.getEvent eventId transaction
             let numberOfParticipants = Queries.getNumberOfParticipantsForEvent eventId transaction
             
@@ -102,7 +103,7 @@ let registerParticipationHandler (eventId: Guid, email): HttpHandler =
                     match canParticipate with
                     | Error e -> Error e
                     | Ok participate -> 
-                        let insert =    
+                        let insertResult =    
                             try
                                 let participant = Queries.addParticipantToEvent eventId email userId writeModel.Name transaction
                                 let answers =
@@ -122,26 +123,34 @@ let registerParticipationHandler (eventId: Guid, email): HttpHandler =
                                                 })
                                         Queries.createParticipantAnswers participantAnswerDbModels transaction
                                 transaction.Commit()
-                                        
-                                match participant, answers with
-                                | Ok participant, Ok answers ->
-                                    let answers = List.map (fun answer -> answer.Answer) answers
-                                    Ok (participant, answers)
-                                | Error e1, Error e2 ->
-                                   $"""Feil med lagring av deltaker og svar.
-                                   Deltaker: {e1}.
-                                   Spørsmål: {e2}."""
-                                   |> Error
-                                | Error e, Ok _ ->
-                                    Error $"Feil med lagring av deltaker: {e}"
-                                | Ok _, Error e ->
-                                    Error $"Feil med lagring av deltakersvar: {e}"
+                                Ok (participant, answers)
                             with
                             | ex ->
                                 transaction.Rollback()
                                 Error ex.Message
-                        cleanupTransaction transaction
                                 
+                        transaction.Dispose()
+                        connection.Close()
+                        connection.Dispose()
+                        
+                        let validatedInsertResult =
+                            match insertResult with
+                            | Ok (participant, answers) ->
+                                match participant, answers with
+                                    | Ok participant, Ok answers ->
+                                        let answers = List.map (fun answer -> answer.Answer) answers
+                                        Ok (participant, answers)
+                                    | Error e1, Error e2 ->
+                                       $"""Feil med lagring av deltaker og svar.
+                                       Deltaker: {e1}.
+                                       Spørsmål: {e2}."""
+                                       |> Error
+                                    | Error e, Ok _ ->
+                                        Error $"Feil med lagring av deltaker: {e}"
+                                    | Ok _, Error e ->
+                                        Error $"Feil med lagring av deltakersvar: {e}"
+                            | Error e -> Error e
+                            
                         Result.map (fun (participant: DbModel, answers) ->
                             // FIXME: we need these domain models as the rest of the system all work with these
                             // Lage domenemodell av participant
@@ -172,7 +181,7 @@ let registerParticipationHandler (eventId: Guid, email): HttpHandler =
                             ArrangementService.Email.Service.sendMail email context
                             
                             participantDomainModel
-                            ) insert
+                            ) validatedInsertResult
                 | Error e, _ -> Error e
                 | _, Error e -> Error $"Fikk ikke til å parse request body: {e}"
                 
