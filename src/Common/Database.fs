@@ -25,8 +25,6 @@ module Database =
         config.currentConnection <- connection
         config.currentTransaction <- transaction
                 
-        ctx |> Logging.log "Transaction started" [logTransactionId transaction] |> ignore
-
         ()
 
     let commitTransaction (ctx: HttpContext) = 
@@ -44,8 +42,6 @@ module Database =
         t.Commit()
         c.Close()
         
-        ctx |> Logging.log "Transaction committed" [logTransactionId t] |> ignore
-
         ()
 
     let rollbackTransaction (ctx: HttpContext) = 
@@ -63,8 +59,6 @@ module Database =
         t.Rollback()
         c.Close()
                 
-        ctx |> Logging.log "Transaction aborted" [logTransactionId t] |> ignore
-
         ()
 
     let runSelectQuery<'t> query =

@@ -1,10 +1,10 @@
-FROM mcr.microsoft.com/dotnet/sdk:5.0-alpine as build-env
+FROM mcr.microsoft.com/dotnet/sdk:6.0-alpine as build-env
 WORKDIR /app
 
 COPY . ./
 RUN dotnet publish -c Release -o out ./src/bekk-arrangement-svc.fsproj
 
-FROM mcr.microsoft.com/dotnet/aspnet:5.0
+FROM mcr.microsoft.com/dotnet/aspnet:6.0
 COPY --from=build-env /app/out .
 
 ENV VIRTUAL_PATH="/arrangement-svc"

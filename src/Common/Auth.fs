@@ -1,11 +1,11 @@
 namespace ArrangementService
 
+open System
 open Giraffe
 open Microsoft.AspNetCore.Http
 
 open ResultComputationExpression
 open UserMessage
-open FSharp.Control.Tasks.V2
 
 
 module Auth =
@@ -71,6 +71,17 @@ module Auth =
                                                 | Ok _ -> ctx.User.FindFirst(employeeIdClaim).Value |> Tools.tryParseInt |> Ok)
             return res
         }
+        
+    let getUserIdV2 (context: HttpContext): int option =
+        let value = context.User.FindFirst(employeeIdClaim)
+        if value = null then
+            None
+        else
+            let parsedSuccessfully, parsedValue = Int32.TryParse(value.Value)
+            if parsedSuccessfully then
+                Some parsedValue
+            else
+                None
 
     let isAuthenticatedAs id =
         result {

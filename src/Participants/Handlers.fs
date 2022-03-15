@@ -28,7 +28,7 @@ module Handlers =
             let! writeModel = parseBody<WriteModel>
 
             let redirectUrlTemplate =
-                HttpUtility.UrlDecode writeModel.cancelUrlTemplate
+                HttpUtility.UrlDecode writeModel.CancelUrlTemplate
 
             let createCancelUrl (participant: Participant) =
                 redirectUrlTemplate.Replace("{eventId}",
@@ -59,11 +59,6 @@ module Handlers =
             let! participantDomainModel = writeToDomain (eventId, email) writeModel userId |> Task.wrap |> ignoreContext
             do! Service.registerParticipant createMailForParticipant participantDomainModel
             
-            do! Logging.log "Participant påmeldt"
-                    [ "eventId", event.Id.Unwrap.ToString()
-                      "number_of_participants", participants.Unwrap.ToString()
-                      "is_waitlisted", if isWaitlisted then "true" else "false" ]
-
             return domainToViewWithCancelInfo participantDomainModel
         }
 
@@ -80,10 +75,6 @@ module Handlers =
             
             let! event = Service.getEvent (Event.Id id)
             let! deleteResult = Service.deleteParticipant (event, emailAddress) 
-            
-            do! Logging.log "Participant avmeldt"
-                    [ "eventId", event.Id.Unwrap.ToString()
-                      "participant_email", email ]
             
             return deleteResult
         }
@@ -157,17 +148,10 @@ module Handlers =
                             check (userCanCancel parameters)
                             >=> (handle << deleteParticipant) parameters)
                             |> withTransaction ]
+ 
               POST
               >=> choose
-                      [ routef "/events/%O/participants/%s" (fun (eventId: Guid, email) ->
-                            (check (oneCanParticipateOnEvent eventId)
-                            >=> (handle << registerForEvent) (eventId, email))
-                            |> withRetry
-                            |> withLock registrationLock
-                            ) ] ]
+                      [ routef "/events/%O/participants/%s" V2.Handlers.registerParticipationHandler ]
+                       ]
 
 
-        // let timer = new Diagnostics.Stopwatch()
-        // timer.Start()
-
-        // printfn "Elapsed SELECT Time: %i" timer.ElapsedMilliseconds

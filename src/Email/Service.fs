@@ -14,6 +14,7 @@ open ArrangementService.DomainModels
 open ArrangementService.Config
 open FifteenBelow.Json
 open System.Collections.Generic
+open System.Web
 
 module Service =
 
@@ -34,7 +35,7 @@ module Service =
                 ()
         }
         |> Async.Start
-
+        
     let sendMail (email: Email) (context: HttpContext) =
 
         let sendgridConfig = context.GetService<SendgridOptions>()
