@@ -1,7 +1,9 @@
 ﻿module ArragementService.App
 
 open System
+open System.Diagnostics
 open System.Threading.Tasks
+open Bekk.Canonical.Logger
 open Giraffe
 open Microsoft.AspNetCore.Builder
 open Microsoft.Extensions.DependencyInjection
@@ -22,6 +24,7 @@ open SendgridApiModels
 let webApp =
     choose
         [ Health.healthCheck; Event.Handlers.routes; Participant.Handlers.routes ]
+        
 
 let private configuration =
     let builder = ConfigurationBuilder()
@@ -39,6 +42,7 @@ let configureApp (app: IApplicationBuilder) =
         context.Request.Path <- context.Request.Path.Value.Replace (configuration.["VIRTUAL_PATH"], "") |> PathString
         next.Invoke())
     |> ignore
+    app.UseMiddleware<Middleware.RequestLogging>() |> ignore
     app.UseAuthentication()
        .UseCors(configureCors)
        .UseGiraffe(createLoggingApp webApp config)
@@ -71,6 +75,7 @@ let configureServices (services: IServiceCollection) =
                                                 requestId = Guid.NewGuid().GetHashCode().ToString().[1..6]
                                                 currentConnection = null
                                                 currentTransaction = null }) |> ignore // For å sende mail: bytt ut = med <>
+    services.AddScoped<Logger>() |> ignore
     services.AddAuthentication(fun options ->
             options.DefaultAuthenticateScheme <-
                 JwtBearerDefaults.AuthenticationScheme
@@ -94,16 +99,6 @@ let configureServices (services: IServiceCollection) =
         (Thoth.Json.Giraffe.ThothSerializer
             (caseStrategy = CamelCase, extra = extraEncoder, skipNullField = true))
     |> ignore
-
-    // let mutable minWorker = 0
-    // let mutable minIOC = 0
-
-    // ThreadPool.GetMinThreads(&minWorker, &minIOC)  
-    // ThreadPool.SetMinThreads(500, minIOC) |> ignore
-
-    // let conn = new SqlConnection(config.databaseConnectionString) :> IDbConnection
-    // conn.Open()
-    // conn.Close()
 
     ()
 

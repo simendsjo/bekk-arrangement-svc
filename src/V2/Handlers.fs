@@ -13,24 +13,6 @@ open ArrangementService.DomainModels
 open ArrangementService.Event
 open ArrangementService.Participant
 
-// Flytt disse ut til en hjelpemodul når vi har flere handlers
-//let createConnection connectionString =
-//    let connection = new SqlConnection(connectionString)
-//    connection.Open()
-//    connection
-//    
-//let cleanupConnection (connection: SqlConnection) =
-//    connection.Close()
-//    connection.Dispose()
-//    
-//let createTransaction connectionString =
-//    let connection = createConnection connectionString
-//    let transaction = connection.BeginTransaction()
-//    (connection, transaction)
-//    
-//let cleanupTransaction (transaction: SqlTransaction) =
-//    transaction.Dispose()
-
 type private ParticipateEvent =
     | NotExternal 
     | IsCancelled
@@ -75,9 +57,9 @@ let registerParticipationHandler (eventId: Guid, email): HttpHandler =
             
             let config = context.GetService<AppConfig>()
             
-            let connection = new SqlConnection(config.databaseConnectionString)
+            use connection = new SqlConnection(config.databaseConnectionString)
             connection.Open()
-            let transaction = connection.BeginTransaction()
+            use transaction = connection.BeginTransaction()
             let event = Queries.getEvent eventId transaction
             let numberOfParticipants = Queries.getNumberOfParticipantsForEvent eventId transaction
             
@@ -129,9 +111,7 @@ let registerParticipationHandler (eventId: Guid, email): HttpHandler =
                                 transaction.Rollback()
                                 Error ex.Message
                                 
-                        transaction.Dispose()
                         connection.Close()
-                        connection.Dispose()
                         
                         let validatedInsertResult =
                             match insertResult with
