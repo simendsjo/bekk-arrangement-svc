@@ -72,7 +72,6 @@ let configureServices (services: IServiceCollection) =
           log = []
         }
     services.AddScoped<AppConfig> (fun _ -> { config with
-                                                requestId = Guid.NewGuid().GetHashCode().ToString().[1..6]
                                                 currentConnection = null
                                                 currentTransaction = null }) |> ignore // For å sende mail: bytt ut = med <>
     services.AddScoped<Logger>() |> ignore
