@@ -12,7 +12,6 @@ open Newtonsoft.Json.Serialization
 open Config
 open Email.Types
 open Email.Models
-open DomainModels
 open SendgridApiModels
 
 let private sendMailProd (options: SendgridOptions) (jsonBody: string) =

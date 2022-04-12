@@ -9,7 +9,6 @@ open Http
 open Auth
 open Config
 open Email.Types
-open DomainModels
 open Participant.Models
 open ResultComputationExpression
 

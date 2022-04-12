@@ -1,10 +1,13 @@
 module Event.Service
 
+open Email
 open Microsoft.AspNetCore.Http
 
 open Email.Types
-open DomainModels
-open Email.CalendarInvite
+open Event.Models
+open Email.Models
+open CalendarInvite
+open Participant.Models
 open ResultComputationExpression
 
 // Arrangement markert som IsHidden skal bare være synlig
@@ -33,33 +36,33 @@ let keepOnlyVisibleEvents (events: Event seq) =
 
 let getEvents: Handler<Event seq> =
     result {
-        let! events = Event.Queries.getEvents 
+        let! events = Queries.getEvents 
         let! visibleEvents = events |> keepOnlyVisibleEvents
         return visibleEvents
     }
 
 let getPastEvents: Handler<Event seq> =
     result {
-        let! events = Event.Queries.getPastEvents
+        let! events = Queries.getPastEvents
         let! visibleEvents = events |> keepOnlyVisibleEvents
         return visibleEvents
     }
 
 let getEventsOrganizedBy organizerEmail =
     result {
-        let! eventsByOrganizer = Event.Queries.queryEventsOrganizedByEmail organizerEmail 
+        let! eventsByOrganizer = Queries.queryEventsOrganizedByEmail organizerEmail 
         return eventsByOrganizer
     }
 
 let getEventsOrganizedByOrganizerId (organizerId: Event.Types.EmployeeId) =
     result {
-        let! eventsByOrganizer = Event.Queries.queryEventsOrganizedByOrganizerId organizerId
+        let! eventsByOrganizer = Queries.queryEventsOrganizedByOrganizerId organizerId
         return eventsByOrganizer
     }
 
 let getEvent id =
     result {
-        let! event = Event.Queries.queryEventByEventId id
+        let! event = Queries.queryEventByEventId id
         return event
     }
 
@@ -98,7 +101,7 @@ let private sendNewlyCreatedEventMail viewUrl createEditUrl (event: Event) (ctx:
     let config = Config.getConfig ctx
     let mail =
         createEmail viewUrl createEditUrl (EmailAddress config.noReplyEmail) event
-    Email.Service.sendMail mail ctx
+    Service.sendMail mail ctx
 
 type EventWithShortname =
     | EventExistsWithShortname of Event
@@ -107,7 +110,7 @@ type EventWithShortname =
 let private setShortname eventId shortname =
     result {
         let! shortnameExists =
-                Event.Queries.queryEventByShortname shortname
+                Queries.queryEventByShortname shortname
                 >> Task.map (function
                 | Ok event -> EventExistsWithShortname event |> Ok
                 | Error _ -> UnusedShortname |> Ok)
@@ -120,20 +123,20 @@ let private setShortname eventId shortname =
             if event.EndDate >= DateTimeCustom.now() then
                 return! Error [ UserMessages.Events.shortnameIsInUse shortname ] |> Task.wrap
             else
-                yield! Event.Queries.deleteShortname shortname
+                yield! Queries.deleteShortname shortname
 
-        yield! Event.Queries.insertShortname eventId shortname
+        yield! Queries.insertShortname eventId shortname
     }
 
 let createEvent viewUrl createEditUrl employeeId event =
     result {
-        let! newEvent = Event.Queries.createEvent employeeId event
+        let! newEvent = Queries.createEvent employeeId event
 
         match event.ParticipantQuestions with
         | [] -> 
             yield! result.Zero()
         | questions ->
-            yield! Event.Queries.insertQuestions newEvent.Id questions
+            yield! Queries.insertQuestions newEvent.Id questions
 
         match event.Shortname with
         | None -> 
@@ -148,13 +151,13 @@ let createEvent viewUrl createEditUrl employeeId event =
 
 let cancelEvent event =
     result {
-        do! Event.Queries.updateEvent { event with IsCancelled = true }
+        do! Queries.updateEvent { event with IsCancelled = true }
         return UserMessages.Events.eventSuccessfullyCancelled event.Title
     }
 
 let deleteEvent id =
     result {
-        do! Event.Queries.deleteEvent id
+        do! Queries.deleteEvent id
         return UserMessages.Events.eventSuccessfullyDeleted id
     }
 
@@ -266,7 +269,7 @@ let registerParticipant createMail participant =
         do! Participant.Queries.createParticipant participant
         do! Participant.Queries.setAnswers participant
 
-        yield Email.Service.sendMail (createMail participant)
+        yield Service.sendMail (createMail participant)
 
         return ()
     }
@@ -278,7 +281,7 @@ let getParticipant (eventId, email: EmailAddress) =
         return participant
     }
 
-let getParticipantsForEvent (event: Event): Handler<Participant.Models.ParticipantsWithWaitingList> =
+let getParticipantsForEvent (event: Event): Handler<ParticipantsWithWaitingList> =
     result {
         let! participantsForEvent =
             Participant.Queries.queryParticipantsByEventId event.Id
@@ -324,16 +327,16 @@ let private sendMailToFirstPersonOnWaitingList
     | None -> 
         ignoreContext ()
     | Some participant ->
-        Email.Service.sendMail
+        Service.sendMail
                   (createFreeSpotAvailableMail event participant)
 
 let private sendMailToOrganizerAboutCancellation event participant =
     let mail = createCancelledParticipationMailToOrganizer event participant
-    Email.Service.sendMail mail
+    Service.sendMail mail
 
 let private sendMailWithCancellationConfirmation event participant =
     let mail = createCancelledParticipationMailToAttendee event participant
-    Email.Service.sendMail mail
+    Service.sendMail mail
 
 let private sendParticipantCancelMails event email =
     result {
@@ -393,11 +396,11 @@ let sendCancellationMailToParticipants
     ctx
     =
     let sendMailToParticipant participant =
-        Email.Service.sendMail
+        Service.sendMail
             (createCancelledEventMail messageToParticipants event
                  noReplyMail participant) ctx
 
-    Email.Service.sendMail
+    Service.sendMail
             (createCancellationConfirmationToOrganizer event messageToParticipants) ctx
 
     participants |> Seq.iter sendMailToParticipant
@@ -460,13 +463,13 @@ let getNumberOfQuestionsThatHaveBeenAnswered (eventId:  Event.Types.Id) =
 *)
 let updateEvent (id: Event.Types.Id) writeModel =
     result {
-        let! oldEvent = Event.Queries.queryEventByEventId id
+        let! oldEvent = Queries.queryEventByEventId id
         let! newEvent = Event.Models.writeToDomain id.Unwrap writeModel oldEvent.EditToken oldEvent.IsCancelled oldEvent.OrganizerId.Unwrap |> Task.wrap |> ignoreContext
 
         let! { waitingList = oldWaitingList } = getParticipantsForEvent oldEvent
 
-        do! Event.Validation.assertValidCapacityChange oldEvent newEvent
-        do! Event.Queries.updateEvent newEvent
+        do! Validation.assertValidCapacityChange oldEvent newEvent
+        do! Queries.updateEvent newEvent
 
         if newEvent.ParticipantQuestions <> oldEvent.ParticipantQuestions then
             let! numberOfAnsweredQuestions = getNumberOfQuestionsThatHaveBeenAnswered newEvent.Id
@@ -475,13 +478,13 @@ let updateEvent (id: Event.Types.Id) writeModel =
             if answeredQuestions <> (oldEvent.ParticipantQuestions.Unwrap |> List.truncate numberOfAnsweredQuestions) then
                 return! Error [ UserMessages.Events.illegalQuestionsUpdate ] |> Task.wrap
             else
-                yield! Event.Queries.deleteLastQuestions ((oldEvent.ParticipantQuestions.Unwrap |> Seq.length) - (answeredQuestions |> Seq.length)) newEvent.Id
-                yield! Event.Queries.insertQuestions newEvent.Id unansweredQuestions
+                yield! Queries.deleteLastQuestions ((oldEvent.ParticipantQuestions.Unwrap |> Seq.length) - (answeredQuestions |> Seq.length)) newEvent.Id
+                yield! Queries.insertQuestions newEvent.Id unansweredQuestions
 
         if newEvent.Shortname <> oldEvent.Shortname then
             match oldEvent.Shortname with
             | Event.Types.Shortname (Some oldShortname) ->
-                yield! Event.Queries.deleteShortname oldShortname
+                yield! Queries.deleteShortname oldShortname
             | Event.Types.Shortname None ->
                 yield! result.Zero()
 
@@ -502,14 +505,14 @@ let updateEvent (id: Event.Types.Id) writeModel =
                 oldWaitingList
                 |> Seq.truncate numberOfNewPeople
             for newAttendee in newPeople do
-                yield Email.Service.sendMail <| createFreeSpotAvailableMail newEvent newAttendee
+                yield Service.sendMail <| createFreeSpotAvailableMail newEvent newAttendee
 
         return newEvent 
     }
 
 let getEventByShortname shortname = 
     result {
-        let! event = Event.Queries.queryEventByShortname shortname
+        let! event = Queries.queryEventByShortname shortname
         return event
     }
 
@@ -519,7 +522,7 @@ let participantToCSVRow (questions: Event.Types.ParticipantQuestions) (participa
     let questions = questions.Unwrap
     let answers = participant.ParticipantAnswers.Unwrap
     let qas = Seq.zip questions answers
-                    |> Seq.filter (fun (q, a) -> a <> "")
+                    |> Seq.filter (fun (_q, a) -> a <> "")
 
     let dobbeltfnuttTilEnkelfnutt character = if character='"' then '\'' else character
     let escapeComma word = $"\"{word}\""
@@ -532,7 +535,7 @@ let participantToCSVRow (questions: Event.Types.ParticipantQuestions) (participa
     |> List.map cleaning
     |> String.concat ","
 
-let createExportEventString (event:Event) (participants: Participant.Models.ParticipantsWithWaitingList) =
+let createExportEventString (event:Event) (participants: ParticipantsWithWaitingList) =
     let newline="\n"
 
     let attendees = participants.attendees 
@@ -557,7 +560,7 @@ let createExportEventString (event:Event) (participants: Participant.Models.Part
 
 let exportParticipationsDataForEvent (id: Event.Types.Id) =
     result {
-        let! event = Event.Queries.queryEventByEventId id
+        let! event = Queries.queryEventByEventId id
         let! participants = getParticipantsForEvent event
         let str = createExportEventString event participants
         return str

@@ -1,8 +1,10 @@
 module Email.CalendarInvite
 
-open Email.Types
 open System
-open DomainModels
+
+open Email.Types
+open Event.Models
+open Participant.Models
 
 // ICS reference: https://tools.ietf.org/html/rfc5545
 let reminderObject =

@@ -5,6 +5,8 @@ open Giraffe
 open Auth
 open Http
 open UserMessage
+open Event.Models
+open Participant.Models
 open ResultComputationExpression
 
 let userHasCancellationToken (eventId, email) =
@@ -30,7 +32,7 @@ let userCanCancel eventIdAndEmail =
         [ userHasCancellationToken eventIdAndEmail
           isAdmin ]
 
-let eventHasAvailableSpots (event:DomainModels.Event) =
+let eventHasAvailableSpots (event: Event) =
     result {
         let hasWaitingList = event.HasWaitingList
         let maxParticipants = event.MaxParticipants.Unwrap
@@ -43,7 +45,7 @@ let eventHasAvailableSpots (event:DomainModels.Event) =
             return! [ AccessDenied "Arrangementet er fullt" ] |> Error |> Task.wrap
     }
 
-let eventIsNotCancelled (event:DomainModels.Event) =  
+let eventIsNotCancelled (event: Event) =  
     result {
         if event.IsCancelled then
             return!

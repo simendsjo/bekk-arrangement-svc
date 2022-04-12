@@ -6,10 +6,10 @@ open Giraffe
 open Auth
 open Http
 open UserMessage
-open DomainModels
+open Event.Models
 open ResultComputationExpression
 
-let userIsOrganizer (event: DomainModels.Event) =
+let userIsOrganizer (event: Event) =
     result {
         let! userId = getUserId
 
@@ -26,7 +26,7 @@ let userIsOrganizer (event: DomainModels.Event) =
                 |> Task.wrap
     }
 
-let userHasCorrectEditToken (event: DomainModels.Event) =
+let userHasCorrectEditToken (event: Event) =
     result {
         let! editToken = queryParam "editToken"
 
@@ -45,7 +45,7 @@ let userHasCorrectEditToken (event: DomainModels.Event) =
 
 let userCanEditEvent eventId =
     result {
-        let! event = Event.Service.getEvent (Event.Types.Id eventId)
+        let! event = Service.getEvent (Types.Id eventId)
 
         let! authResult =
             anyOf [ isAdmin
@@ -55,7 +55,7 @@ let userCanEditEvent eventId =
         return authResult
     }
 
-let eventIsOpenForRegistration (event: DomainModels.Event) =
+let eventIsOpenForRegistration (event: Event) =
     result {
         let openDateTime =
             DateTimeOffset.FromUnixTimeMilliseconds event.OpenForRegistrationTime.Unwrap
@@ -73,7 +73,7 @@ let eventIsOpenForRegistration (event: DomainModels.Event) =
                 |> Task.wrap
     }
 
-let eventHasNotPassed (event: DomainModels.Event) =
+let eventHasNotPassed (event: Event) =
     result {
         if event.EndDate > DateTimeCustom.now() then
             return ()
@@ -85,9 +85,9 @@ let eventHasNotPassed (event: DomainModels.Event) =
 
 
 // TODO: UNDUPLICATE CODE:
-let eventIsExternal (eventId: Event.Types.Key) =
+let eventIsExternal (eventId: Types.Key) =
     result {
-        let! event = Event.Service.getEvent (Event.Types.Id eventId)
+        let! event = Service.getEvent (Types.Id eventId)
 
         if event.IsExternal then
             return ()
@@ -95,7 +95,7 @@ let eventIsExternal (eventId: Event.Types.Key) =
             return! Error [ AccessDenied "Arrangementet er internt" ] |> Task.wrap
     }
 
-let eventIsExternalOrUserIsAuthenticated (eventId: Event.Types.Key) =
+let eventIsExternalOrUserIsAuthenticated (eventId: Types.Key) =
     anyOf [ eventIsExternal eventId
             isAuthenticated ]
 

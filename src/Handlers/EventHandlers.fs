@@ -9,7 +9,6 @@ open Config
 open Email.Types
 open Event.Types
 open Event.Models
-open DomainModels
 open ResultComputationExpression
 
 type RemoveEvent = 

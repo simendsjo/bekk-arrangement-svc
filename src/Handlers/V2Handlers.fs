@@ -9,7 +9,7 @@ open Microsoft.AspNetCore.Http
 
 open Config
 open UserMessage
-open DomainModels
+open Participant.Models
 
 type private ParticipateEvent =
     | NotExternal 
@@ -51,7 +51,7 @@ let registerParticipationHandler (eventId: Guid, email): HttpHandler =
             let userId = Auth.getUserIdV2 context
             
             let! body = context.ReadBodyFromRequestAsync()
-            let writeModel = Decode.Auto.fromString<Participant.Models.WriteModel> (body, caseStrategy = CamelCase)
+            let writeModel = Decode.Auto.fromString<WriteModel> (body, caseStrategy = CamelCase)
             
             let config = context.GetService<AppConfig>()
             
@@ -91,8 +91,8 @@ let registerParticipationHandler (eventId: Guid, email): HttpHandler =
                                         Ok []
                                     else
                                         // FIXME: Here we need to fetch all the questions from the database. This is because we have no question ID related to the answers. This does not feel right and should be fixed. Does require a frontend fix as well
-                                        let eventQuestions = V2.Queries.getEventQuestions eventId transaction
-                                        let participantAnswerDbModels: Participant.Models.ParticipantAnswerDbModel list =
+                                        let eventQuestions = Queries.getEventQuestions eventId transaction
+                                        let participantAnswerDbModels: ParticipantAnswerDbModel list =
                                             writeModel.ParticipantAnswers
                                             |> List.zip eventQuestions
                                             |> List.map (fun (question, answer) -> 
@@ -116,7 +116,7 @@ let registerParticipationHandler (eventId: Guid, email): HttpHandler =
                             | Ok (participant, answers) ->
                                 match participant, answers with
                                     | Ok participant, Ok answers ->
-                                        let answers = List.map (fun (answer: Participant.Models.ParticipantAnswerDbModel) -> answer.Answer) answers
+                                        let answers = List.map (fun (answer: ParticipantAnswerDbModel) -> answer.Answer) answers
                                         Ok (participant, answers)
                                     | Error e1, Error e2 ->
                                        $"""Feil med lagring av deltaker og svar.
@@ -129,10 +129,10 @@ let registerParticipationHandler (eventId: Guid, email): HttpHandler =
                                         Error $"Feil med lagring av deltakersvar: {e}"
                             | Error e -> Error e
                             
-                        Result.map (fun (participant: Participant.Models.DbModel, answers) ->
+                        Result.map (fun (participant: DbModel, answers) ->
                             // FIXME: we need these domain models as the rest of the system all work with these
                             // Lage domenemodell av participant
-                            let participantDomainModel = DomainModels.Participant.CreateFromPrimitives participant.Name participant.Email answers participant.EventId participant.RegistrationTime participant.CancellationToken participant.EmployeeId
+                            let participantDomainModel = Participant.CreateFromPrimitives participant.Name participant.Email answers participant.EventId participant.RegistrationTime participant.CancellationToken participant.EmployeeId
                             // Lag domenemodell av event
                             let eventDomainModel = Event.Models.dbToDomain(event, [], None)
                             // Sende epost
@@ -166,7 +166,7 @@ let registerParticipationHandler (eventId: Guid, email): HttpHandler =
             return!
                 match result with
                 | Ok result ->
-                    let newlyCreatedParticipantViewModel = Participant.Models.domainToViewWithCancelInfo result
+                    let newlyCreatedParticipantViewModel = domainToViewWithCancelInfo result
                     json newlyCreatedParticipantViewModel next context
                 | Error e ->
                     context.SetStatusCode 400

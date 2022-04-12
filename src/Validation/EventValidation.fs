@@ -1,6 +1,6 @@
 module Event.Validation
 
-open DomainModels
+open Event.Models
 open ResultComputationExpression
 
 (*

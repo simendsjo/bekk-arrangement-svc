@@ -4,7 +4,6 @@ open Dapper.FSharp
 
 open Tables
 open Email.Types
-open DomainModels
 open Participant.Models
 open ResultComputationExpression
 

@@ -5,8 +5,34 @@ open System
 open Email.Types
 open Validation
 open UserMessage
-open DomainModels
 open Participant.Types
+
+type Participant =
+    { Name: Types.Name
+      Email: Email.Types.EmailAddress
+      ParticipantAnswers: Types.ParticipantAnswers
+      EventId: Event.Types.Id
+      RegistrationTime: TimeStamp.TimeStamp
+      CancellationToken: Guid
+      EmployeeId: Types.EmployeeId }
+    static member Create =
+        fun name email participantAnswers eventId registrationTime cancellationToken employeeId ->
+            { Name = name
+              Email = email
+              ParticipantAnswers = participantAnswers
+              EventId = eventId
+              RegistrationTime = registrationTime
+              CancellationToken = cancellationToken
+              EmployeeId = employeeId }
+    static member CreateFromPrimitives =
+        fun name email participantAnswers eventId registrationTime cancellationToken employeeId ->
+            { Name = name |> Name
+              Email = email |> EmailAddress
+              ParticipantAnswers = participantAnswers |> ParticipantAnswers
+              EventId = eventId |> Event.Types.Id
+              RegistrationTime = registrationTime |> TimeStamp.TimeStamp
+              CancellationToken = cancellationToken
+              EmployeeId = employeeId |> EmployeeId }
 
 type ParticipantAnswerDbModel = {
   QuestionId: int
@@ -116,7 +142,8 @@ let domainToViewWithCancelInfo (participant: Participant): NewlyCreatedParticipa
       CancellationToken = participant.CancellationToken.ToString() }
 
 let domainToLocalStorageView events (participations: Participant seq) : ViewModelLocalStorage = 
-    let eventToLocalStorage event = { EventId=event.Id.Unwrap
+    let eventToLocalStorage (event: Event.Models.Event) =
+                                    { EventId = event.Id.Unwrap
                                       EditToken = event.EditToken
                                     }
     let participationToLocalStorage (participant:Participant) = { EventId=participant.EventId.Unwrap

@@ -1,8 +1,13 @@
 module Email.Models
 
 open Email.Types
-open DomainModels
 open Email.SendgridApiModels
+
+type Email =
+    { Subject: string
+      Message: string
+      To: Types.EmailAddress
+      CalendarInvite: string option }
 
 let emailToSendgridFormat
     (email: Email)

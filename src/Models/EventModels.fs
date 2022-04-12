@@ -7,7 +7,50 @@ open Email.Types
 open Validation
 open Event.Types
 open UserMessage
-open DomainModels
+
+type Event =
+    { Id: Types.Id
+      Title: Types.Title
+      Description: Types.Description
+      Location: Types.Location
+      StartDate: DateTimeCustom.DateTimeCustom
+      EndDate: DateTimeCustom.DateTimeCustom
+      OrganizerName: Types.OrganizerName
+      OrganizerEmail: Email.Types.EmailAddress
+      OpenForRegistrationTime: Types.OpenForRegistrationTime
+      CloseRegistrationTime: Types.CloseRegistrationTime
+      ParticipantQuestions: Types.ParticipantQuestions
+      MaxParticipants: Types.MaxParticipants
+      EditToken: Guid
+      HasWaitingList: bool
+      IsCancelled: bool
+      IsExternal: bool
+      IsHidden: bool
+      OrganizerId: Types.EmployeeId
+      Shortname: Types.Shortname 
+      CustomHexColor: Types.CustomHexColor }
+    static member Create =
+        fun id title description location organizerName organizerEmail maxParticipants (startDate, endDate) openForRegistrationTime closeRegistrationTime editToken participantQuestions hasWaitingList isCancelled isExternal isHidden organizerId shortname hexCode ->
+            { Id = id
+              Title = title
+              Description = description
+              Location = location
+              OrganizerName = organizerName
+              OrganizerEmail = organizerEmail
+              MaxParticipants = maxParticipants
+              StartDate = startDate
+              EndDate = endDate
+              OpenForRegistrationTime = openForRegistrationTime
+              CloseRegistrationTime = closeRegistrationTime
+              EditToken = editToken
+              ParticipantQuestions = participantQuestions
+              HasWaitingList = hasWaitingList
+              IsCancelled = isCancelled
+              IsExternal = isExternal
+              IsHidden = isHidden
+              OrganizerId = organizerId
+              Shortname = shortname
+              CustomHexColor = hexCode }
 
 // TODO: Rart at denne lever her
 type ParticipantQuestionDbModel = {

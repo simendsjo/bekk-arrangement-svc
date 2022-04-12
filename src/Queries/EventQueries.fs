@@ -5,7 +5,6 @@ open Dapper.FSharp
 
 open Tables
 open Email.Types
-open DomainModels
 open Event.Models
 open ResultComputationExpression
 
