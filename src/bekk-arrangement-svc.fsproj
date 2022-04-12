@@ -69,9 +69,10 @@
 
     <Compile Include="Events\Models.fs" />
     <Compile Include="Participants\Models.fs" />
-
-    <Compile Include="Events\Queries.fs" />
-    <Compile Include="Participants\Queries.fs" />
+    <Compile Include="Queries\Tables.fs" />
+    <Compile Include="Queries\V2Queries.fs" />
+    <Compile Include="Queries\ParticipantQueries.fs" />
+    <Compile Include="Queries\EventQueries.fs" />
 
     <Compile Include="Events\Validation.fs" />
 
@@ -80,15 +81,16 @@
     <Compile Include="Events\Authorization.fs" />
     <Compile Include="Participants\Authorization.fs" />
     
-    <Compile Include="V2\Queries.fs" />
+    
     <Compile Include="Middleware\RequestLogging.fs" />
     
     <Compile Include="Handlers\Health.fs" />
-    <Compile Include="Handlers\V2.fs" />
+    <Compile Include="Handlers\V2Handlers.fs" />
     <Compile Include="Handlers\ParticipantHandlers.fs" />
     <Compile Include="Handlers\EventHandlers.fs" />
     
     <Compile Include="Program.fs" />
+    
   </ItemGroup>
   <ItemGroup>
     <Content Include="appsettings.json">

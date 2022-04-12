@@ -2,17 +2,15 @@ module Participant.Queries
 
 open Dapper.FSharp
 
+open Tables
 open Email.Types
 open DomainModels
 open Participant.Models
 open ResultComputationExpression
 
-let participantsTable = "Participants"
-let answersTable = "ParticipantAnswers"
-
 let deleteParticipant (participant: Participant): Handler<unit> =
     result {
-        let! res =
+        let! _res =
             delete { table participantsTable
                      where (eq "EventId" participant.EventId.Unwrap + eq "Email" participant.Email.Unwrap) 
                    }
@@ -24,7 +22,7 @@ let private groupParticipants ls =
     ls
     |> Seq.groupBy (fun (participant: DbModel, _) -> (participant.EventId, participant.Email))
     |> Seq.map (fun (_, listOfParticipants) -> 
-        let (participant, _) = listOfParticipants |> Seq.head 
+        let participant, _ = listOfParticipants |> Seq.head 
         let sortedAnswersForParticipant =
             listOfParticipants 
             |> Seq.collect (fun (_, answer) -> match answer with | Some a -> [ a ] | None -> []) 
@@ -142,7 +140,7 @@ let setAnswers (participant: Participant) =
 
         let! questions =
             select {
-              table Event.Queries.questionsTable
+              table questionsTable
               where (eq "EventId" participant.EventId.Unwrap)
               orderBy "Id" Asc
             } |> Database.runSelectQuery<Event.Models.ParticipantQuestionDbModel>

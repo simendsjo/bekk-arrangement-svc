@@ -3,14 +3,13 @@ module Event.Queries
 open System
 open Dapper.FSharp
 
+open Tables
 open Email.Types
 open DomainModels
 open Event.Models
 open ResultComputationExpression
 
-let eventsTable = "Events"
-let questionsTable = "ParticipantQuestions"
-let shortnamesTable = "Shortnames"
+// TODO: se på _res her
 
 let createEvent employeeId (event: WriteModel)  =
     result {
@@ -31,8 +30,8 @@ let private groupEventAndShortname ls =
                     , shortnameDbModel 
                         |> Option.map (fun dbModel -> dbModel.Shortname)))
     |> Seq.groupBy (fun (event, _, _) -> event.Id)
-    |> Seq.map (fun (eventId, listOfQuestions) -> 
-        let (event, _, shortname) = listOfQuestions |> Seq.head
+    |> Seq.map (fun (_eventId, listOfQuestions) -> 
+        let event, _, shortname = listOfQuestions |> Seq.head
         let sortedQuestionsForEvent =
             listOfQuestions 
             |> Seq.collect (fun (_, question, _) -> match question with | Some q -> [ q ] | None -> []) 
@@ -77,9 +76,9 @@ let getPastEvents: Handler<Event seq> =
         return Seq.map dbToDomain groupedEvents
     }
 
-let deleteEvent (id: Event.Types.Id): Handler<unit> =
+let deleteEvent (id: Types.Id): Handler<unit> =
     result {
-        let! res =
+        let! _res =
             delete { table eventsTable
                      where (eq "Id" id.Unwrap)
                    }
@@ -90,7 +89,7 @@ let deleteEvent (id: Event.Types.Id): Handler<unit> =
 let updateEvent (newEvent: Event): Handler<unit> =
     result {
         let newEventDb = domainToDb newEvent
-        let! res =
+        let! _res =
             update { table eventsTable
                      set newEventDb
                      where (eq "Id" newEvent.Id.Unwrap)
@@ -99,7 +98,7 @@ let updateEvent (newEvent: Event): Handler<unit> =
         return ()
     }
 
-let queryEventByEventId (eventId: Event.Types.Id): Handler<Event> =
+let queryEventByEventId (eventId: Types.Id): Handler<Event> =
     result {
         let! events = 
             select { table eventsTable 
@@ -141,7 +140,7 @@ let queryEventsOrganizedByEmail (organizerEmail: EmailAddress): Handler<Event se
         return Seq.map dbToDomain groupedEvents
    }
 
-let queryEventsOrganizedByOrganizerId (organizerId: Event.Types.EmployeeId): Handler<Event seq> =
+let queryEventsOrganizedByOrganizerId (organizerId: Types.EmployeeId): Handler<Event seq> =
     result {
         let! events =
             select { table eventsTable
@@ -184,14 +183,14 @@ let queryEventByShortname (shortname: string): Handler<Event> =
                 |> Task.wrap
     }
 
-let insertShortname (eventId: Event.Types.Id) (shortname: string): Handler<unit> =
+let insertShortname (eventId: Types.Id) (shortname: string): Handler<unit> =
     result {
         let! () =
             queryEventByShortname shortname
             >> Task.map (function
                             | Ok _ -> Error [ UserMessages.Events.shortnameIsInUse shortname ]
                             | Error _ -> Ok ())
-        let! res =
+        let! _res =
             insert { table shortnamesTable
                      value {| Shortname = shortname; EventId = eventId.Unwrap |}
                    }
@@ -202,7 +201,7 @@ let insertShortname (eventId: Event.Types.Id) (shortname: string): Handler<unit>
 
 let deleteShortname (shortname: string): Handler<unit> =
     result {
-        let! res =
+        let! _res =
             delete { table shortnamesTable
                      where (eq "Shortname" shortname)
                    }
@@ -211,7 +210,7 @@ let deleteShortname (shortname: string): Handler<unit> =
         return ()
     }
 
-let getQuestionsForEvent (eventId: Event.Types.Id) =
+let getQuestionsForEvent (eventId: Types.Id) =
     result {
         let! questions = 
             select {
@@ -223,7 +222,7 @@ let getQuestionsForEvent (eventId: Event.Types.Id) =
         return questions
     }
 
-let insertQuestions (eventId: Event.Types.Id) questions =
+let insertQuestions (eventId: Types.Id) questions =
     result {
         if Seq.isEmpty questions then
             return ()
@@ -237,9 +236,9 @@ let insertQuestions (eventId: Event.Types.Id) questions =
                    |> Database.runInsertQuery
     }
 
-let deleteAllQuestions (eventId: Event.Types.Id) =
+let deleteAllQuestions (eventId: Types.Id) =
     result {
-        let! res = 
+        let! _res = 
             delete { table questionsTable
                      where (eq "EventId" eventId.Unwrap)
                    }
@@ -247,7 +246,7 @@ let deleteAllQuestions (eventId: Event.Types.Id) =
         return ()
     }
 
-let deleteLastQuestions n (eventId: Event.Types.Id) =
+let deleteLastQuestions n (eventId: Types.Id) =
     result {
         if n <= 0 then
             return ()
@@ -255,7 +254,7 @@ let deleteLastQuestions n (eventId: Event.Types.Id) =
 
         let! questions = getQuestionsForEvent eventId
         let lastNQuestions = questions |> Seq.rev |> Seq.truncate n |> List.ofSeq
-        let! res =
+        let! _res =
             delete { table questionsTable
                      where (isIn "Id" (lastNQuestions |> List.map (fun q -> q.Id :> obj)))
                    }
