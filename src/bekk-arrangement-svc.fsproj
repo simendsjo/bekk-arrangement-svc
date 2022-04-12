@@ -40,8 +40,8 @@
     <Compile Include="LanguageExtensions\Task.fs" />
     <Compile Include="LanguageExtensions\Seq.fs" />
     <Compile Include="LanguageExtensions\Option.fs" /> 
-    <Compile Include="LanguageExtensions\Tools.fs" />
-    <Compile Include="Logging.fs" />
+    <Compile Include="LanguageExtensions\Tools.fs" /> 
+    <Compile Include="Common\Logging.fs" />
     <Compile Include="Common\UserMessage.fs" />
     <Compile Include="Common\ResultComputationExpression.fs" />
     <Compile Include="Common\Database.fs" /> 
