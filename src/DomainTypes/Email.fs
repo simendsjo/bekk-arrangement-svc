@@ -1,6 +1,5 @@
-namespace ArrangementService.Email
+module Email
 
-open ArrangementService
 open Validation
 open UserMessage
 

@@ -1,4 +1,5 @@
-namespace ArrangementService
+[<RequireQualifiedAccess>]
+module TimeStamp 
 
 open System
 
@@ -9,6 +10,4 @@ type TimeStamp =
         match this with
         | TimeStamp t -> t
 
-module TimeStamp =
-
-    let now(): TimeStamp = DateTimeOffset.Now.ToUnixTimeSeconds() |> TimeStamp
+let now(): TimeStamp = DateTimeOffset.Now.ToUnixTimeSeconds() |> TimeStamp

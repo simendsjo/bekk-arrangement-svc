@@ -1,9 +1,6 @@
 module V2.Queries
 
 open System
-open ArrangementService
-open ArrangementService.Event
-open ArrangementService.Participant
 open Dapper
 open Microsoft.Data.SqlClient
 
@@ -38,7 +35,7 @@ let getEvent (eventId: Guid) (transaction: SqlTransaction) =
     ]
     
     try
-        Ok (transaction.Connection.QuerySingle<Event.DbModel>(query, parameters, transaction))
+        Ok (transaction.Connection.QuerySingle<Event.Models.DbModel>(query, parameters, transaction))
     with
     | ex -> Error $"Finner ikke arrangement med id: {eventId}. Feil: {ex}"
     
@@ -74,7 +71,7 @@ let addParticipantToEvent (eventId: Guid) email (userId: int option) name (trans
     ]
     
     try
-        transaction.Connection.QuerySingle<DbModel>(query, parameters, transaction)
+        transaction.Connection.QuerySingle<Participant.Models.DbModel>(query, parameters, transaction)
         |> Ok
     with
         | ex -> Error $"Kunne ikke legge til deltakeren. Feil {ex}"
@@ -93,10 +90,10 @@ let getEventQuestions eventId (transaction: SqlTransaction) =
         "eventId", box (eventId.ToString())
     ]
     
-    transaction.Connection.Query<ParticipantQuestionDbModel>(query, parameters, transaction)
+    transaction.Connection.Query<Event.Models.ParticipantQuestionDbModel>(query, parameters, transaction)
     |> Seq.toList
         
-let createParticipantAnswers (participantAnswers: ParticipantAnswerDbModel list) (transaction: SqlTransaction) =
+let createParticipantAnswers (participantAnswers: Participant.Models.ParticipantAnswerDbModel list) (transaction: SqlTransaction) =
     let answer = List.tryHead participantAnswers
     match answer with
     | None -> Ok []
@@ -119,7 +116,7 @@ let createParticipantAnswers (participantAnswers: ParticipantAnswerDbModel list)
     
     try
         transaction.Connection.Execute(insertQuery, participantAnswers |> List.toSeq, transaction) |> ignore
-        transaction.Connection.Query<ParticipantAnswerDbModel>(selectQuery, selectParameters, transaction)
+        transaction.Connection.Query<Participant.Models.ParticipantAnswerDbModel>(selectQuery, selectParameters, transaction)
         |> Seq.toList
         |> Ok
     with

@@ -1,4 +1,5 @@
-namespace ArrangementService
+[<RequireQualifiedAccess>]
+module DateTimeCustom
 
 open System
 
@@ -84,44 +85,42 @@ type DateTimeCustom =
     override this.GetHashCode() =
         this.Date.GetHashCode() + this.Time.GetHashCode()
 
-module DateTime =
+let customToDateTime (date: Date): DateTime =
+    DateTime(date.Year, date.Month, date.Day, 0, 0, 0)
 
-    let customToDateTime (date: Date): DateTime =
-        DateTime(date.Year, date.Month, date.Day, 0, 0, 0)
+let customToTimeSpan (time: Time): TimeSpan =
+    TimeSpan(time.Hour, time.Minute, 0)
 
-    let customToTimeSpan (time: Time): TimeSpan =
-        TimeSpan(time.Hour, time.Minute, 0)
+let toCustomDateTime (date: DateTime) (time: TimeSpan): DateTimeCustom =
+    { Date =
+          { Day = date.Day
+            Month = date.Month
+            Year = date.Year }
+      Time =
+          { Hour = time.Hours
+            Minute = time.Minutes } }
 
-    let toCustomDateTime (date: DateTime) (time: TimeSpan): DateTimeCustom =
-        { Date =
-              { Day = date.Day
-                Month = date.Month
-                Year = date.Year }
-          Time =
-              { Hour = time.Hours
-                Minute = time.Minutes } }
+let now(): DateTimeCustom =
+    toCustomDateTime DateTime.Now (TimeSpan(DateTime.Now.Hour, DateTime.Now.Minute, 0))
 
-    let now(): DateTimeCustom =
-        toCustomDateTime DateTime.Now (TimeSpan(DateTime.Now.Hour, DateTime.Now.Minute, 0))
+let toUtcString (dt: DateTimeCustom) =
+    sprintf "%s%s%sT%s%s%sZ" (dt.Date.Year.ToString())
+        (dt.Date.Month.ToString().PadLeft(2, '0'))
+        (dt.Date.Day.ToString().PadLeft(2, '0'))
+        (dt.Time.Hour.ToString().PadLeft(2, '0'))
+        (dt.Time.Minute.ToString().PadLeft(2, '0'))
+        "00" // Format: "20200101T192209Z"
 
-    let toUtcString (dt: DateTimeCustom) =
-        sprintf "%s%s%sT%s%s%sZ" (dt.Date.Year.ToString())
-            (dt.Date.Month.ToString().PadLeft(2, '0'))
-            (dt.Date.Day.ToString().PadLeft(2, '0'))
-            (dt.Time.Hour.ToString().PadLeft(2, '0'))
-            (dt.Time.Minute.ToString().PadLeft(2, '0'))
-            "00" // Format: "20200101T192209Z"
+let toDateString (dt: DateTimeCustom) =
+    sprintf "%s%s%sT%s%s%s" (dt.Date.Year.ToString())
+        (dt.Date.Month.ToString().PadLeft(2, '0'))
+        (dt.Date.Day.ToString().PadLeft(2, '0'))
+        (dt.Time.Hour.ToString().PadLeft(2, '0'))
+        (dt.Time.Minute.ToString().PadLeft(2, '0'))
+        "00" // Format: "20200101T192209"
 
-    let toDateString (dt: DateTimeCustom) =
-        sprintf "%s%s%sT%s%s%s" (dt.Date.Year.ToString())
-            (dt.Date.Month.ToString().PadLeft(2, '0'))
-            (dt.Date.Day.ToString().PadLeft(2, '0'))
-            (dt.Time.Hour.ToString().PadLeft(2, '0'))
-            (dt.Time.Minute.ToString().PadLeft(2, '0'))
-            "00" // Format: "20200101T192209"
-
-    let toReadableString (dt: DateTimeCustom) =
-        sprintf "%s.%s.%s kl %s:%s" (dt.Date.Day.ToString().PadLeft(2, '0'))
-            (dt.Date.Month.ToString().PadLeft(2, '0'))
-            (dt.Date.Year.ToString()) (dt.Time.Hour.ToString().PadLeft(2, '0'))
-            (dt.Time.Minute.ToString().PadLeft(2, '0'))
+let toReadableString (dt: DateTimeCustom) =
+    sprintf "%s.%s.%s kl %s:%s" (dt.Date.Day.ToString().PadLeft(2, '0'))
+        (dt.Date.Month.ToString().PadLeft(2, '0'))
+        (dt.Date.Year.ToString()) (dt.Time.Hour.ToString().PadLeft(2, '0'))
+        (dt.Time.Minute.ToString().PadLeft(2, '0'))

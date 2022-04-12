@@ -1,10 +1,8 @@
-namespace ArrangementService.Participant
+module Participant.Types
 
-open ArrangementService
+open Utils
 open Validation
-open ArrangementService.Utils
 open UserMessage
-
 
 type EmployeeId = 
     | EmployeeId of int option

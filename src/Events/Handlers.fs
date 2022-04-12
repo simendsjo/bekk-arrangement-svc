@@ -1,205 +1,198 @@
-namespace ArrangementService.Event
+module Event.Handlers
 
-open ArrangementService
-
-open Http
-open ResultComputationExpression
-open Models
-open ArrangementService.DomainModels
-open ArrangementService.Config
-open ArrangementService.Email
-open Authorization
-
-open Microsoft.AspNetCore.Http
+open Auth
 open Giraffe
 open System.Web
-open ArrangementService.Auth
 
-open FSharp.Control.Tasks.V2
+open Http
+open Email
+open Config
+open Event.Models
+open DomainModels
+open Event.Types
+open ResultComputationExpression
 
-module Handlers =
+type RemoveEvent = 
+    | Cancel
+    | Delete
 
-    type RemoveEvent = 
-        | Cancel
-        | Delete
+let getEvents: Handler<ViewModel list> =
+    result {
+        let! events = Event.Service.getEvents
+        return Seq.map domainToView events |> Seq.toList
+    }
 
-    let getEvents: Handler<ViewModel list> =
-        result {
-            let! events = Service.getEvents
-            return Seq.map domainToView events |> Seq.toList
-        }
+let getPastEvents: Handler<ViewModel list> =
+    result {
+        let! events = Event.Service.getPastEvents
+        return Seq.map domainToView events |> Seq.toList
+    }
 
-    let getPastEvents: Handler<ViewModel list> =
-        result {
-            let! events = Service.getPastEvents
-            return Seq.map domainToView events |> Seq.toList
-        }
+let getEventsOrganizedBy organizerEmail =
+    result {
+        let! events = Event.Service.getEventsOrganizedBy (EmailAddress organizerEmail)
+        return Seq.map domainToView events |> Seq.toList
+    }
 
-    let getEventsOrganizedBy organizerEmail =
-        result {
-            let! events = Service.getEventsOrganizedBy (EmailAddress organizerEmail)
-            return Seq.map domainToView events |> Seq.toList
-        }
+let getEvent id =
+    result {
+        let! event = Event.Service.getEvent (Id id)
+        return domainToView event
+    }
 
-    let getEvent id =
-        result {
-            let! event = Service.getEvent (Id id)
-            return domainToView event
-        }
+    
+let deleteOrCancelEvent (removeEventType:RemoveEvent) id: Handler<string> =
+    result {
+        let! messageToParticipants = getBody<string> ()
+        let! event = Event.Service.getEvent (Id id)
+        let! participants = Event.Service.getParticipantsForEvent event
 
+        let! config = getConfig >> Ok >> Task.wrap
+
+        let! result =  match removeEventType with 
+                        | Cancel -> Event.Service.cancelEvent event
+                        | Delete -> Event.Service.deleteEvent (Id id)
         
-    let deleteOrCancelEvent (removeEventType:RemoveEvent) id: Handler<string> =
-        result {
-            let! messageToParticipants = getBody<string> ()
-            let! event = Service.getEvent (Id id)
-            let! participants = Service.getParticipantsForEvent event
+        yield Event.Service.sendCancellationMailToParticipants
+                  messageToParticipants (EmailAddress config.noReplyEmail) participants.attendees event
+                  
+        return result
+    }
 
-            let! config = getConfig >> Ok >> Task.wrap
+let getEmployeeId = 
+    result {
+        let! userId = Auth.getUserId 
 
-            let! result =  match removeEventType with 
-                            | Cancel -> Service.cancelEvent event
-                            | Delete -> Service.deleteEvent (Id id)
-            
-            yield Service.sendCancellationMailToParticipants
-                      messageToParticipants (EmailAddress config.noReplyEmail) participants.attendees event
-                      
-            return result
-        }
+        return! userId
+                |> Option.map EmployeeId  // option EmployeeId
+                |> Option.withError [UserMessages.Events.couldNotRetrieveUserId] // Result<EmployeeId, UserMessage list>
+                |> Task.wrap
+    }
 
-    let getEmployeeId = 
-        result {
-            let! userId = Auth.getUserId 
+let updateEvent (id:Key) =
+    result {
+        let! writeModel = getBody<WriteModel> ()
+        let! updatedEvent = Event.Service.updateEvent (Id id) writeModel
+        return domainToView updatedEvent
+    }
 
-            return! userId
-                    |> Option.map Event.EmployeeId  // option EmployeeId
-                    |> Option.withError [UserMessages.couldNotRetrieveUserId] // Result<EmployeeId, UserMessage list>
-                    |> Task.wrap
-        }
+let createEvent =
+    result {
+        let! writeModel = getBody<WriteModel> ()
 
-    let updateEvent (id:Key) =
-        result {
-            let! writeModel = getBody<WriteModel> ()
-            let! updatedEvent = Service.updateEvent (Id id) writeModel
-            return domainToView updatedEvent
-        }
+        let redirectUrlTemplate =
+            HttpUtility.UrlDecode writeModel.editUrlTemplate
 
-    let createEvent =
-        result {
-            let! writeModel = getBody<WriteModel> ()
+        let viewUrl = writeModel.viewUrl
+        let createEditUrl (event: Event) =
+            redirectUrlTemplate.Replace("{eventId}",
+                                        event.Id.Unwrap.ToString())
+                               .Replace("{editToken}",
+                                        event.EditToken.ToString())
 
-            let redirectUrlTemplate =
-                HttpUtility.UrlDecode writeModel.editUrlTemplate
+        let! employeeId = getEmployeeId
 
-            let viewUrl = writeModel.viewUrl
-            let createEditUrl (event: Event) =
-                redirectUrlTemplate.Replace("{eventId}",
-                                            event.Id.Unwrap.ToString())
-                                   .Replace("{editToken}",
-                                            event.EditToken.ToString())
+        let! newEvent = Event.Service.createEvent viewUrl createEditUrl employeeId.Unwrap writeModel
+        
+        return domainToViewWithEditInfo newEvent
+    }
 
-            let! employeeId = getEmployeeId
-
-            let! newEvent = Service.createEvent viewUrl createEditUrl employeeId.Unwrap writeModel
-            
-            return domainToViewWithEditInfo newEvent
-        }
-
-    let deleteEvent = deleteOrCancelEvent Delete
-    let cancelEvent = deleteOrCancelEvent Cancel
+let deleteEvent = deleteOrCancelEvent Delete
+let cancelEvent = deleteOrCancelEvent Cancel
 
 
-    let getEventAndParticipationSummaryForEmployee employeeId = 
-        result {
-            let! events = Service.getEventsOrganizedByOrganizerId (Event.EmployeeId employeeId)
-            let! participations = Service.getParticipationsByEmployeeId (Event.EmployeeId employeeId)
-            return Participant.Models.domainToLocalStorageView events participations
-        }
+let getEventAndParticipationSummaryForEmployee employeeId = 
+    result {
+        let! events = Event.Service.getEventsOrganizedByOrganizerId (EmployeeId employeeId)
+        let! participations = Event.Service.getParticipationsByEmployeeId (EmployeeId employeeId)
+        return Participant.Models.domainToLocalStorageView events participations
+    }
 
-    let getEventIdByShortname =
-        result {
-            let! shortnameEncoded = queryParam "shortname"
-            let shortname = System.Web.HttpUtility.UrlDecode(shortnameEncoded)
-            let! event = Service.getEventByShortname shortname
-            return event.Id.Unwrap
-        }
+let getEventIdByShortname =
+    result {
+        let! shortnameEncoded = queryParam "shortname"
+        let shortname = HttpUtility.UrlDecode(shortnameEncoded)
+        let! event = Event.Service.getEventByShortname shortname
+        return event.Id.Unwrap
+    }
 
-    let getUnfurl (idOrName: string) =
-        let strSkip n (s: string) =
-            s
-            |> Seq.safeSkip n
-            |> Seq.map string
-            |> String.concat ""
+let getUnfurl (idOrName: string) =
+    let strSkip n (s: string) =
+        s
+        |> Seq.safeSkip n
+        |> Seq.map string
+        |> String.concat ""
 
-        result {
-            let! event =
-                match System.Guid.TryParse (idOrName |> strSkip ("/events/" |> String.length)) with
-                | true, guid ->
-                    Service.getEvent (Id guid)
-                | false, _ ->
-                    // Vi må hoppe over leading slash (/)
-                    let name = idOrName |> strSkip 1
-                    Service.getEventByShortname name
+    result {
+        let! event =
+            match System.Guid.TryParse (idOrName |> strSkip ("/events/" |> String.length)) with
+            | true, guid ->
+                Event.Service.getEvent (Id guid)
+            | false, _ ->
+                // Vi må hoppe over leading slash (/)
+                let name = idOrName |> strSkip 1
+                Event.Service.getEventByShortname name
 
-            let! numberOfParticipants = Service.getNumberOfParticipantsForEvent event.Id
-            
-            return {| event = domainToView event; numberOfParticipants = numberOfParticipants.Unwrap |} 
-        }
+        let! numberOfParticipants = Event.Service.getNumberOfParticipantsForEvent event.Id
+        
+        return {| event = domainToView event; numberOfParticipants = numberOfParticipants.Unwrap |} 
+    }
 
-    let routes: HttpHandler =
-        choose
-            [ GET_HEAD
-              >=> choose
-                      [ route "/events" >=>
-                            (check isAuthenticated
-                            >=> handle getEvents
-                            |> withTransaction)
+let routes: HttpHandler =
+    choose
+        [ GET_HEAD
+          >=> choose
+                  [ route "/events" >=>
+                        (check isAuthenticated
+                        >=> handle getEvents
+                        |> withTransaction)
 
-                        route "/events/previous" >=>
-                            (check isAuthenticated
-                            >=> handle getPastEvents
-                            |> withTransaction)
+                    route "/events/previous" >=>
+                        (check isAuthenticated
+                        >=> handle getPastEvents
+                        |> withTransaction)
 
-                        routef "/events/%O" (fun eventId -> 
-                            check (eventIsExternalOrUserIsAuthenticated eventId)
-                            >=> (handle << getEvent) eventId
-                            |> withTransaction)
+                    routef "/events/%O" (fun eventId -> 
+                        check (Event.Authorization.eventIsExternalOrUserIsAuthenticated eventId)
+                        >=> (handle << getEvent) eventId
+                        |> withTransaction)
 
-                        routef "/events/organizer/%s" (fun email -> 
-                            check isAuthenticated
-                            >=> (handle << getEventsOrganizedBy) email
-                            |> withTransaction)
+                    routef "/events/organizer/%s" (fun email -> 
+                        check isAuthenticated
+                        >=> (handle << getEventsOrganizedBy) email
+                        |> withTransaction)
 
-                        routef "/events-and-participations/%i" (fun id ->
-                            check (isAdminOrAuthenticatedAsUser id)
-                            >=> (handle << getEventAndParticipationSummaryForEmployee) id
-                            |> withTransaction) 
-                        
-                        route "/events/id" >=> (handle getEventIdByShortname |> withTransaction)
+                    routef "/events-and-participations/%i" (fun id ->
+                        check (isAdminOrAuthenticatedAsUser id)
+                        >=> (handle << getEventAndParticipationSummaryForEmployee) id
+                        |> withTransaction) 
+                    
+                    route "/events/id" >=> (handle getEventIdByShortname |> withTransaction)
 
-                        routef "/events/%s/unfurl" (fun idOrName ->
-                            (handle (getUnfurl idOrName)
-                            |> withTransaction))
-                      ]
-              DELETE
-              >=> choose
-                      [ routef "/events/%O" (fun id ->
-                            check (userCanEditEvent id)
-                            >=> (handle << cancelEvent) id
-                            |> withTransaction)
-                        routef "/events/%O/delete" (fun id -> 
-                            check (userCanEditEvent id)
-                            >=> (handle << deleteEvent) id
-                            |> withTransaction)
-                        ]
-              PUT
-              >=> choose
-                      [ routef "/events/%O" (fun id ->
-                            check (userCanEditEvent id)
-                            >=> (handle << updateEvent) id
-                            |> withTransaction) ]
-              POST 
-              >=> choose 
-                    [ route "/events" >=>
-                            (check isAuthenticated
-                            >=> handle createEvent 
-                            |> withTransaction)] ]
+                    routef "/events/%s/unfurl" (fun idOrName ->
+                        (handle (getUnfurl idOrName)
+                        |> withTransaction))
+                  ]
+          DELETE
+          >=> choose
+                  [ routef "/events/%O" (fun id ->
+                        check (Event.Authorization.userCanEditEvent id)
+                        >=> (handle << cancelEvent) id
+                        |> withTransaction)
+                    routef "/events/%O/delete" (fun id -> 
+                        check (Event.Authorization.userCanEditEvent id)
+                        >=> (handle << deleteEvent) id
+                        |> withTransaction)
+                    ]
+          PUT
+          >=> choose
+                  [ routef "/events/%O" (fun id ->
+                        check (Event.Authorization.userCanEditEvent id)
+                        >=> (handle << updateEvent) id
+                        |> withTransaction) ]
+          POST 
+          >=> choose 
+                [ route "/events" >=>
+                        (check isAuthenticated
+                        >=> handle createEvent 
+                        |> withTransaction)] ]

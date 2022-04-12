@@ -1,10 +1,9 @@
-namespace ArrangementService.Event
+module Event.Types
 
 open System
-open ArrangementService
 
+open Utils
 open Validation
-open ArrangementService.Utils
 open UserMessage
 
 type Key = Guid

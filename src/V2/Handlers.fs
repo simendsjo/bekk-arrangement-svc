@@ -1,17 +1,15 @@
 module V2.Handlers
 
+open Giraffe
 open System
 open System.Web
-open Giraffe
+open Thoth.Json.Net
 open Microsoft.Data.SqlClient
 open Microsoft.AspNetCore.Http
-open Thoth.Json.Net
 
-open ArrangementService
+open Config
 open UserMessage
-open ArrangementService.DomainModels
-open ArrangementService.Event
-open ArrangementService.Participant
+open DomainModels
 
 type private ParticipateEvent =
     | NotExternal 
@@ -22,7 +20,7 @@ type private ParticipateEvent =
     | IsWaitListed
     | CanParticipate
     
-let private participateEvent isBekker numberOfParticipants (event: Event.DbModel) =
+let private participateEvent isBekker numberOfParticipants (event: Event.Models.DbModel) =
     let currentEpoch = DateTimeOffset.Now.ToUnixTimeMilliseconds()
     let hasRoom = event.MaxParticipants.IsNone || event.MaxParticipants.IsSome && numberOfParticipants < event.MaxParticipants.Value
     // Eventet er ikke ekstern 
@@ -36,7 +34,7 @@ let private participateEvent isBekker numberOfParticipants (event: Event.DbModel
     else if event.OpenForRegistrationTime >= currentEpoch || (event.CloseRegistrationTime.IsSome && event.CloseRegistrationTime.Value < currentEpoch) then
         NotOpenForRegistration
     // Eventet har funnet sted
-    else if DateTime.now() > (DateTime.toCustomDateTime event.EndDate event.EndTime) then
+    else if DateTimeCustom.now() > (DateTimeCustom.toCustomDateTime event.EndDate event.EndTime) then
         HasAlreadyTakenPlace
     // Eventet har ikke nok ledig plass 
     else if not hasRoom && not event.HasWaitingList then
@@ -53,7 +51,7 @@ let registerParticipationHandler (eventId: Guid, email): HttpHandler =
             let userId = Auth.getUserIdV2 context
             
             let! body = context.ReadBodyFromRequestAsync()
-            let writeModel = Decode.Auto.fromString<WriteModel> (body, caseStrategy = CamelCase)
+            let writeModel = Decode.Auto.fromString<Participant.Models.WriteModel> (body, caseStrategy = CamelCase)
             
             let config = context.GetService<AppConfig>()
             
@@ -94,7 +92,7 @@ let registerParticipationHandler (eventId: Guid, email): HttpHandler =
                                     else
                                         // FIXME: Here we need to fetch all the questions from the database. This is because we have no question ID related to the answers. This does not feel right and should be fixed. Does require a frontend fix as well
                                         let eventQuestions = V2.Queries.getEventQuestions eventId transaction
-                                        let participantAnswerDbModels: ParticipantAnswerDbModel list =
+                                        let participantAnswerDbModels: Participant.Models.ParticipantAnswerDbModel list =
                                             writeModel.ParticipantAnswers
                                             |> List.zip eventQuestions
                                             |> List.map (fun (question, answer) -> 
@@ -118,7 +116,7 @@ let registerParticipationHandler (eventId: Guid, email): HttpHandler =
                             | Ok (participant, answers) ->
                                 match participant, answers with
                                     | Ok participant, Ok answers ->
-                                        let answers = List.map (fun answer -> answer.Answer) answers
+                                        let answers = List.map (fun (answer: Participant.Models.ParticipantAnswerDbModel) -> answer.Answer) answers
                                         Ok (participant, answers)
                                     | Error e1, Error e2 ->
                                        $"""Feil med lagring av deltaker og svar.
@@ -131,7 +129,7 @@ let registerParticipationHandler (eventId: Guid, email): HttpHandler =
                                         Error $"Feil med lagring av deltakersvar: {e}"
                             | Error e -> Error e
                             
-                        Result.map (fun (participant: DbModel, answers) ->
+                        Result.map (fun (participant: Participant.Models.DbModel, answers) ->
                             // FIXME: we need these domain models as the rest of the system all work with these
                             // Lage domenemodell av participant
                             let participantDomainModel = DomainModels.Participant.CreateFromPrimitives participant.Name participant.Email answers participant.EventId participant.RegistrationTime participant.CancellationToken participant.EmployeeId
@@ -154,11 +152,11 @@ let registerParticipationHandler (eventId: Guid, email): HttpHandler =
                                                                 participant.CancellationToken.ToString
                                                                     ())
                                 
-                                Service.createNewParticipantMail
+                                Event.Service.createNewParticipantMail
                                     createCancelUrl eventDomainModel isWaitlisted
                                     (Email.EmailAddress config.noReplyEmail)
                                     participantDomainModel
-                            ArrangementService.Email.Service.sendMail email context
+                            Email.Service.sendMail email context
                             
                             participantDomainModel
                             ) validatedInsertResult
@@ -168,7 +166,7 @@ let registerParticipationHandler (eventId: Guid, email): HttpHandler =
             return!
                 match result with
                 | Ok result ->
-                    let newlyCreatedParticipantViewModel = Models.domainToViewWithCancelInfo result
+                    let newlyCreatedParticipantViewModel = Participant.Models.domainToViewWithCancelInfo result
                     json newlyCreatedParticipantViewModel next context
                 | Error e ->
                     context.SetStatusCode 400

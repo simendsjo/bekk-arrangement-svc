@@ -1,14 +1,12 @@
-namespace ArrangementService.Participant
+module Participant.Models
 
 open System
-open System.Web
 
-open ArrangementService
-open TimeStamp
+open Email
 open Validation
 open UserMessage
-open ArrangementService.Email
-open ArrangementService.DomainModels
+open DomainModels
+open Participant.Types
 
 type ParticipantAnswerDbModel = {
   QuestionId: int
@@ -73,62 +71,59 @@ type ViewModelLocalStorage =
     Participations: ParticipationsLocalStorage list
   }
   
-module Models =
+let dbToDomain (dbRecord: DbModel, answers): Participant =
+    { Name = Name dbRecord.Name
+      Email = EmailAddress dbRecord.Email
+      ParticipantAnswers = ParticipantAnswers answers
+      EventId = Event.Types.Id dbRecord.EventId
+      RegistrationTime = TimeStamp.TimeStamp dbRecord.RegistrationTime
+      CancellationToken = dbRecord.CancellationToken
+      EmployeeId = EmployeeId dbRecord.EmployeeId
+    }
 
-    let dbToDomain (dbRecord: DbModel, answers): Participant =
-        { Name = Name dbRecord.Name
-          Email = EmailAddress dbRecord.Email
-          ParticipantAnswers = ParticipantAnswers answers
-          EventId = Event.Id dbRecord.EventId
-          RegistrationTime = TimeStamp dbRecord.RegistrationTime
-          CancellationToken = dbRecord.CancellationToken
-          EmployeeId = Participant.EmployeeId dbRecord.EmployeeId
-        }
-
-    let writeToDomain ((eventId, email): Key) (writeModel: WriteModel) (employeeId: int option): Result<Participant, UserMessage list> =
-          Ok Participant.Create 
-          <*> Name.Parse writeModel.Name
-          <*> EmailAddress.Parse email 
-          <*> ParticipantAnswers.Parse writeModel.ParticipantAnswers
-          <*> (Event.Id eventId |> Ok) 
-          <*> (now() |> Ok) 
-          <*> (Guid.NewGuid() |> Ok)
-          <*> Ok (Participant.EmployeeId employeeId)
-    
-
-    let domainToView (participant: Participant): ViewModel =
-        { Name = participant.Name.Unwrap
-          Email = Some participant.Email.Unwrap 
-          ParticipantAnswers = participant.ParticipantAnswers.Unwrap
-          EventId = participant.EventId.Unwrap.ToString()
-          RegistrationTime = participant.RegistrationTime.Unwrap
-          EmployeeId = participant.EmployeeId.Unwrap 
-        }
+let writeToDomain ((eventId, email): Key) (writeModel: WriteModel) (employeeId: int option): Result<Participant, UserMessage list> =
+      Ok Participant.Create 
+      <*> Name.Parse writeModel.Name
+      <*> EmailAddress.Parse email 
+      <*> ParticipantAnswers.Parse writeModel.ParticipantAnswers
+      <*> (Event.Types.Id eventId |> Ok) 
+      <*> (TimeStamp.now() |> Ok) 
+      <*> (Guid.NewGuid() |> Ok)
+      <*> Ok (EmployeeId employeeId)
 
 
-    let domainToDb (participant: Participant): DbModel =
-        { Name = participant.Name.Unwrap
-          Email = participant.Email.Unwrap
-          EventId = participant.EventId.Unwrap
-          RegistrationTime = participant.RegistrationTime.Unwrap
-          CancellationToken = participant.CancellationToken
-          EmployeeId = participant.EmployeeId.Unwrap
-        }
+let domainToView (participant: Participant): ViewModel =
+    { Name = participant.Name.Unwrap
+      Email = Some participant.Email.Unwrap 
+      ParticipantAnswers = participant.ParticipantAnswers.Unwrap
+      EventId = participant.EventId.Unwrap.ToString()
+      RegistrationTime = participant.RegistrationTime.Unwrap
+      EmployeeId = participant.EmployeeId.Unwrap 
+    }
 
-    let domainToViewWithCancelInfo (participant: Participant): NewlyCreatedParticipationViewModel
-        =
-        { Participant = domainToView participant
-          CancellationToken = participant.CancellationToken.ToString() }
+let domainToDb (participant: Participant): DbModel =
+    { Name = participant.Name.Unwrap
+      Email = participant.Email.Unwrap
+      EventId = participant.EventId.Unwrap
+      RegistrationTime = participant.RegistrationTime.Unwrap
+      CancellationToken = participant.CancellationToken
+      EmployeeId = participant.EmployeeId.Unwrap
+    }
 
-    let domainToLocalStorageView events (participations: Participant seq) : ViewModelLocalStorage = 
-        let eventToLocalStorage event = { EventId=event.Id.Unwrap
-                                          EditToken = event.EditToken
-                                        }
-        let participationToLocalStorage (participant:Participant) = { EventId=participant.EventId.Unwrap
-                                                                      Email= participant.Email.Unwrap
-                                                                      CancellationToken=participant.CancellationToken
-                                                                    }
+let domainToViewWithCancelInfo (participant: Participant): NewlyCreatedParticipationViewModel
+    =
+    { Participant = domainToView participant
+      CancellationToken = participant.CancellationToken.ToString() }
 
-        { EditableEvents = (events |> Seq.map eventToLocalStorage |> Seq.toList)
-          Participations = participations |> Seq.map participationToLocalStorage |> Seq.toList
-        }
+let domainToLocalStorageView events (participations: Participant seq) : ViewModelLocalStorage = 
+    let eventToLocalStorage event = { EventId=event.Id.Unwrap
+                                      EditToken = event.EditToken
+                                    }
+    let participationToLocalStorage (participant:Participant) = { EventId=participant.EventId.Unwrap
+                                                                  Email= participant.Email.Unwrap
+                                                                  CancellationToken=participant.CancellationToken
+                                                                }
+
+    { EditableEvents = (events |> Seq.map eventToLocalStorage |> Seq.toList)
+      Participations = participations |> Seq.map participationToLocalStorage |> Seq.toList
+    }

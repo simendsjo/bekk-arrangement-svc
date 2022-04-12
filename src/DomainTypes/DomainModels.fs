@@ -1,6 +1,5 @@
-namespace ArrangementService.DomainModels
+module DomainModels
 
-open ArrangementService
 open System
 
 type Email =
@@ -10,26 +9,26 @@ type Email =
       CalendarInvite: string option }
 
 type Event =
-    { Id: Event.Id
-      Title: Event.Title
-      Description: Event.Description
-      Location: Event.Location
-      StartDate: DateTimeCustom
-      EndDate: DateTimeCustom
-      OrganizerName: Event.OrganizerName
+    { Id: Event.Types.Id
+      Title: Event.Types.Title
+      Description: Event.Types.Description
+      Location: Event.Types.Location
+      StartDate: DateTimeCustom.DateTimeCustom
+      EndDate: DateTimeCustom.DateTimeCustom
+      OrganizerName: Event.Types.OrganizerName
       OrganizerEmail: Email.EmailAddress
-      OpenForRegistrationTime: Event.OpenForRegistrationTime
-      CloseRegistrationTime: Event.CloseRegistrationTime
-      ParticipantQuestions: Event.ParticipantQuestions
-      MaxParticipants: Event.MaxParticipants
+      OpenForRegistrationTime: Event.Types.OpenForRegistrationTime
+      CloseRegistrationTime: Event.Types.CloseRegistrationTime
+      ParticipantQuestions: Event.Types.ParticipantQuestions
+      MaxParticipants: Event.Types.MaxParticipants
       EditToken: Guid
       HasWaitingList: bool
       IsCancelled: bool
       IsExternal: bool
       IsHidden: bool
-      OrganizerId: Event.EmployeeId
-      Shortname: Event.Shortname 
-      CustomHexColor: Event.CustomHexColor }
+      OrganizerId: Event.Types.EmployeeId
+      Shortname: Event.Types.Shortname 
+      CustomHexColor: Event.Types.CustomHexColor }
     static member Create =
         fun id title description location organizerName organizerEmail maxParticipants (startDate, endDate) openForRegistrationTime closeRegistrationTime editToken participantQuestions hasWaitingList isCancelled isExternal isHidden organizerId shortname hexCode ->
             { Id = id
@@ -54,13 +53,13 @@ type Event =
               CustomHexColor = hexCode }
 
 type Participant =
-    { Name: Participant.Name
+    { Name: Participant.Types.Name
       Email: Email.EmailAddress
-      ParticipantAnswers: Participant.ParticipantAnswers
-      EventId: Event.Id
-      RegistrationTime: TimeStamp
+      ParticipantAnswers: Participant.Types.ParticipantAnswers
+      EventId: Event.Types.Id
+      RegistrationTime: TimeStamp.TimeStamp
       CancellationToken: Guid
-      EmployeeId: Participant.EmployeeId }
+      EmployeeId: Participant.Types.EmployeeId }
     static member Create =
         fun name email participantAnswers eventId registrationTime cancellationToken employeeId ->
             { Name = name
@@ -72,10 +71,10 @@ type Participant =
               EmployeeId = employeeId }
     static member CreateFromPrimitives =
         fun name email participantAnswers eventId registrationTime cancellationToken employeeId ->
-            { Name = name |> Participant.Name
+            { Name = name |> Participant.Types.Name
               Email = email |> Email.EmailAddress
-              ParticipantAnswers = participantAnswers |> Participant.ParticipantAnswers
-              EventId = eventId |> Event.Id
-              RegistrationTime = registrationTime |> TimeStamp
+              ParticipantAnswers = participantAnswers |> Participant.Types.ParticipantAnswers
+              EventId = eventId |> Event.Types.Id
+              RegistrationTime = registrationTime |> TimeStamp.TimeStamp
               CancellationToken = cancellationToken
-              EmployeeId = employeeId |> Participant.EmployeeId }
+              EmployeeId = employeeId |> Participant.Types.EmployeeId }
