@@ -3,7 +3,7 @@ module Event.Models
 open System
 
 open Utils
-open Email
+open Email.Types
 open Validation
 open Event.Types
 open UserMessage

@@ -2,9 +2,9 @@ module Event.Service
 
 open Microsoft.AspNetCore.Http
 
-open Email
+open Email.Types
 open DomainModels
-open CalendarInvite
+open Email.CalendarInvite
 open ResultComputationExpression
 
 // Arrangement markert som IsHidden skal bare være synlig
@@ -98,7 +98,7 @@ let private sendNewlyCreatedEventMail viewUrl createEditUrl (event: Event) (ctx:
     let config = Config.getConfig ctx
     let mail =
         createEmail viewUrl createEditUrl (EmailAddress config.noReplyEmail) event
-    Service.sendMail mail ctx
+    Email.Service.sendMail mail ctx
 
 type EventWithShortname =
     | EventExistsWithShortname of Event
@@ -266,7 +266,7 @@ let registerParticipant createMail participant =
         do! Participant.Queries.createParticipant participant
         do! Participant.Queries.setAnswers participant
 
-        yield Service.sendMail (createMail participant)
+        yield Email.Service.sendMail (createMail participant)
 
         return ()
     }
@@ -324,16 +324,16 @@ let private sendMailToFirstPersonOnWaitingList
     | None -> 
         ignoreContext ()
     | Some participant ->
-        Service.sendMail
+        Email.Service.sendMail
                   (createFreeSpotAvailableMail event participant)
 
 let private sendMailToOrganizerAboutCancellation event participant =
     let mail = createCancelledParticipationMailToOrganizer event participant
-    Service.sendMail mail
+    Email.Service.sendMail mail
 
 let private sendMailWithCancellationConfirmation event participant =
     let mail = createCancelledParticipationMailToAttendee event participant
-    Service.sendMail mail
+    Email.Service.sendMail mail
 
 let private sendParticipantCancelMails event email =
     result {
@@ -393,11 +393,11 @@ let sendCancellationMailToParticipants
     ctx
     =
     let sendMailToParticipant participant =
-        Service.sendMail
+        Email.Service.sendMail
             (createCancelledEventMail messageToParticipants event
                  noReplyMail participant) ctx
 
-    Service.sendMail
+    Email.Service.sendMail
             (createCancellationConfirmationToOrganizer event messageToParticipants) ctx
 
     participants |> Seq.iter sendMailToParticipant
@@ -502,7 +502,7 @@ let updateEvent (id: Event.Types.Id) writeModel =
                 oldWaitingList
                 |> Seq.truncate numberOfNewPeople
             for newAttendee in newPeople do
-                yield Service.sendMail <| createFreeSpotAvailableMail newEvent newAttendee
+                yield Email.Service.sendMail <| createFreeSpotAvailableMail newEvent newAttendee
 
         return newEvent 
     }

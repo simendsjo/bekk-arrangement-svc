@@ -5,7 +5,7 @@ open System
 type Email =
     { Subject: string
       Message: string
-      To: Email.EmailAddress
+      To: Email.Types.EmailAddress
       CalendarInvite: string option }
 
 type Event =
@@ -16,7 +16,7 @@ type Event =
       StartDate: DateTimeCustom.DateTimeCustom
       EndDate: DateTimeCustom.DateTimeCustom
       OrganizerName: Event.Types.OrganizerName
-      OrganizerEmail: Email.EmailAddress
+      OrganizerEmail: Email.Types.EmailAddress
       OpenForRegistrationTime: Event.Types.OpenForRegistrationTime
       CloseRegistrationTime: Event.Types.CloseRegistrationTime
       ParticipantQuestions: Event.Types.ParticipantQuestions
@@ -54,7 +54,7 @@ type Event =
 
 type Participant =
     { Name: Participant.Types.Name
-      Email: Email.EmailAddress
+      Email: Email.Types.EmailAddress
       ParticipantAnswers: Participant.Types.ParticipantAnswers
       EventId: Event.Types.Id
       RegistrationTime: TimeStamp.TimeStamp
@@ -72,7 +72,7 @@ type Participant =
     static member CreateFromPrimitives =
         fun name email participantAnswers eventId registrationTime cancellationToken employeeId ->
             { Name = name |> Participant.Types.Name
-              Email = email |> Email.EmailAddress
+              Email = email |> Email.Types.EmailAddress
               ParticipantAnswers = participantAnswers |> Participant.Types.ParticipantAnswers
               EventId = eventId |> Event.Types.Id
               RegistrationTime = registrationTime |> TimeStamp.TimeStamp

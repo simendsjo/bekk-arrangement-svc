@@ -7,8 +7,8 @@ open System.Threading
 
 open Http
 open Auth
-open Email
 open Config
+open Email.Types
 open DomainModels
 open Participant.Models
 open ResultComputationExpression
@@ -47,7 +47,7 @@ let registerForEvent (eventId: Guid, email) =
                 createCancelUrl event isWaitlisted
                 (EmailAddress config.noReplyEmail)
         
-        let! userId = Auth.getUserId 
+        let! userId = getUserId 
 
         let! participantDomainModel = writeToDomain (eventId, email) writeModel userId |> Task.wrap |> ignoreContext
         do! Event.Service.registerParticipant createMailForParticipant participantDomainModel
@@ -138,7 +138,7 @@ let routes: HttpHandler =
           DELETE
           >=> choose
                   [ routef "/events/%O/participants/%s" (fun parameters ->
-                        check (Participant.Authorization.userCanCancel parameters)
+                        check (Authorization.userCanCancel parameters)
                         >=> (handle << deleteParticipant) parameters)
                         |> withTransaction ]
 

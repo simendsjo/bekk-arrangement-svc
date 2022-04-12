@@ -13,7 +13,7 @@ let userHasCancellationToken (eventId, email) =
 
         let! participant = Event.Service.getParticipant
                                (Event.Types.Id eventId,
-                                Email.EmailAddress email)
+                                Email.Types.EmailAddress email)
 
         let hasCorrectCancellationToken =
             cancellationToken =

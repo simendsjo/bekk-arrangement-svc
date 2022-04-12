@@ -1,6 +1,6 @@
 module Email.CalendarInvite
 
-open Email
+open Email.Types
 open System
 open DomainModels
 

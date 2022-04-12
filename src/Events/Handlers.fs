@@ -5,11 +5,11 @@ open Giraffe
 open System.Web
 
 open Http
-open Email
 open Config
+open Email.Types
+open Event.Types
 open Event.Models
 open DomainModels
-open Event.Types
 open ResultComputationExpression
 
 type RemoveEvent = 
@@ -18,25 +18,25 @@ type RemoveEvent =
 
 let getEvents: Handler<ViewModel list> =
     result {
-        let! events = Event.Service.getEvents
+        let! events = Service.getEvents
         return Seq.map domainToView events |> Seq.toList
     }
 
 let getPastEvents: Handler<ViewModel list> =
     result {
-        let! events = Event.Service.getPastEvents
+        let! events = Service.getPastEvents
         return Seq.map domainToView events |> Seq.toList
     }
 
 let getEventsOrganizedBy organizerEmail =
     result {
-        let! events = Event.Service.getEventsOrganizedBy (EmailAddress organizerEmail)
+        let! events = Service.getEventsOrganizedBy (EmailAddress organizerEmail)
         return Seq.map domainToView events |> Seq.toList
     }
 
 let getEvent id =
     result {
-        let! event = Event.Service.getEvent (Id id)
+        let! event = Service.getEvent (Id id)
         return domainToView event
     }
 
@@ -44,16 +44,16 @@ let getEvent id =
 let deleteOrCancelEvent (removeEventType:RemoveEvent) id: Handler<string> =
     result {
         let! messageToParticipants = getBody<string> ()
-        let! event = Event.Service.getEvent (Id id)
-        let! participants = Event.Service.getParticipantsForEvent event
+        let! event = Service.getEvent (Id id)
+        let! participants = Service.getParticipantsForEvent event
 
         let! config = getConfig >> Ok >> Task.wrap
 
         let! result =  match removeEventType with 
-                        | Cancel -> Event.Service.cancelEvent event
-                        | Delete -> Event.Service.deleteEvent (Id id)
+                        | Cancel -> Service.cancelEvent event
+                        | Delete -> Service.deleteEvent (Id id)
         
-        yield Event.Service.sendCancellationMailToParticipants
+        yield Service.sendCancellationMailToParticipants
                   messageToParticipants (EmailAddress config.noReplyEmail) participants.attendees event
                   
         return result
@@ -61,7 +61,7 @@ let deleteOrCancelEvent (removeEventType:RemoveEvent) id: Handler<string> =
 
 let getEmployeeId = 
     result {
-        let! userId = Auth.getUserId 
+        let! userId = getUserId 
 
         return! userId
                 |> Option.map EmployeeId  // option EmployeeId
@@ -72,7 +72,7 @@ let getEmployeeId =
 let updateEvent (id:Key) =
     result {
         let! writeModel = getBody<WriteModel> ()
-        let! updatedEvent = Event.Service.updateEvent (Id id) writeModel
+        let! updatedEvent = Service.updateEvent (Id id) writeModel
         return domainToView updatedEvent
     }
 
@@ -92,7 +92,7 @@ let createEvent =
 
         let! employeeId = getEmployeeId
 
-        let! newEvent = Event.Service.createEvent viewUrl createEditUrl employeeId.Unwrap writeModel
+        let! newEvent = Service.createEvent viewUrl createEditUrl employeeId.Unwrap writeModel
         
         return domainToViewWithEditInfo newEvent
     }
@@ -103,8 +103,8 @@ let cancelEvent = deleteOrCancelEvent Cancel
 
 let getEventAndParticipationSummaryForEmployee employeeId = 
     result {
-        let! events = Event.Service.getEventsOrganizedByOrganizerId (EmployeeId employeeId)
-        let! participations = Event.Service.getParticipationsByEmployeeId (EmployeeId employeeId)
+        let! events = Service.getEventsOrganizedByOrganizerId (EmployeeId employeeId)
+        let! participations = Service.getParticipationsByEmployeeId (EmployeeId employeeId)
         return Participant.Models.domainToLocalStorageView events participations
     }
 
@@ -112,7 +112,7 @@ let getEventIdByShortname =
     result {
         let! shortnameEncoded = queryParam "shortname"
         let shortname = HttpUtility.UrlDecode(shortnameEncoded)
-        let! event = Event.Service.getEventByShortname shortname
+        let! event = Service.getEventByShortname shortname
         return event.Id.Unwrap
     }
 
@@ -127,13 +127,13 @@ let getUnfurl (idOrName: string) =
         let! event =
             match System.Guid.TryParse (idOrName |> strSkip ("/events/" |> String.length)) with
             | true, guid ->
-                Event.Service.getEvent (Id guid)
+                Service.getEvent (Id guid)
             | false, _ ->
                 // Vi må hoppe over leading slash (/)
                 let name = idOrName |> strSkip 1
-                Event.Service.getEventByShortname name
+                Service.getEventByShortname name
 
-        let! numberOfParticipants = Event.Service.getNumberOfParticipantsForEvent event.Id
+        let! numberOfParticipants = Service.getNumberOfParticipantsForEvent event.Id
         
         return {| event = domainToView event; numberOfParticipants = numberOfParticipants.Unwrap |} 
     }
@@ -153,7 +153,7 @@ let routes: HttpHandler =
                         |> withTransaction)
 
                     routef "/events/%O" (fun eventId -> 
-                        check (Event.Authorization.eventIsExternalOrUserIsAuthenticated eventId)
+                        check (Authorization.eventIsExternalOrUserIsAuthenticated eventId)
                         >=> (handle << getEvent) eventId
                         |> withTransaction)
 
@@ -176,18 +176,18 @@ let routes: HttpHandler =
           DELETE
           >=> choose
                   [ routef "/events/%O" (fun id ->
-                        check (Event.Authorization.userCanEditEvent id)
+                        check (Authorization.userCanEditEvent id)
                         >=> (handle << cancelEvent) id
                         |> withTransaction)
                     routef "/events/%O/delete" (fun id -> 
-                        check (Event.Authorization.userCanEditEvent id)
+                        check (Authorization.userCanEditEvent id)
                         >=> (handle << deleteEvent) id
                         |> withTransaction)
                     ]
           PUT
           >=> choose
                   [ routef "/events/%O" (fun id ->
-                        check (Event.Authorization.userCanEditEvent id)
+                        check (Authorization.userCanEditEvent id)
                         >=> (handle << updateEvent) id
                         |> withTransaction) ]
           POST 

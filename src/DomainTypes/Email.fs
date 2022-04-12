@@ -1,4 +1,4 @@
-module Email
+module Email.Types
 
 open Validation
 open UserMessage

@@ -3,7 +3,7 @@ module Event.Queries
 open System
 open Dapper.FSharp
 
-open Email
+open Email.Types
 open DomainModels
 open Event.Models
 open ResultComputationExpression

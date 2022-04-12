@@ -2,7 +2,7 @@ module Participant.Models
 
 open System
 
-open Email
+open Email.Types
 open Validation
 open UserMessage
 open DomainModels

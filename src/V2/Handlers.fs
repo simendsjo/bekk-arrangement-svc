@@ -154,7 +154,7 @@ let registerParticipationHandler (eventId: Guid, email): HttpHandler =
                                 
                                 Event.Service.createNewParticipantMail
                                     createCancelUrl eventDomainModel isWaitlisted
-                                    (Email.EmailAddress config.noReplyEmail)
+                                    (Email.Types.EmailAddress config.noReplyEmail)
                                     participantDomainModel
                             Email.Service.sendMail email context
                             

@@ -2,7 +2,7 @@ module Participant.Queries
 
 open Dapper.FSharp
 
-open Email
+open Email.Types
 open DomainModels
 open Participant.Models
 open ResultComputationExpression

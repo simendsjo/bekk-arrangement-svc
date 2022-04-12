@@ -1,6 +1,6 @@
 module Email.Models
 
-open Email
+open Email.Types
 open DomainModels
 open Email.SendgridApiModels
 

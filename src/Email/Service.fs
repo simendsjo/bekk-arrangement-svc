@@ -9,8 +9,8 @@ open Microsoft.AspNetCore.Http
 open System.Collections.Generic
 open Newtonsoft.Json.Serialization
 
-open Email
 open Config
+open Email.Types
 open Email.Models
 open DomainModels
 open SendgridApiModels
