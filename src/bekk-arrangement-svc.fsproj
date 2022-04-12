@@ -81,13 +81,13 @@
     <Compile Include="Participants\Authorization.fs" />
     
     <Compile Include="V2\Queries.fs" />
-    <Compile Include="V2\Handlers.fs" />
-
-    <Compile Include="Events\Handlers.fs" />
-    <Compile Include="Participants\Handlers.fs" />
-
-    <Compile Include="Health\Health.fs" />
     <Compile Include="Middleware\RequestLogging.fs" />
+    
+    <Compile Include="Handlers\Health.fs" />
+    <Compile Include="Handlers\V2.fs" />
+    <Compile Include="Handlers\ParticipantHandlers.fs" />
+    <Compile Include="Handlers\EventHandlers.fs" />
+    
     <Compile Include="Program.fs" />
   </ItemGroup>
   <ItemGroup>

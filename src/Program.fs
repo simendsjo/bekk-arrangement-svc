@@ -22,7 +22,7 @@ open Email.SendgridApiModels
 
 let webApp =
     choose
-        [ Health.healthCheck; Event.Handlers.routes; Participant.Handlers.routes ]
+        [ Health.healthCheck; Event.Handlers.routes; Participant.Handlers.routes; V2.Handlers.routes ]
         
 
 let private configuration =

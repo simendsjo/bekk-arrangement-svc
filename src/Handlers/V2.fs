@@ -172,3 +172,10 @@ let registerParticipationHandler (eventId: Guid, email): HttpHandler =
                     context.SetStatusCode 400
                     convertUserMessagesToHttpError [BadInput e] next context
         }
+        
+let routes: HttpHandler =
+    choose
+        [ POST
+          >=> choose
+                  [ routef "/events/%O/participants/%s" registerParticipationHandler ]
+        ]
