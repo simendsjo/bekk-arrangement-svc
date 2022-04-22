@@ -1,29 +1,28 @@
 ﻿module ArragementService.App
 
 open System
-open System.Diagnostics
-open System.Threading.Tasks
-open Bekk.Canonical.Logger
 open Giraffe
-open Microsoft.AspNetCore.Builder
-open Microsoft.Extensions.DependencyInjection
 open System.IO
-open Microsoft.Extensions.Configuration
+open Thoth.Json.Net
+open Bekk.Canonical.Logger
+open System.Threading.Tasks
 open Microsoft.AspNetCore.Http
+open Microsoft.AspNetCore.Hosting
+open Microsoft.AspNetCore.Builder
+open Microsoft.IdentityModel.Tokens
+open Microsoft.Extensions.Configuration
+open Microsoft.Extensions.DependencyInjection
 open Microsoft.AspNetCore.Cors.Infrastructure
 open Microsoft.AspNetCore.Authentication.JwtBearer
-open Microsoft.IdentityModel.Tokens
-open Microsoft.AspNetCore.Hosting
-open Thoth.Json.Net
 
-open ArrangementService
 open migrator
 open Logging
-open SendgridApiModels
+open Config
+open Email.SendgridApiModels
 
 let webApp =
     choose
-        [ Health.healthCheck; Event.Handlers.routes; Participant.Handlers.routes ]
+        [ Health.healthCheck; Event.Handlers.routes; Participant.Handlers.routes; V2.Handlers.routes ]
         
 
 let private configuration =
