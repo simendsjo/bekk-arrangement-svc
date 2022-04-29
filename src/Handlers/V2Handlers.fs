@@ -134,7 +134,7 @@ let registerParticipationHandler (eventId: Guid, email): HttpHandler =
                             // Lage domenemodell av participant
                             let participantDomainModel = Participant.CreateFromPrimitives participant.Name participant.Email answers participant.EventId participant.RegistrationTime participant.CancellationToken participant.EmployeeId
                             // Lag domenemodell av event
-                            let eventDomainModel = Event.Models.dbToDomain(event, [], None)
+                            let eventDomainModel = Event.Models.dbToDomain(event, [])
                             // Sende epost
                             let isWaitlisted = participate = IsWaitListed
                             let email =

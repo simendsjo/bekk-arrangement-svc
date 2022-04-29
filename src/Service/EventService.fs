@@ -1,5 +1,6 @@
 module Event.Service
 
+open System
 open Email
 open Microsoft.AspNetCore.Http
 
@@ -107,29 +108,32 @@ type EventWithShortname =
     | EventExistsWithShortname of Event
     | UnusedShortname
 
-let private setShortname eventId shortname =
+let private setShortname shortname =
     result {
-        let! shortnameExists =
-                Queries.queryEventByShortname shortname
-                >> Task.map (function
-                | Ok event -> EventExistsWithShortname event |> Ok
-                | Error _ -> UnusedShortname |> Ok)
-
-        match shortnameExists with
-        | UnusedShortname ->
+        match shortname with
+        | None -> 
             yield! result.Zero()
-
-        | EventExistsWithShortname event ->
-            if event.EndDate >= DateTimeCustom.now() then
-                return! Error [ UserMessages.Events.shortnameIsInUse shortname ] |> Task.wrap
-            else
-                yield! Queries.deleteShortname shortname
-
-        yield! Queries.insertShortname eventId shortname
+        // Her sjekker vi om shortname er i bruk allerede
+        // Hvis den er i bruk kan den kun gjenbrukes dersom det gamle eventet er ferdig
+        | Some shortname ->
+            let! existingEvent = Queries.shortnameExists shortname
+            match existingEvent with
+            | Some existingEvent ->
+                let previousEventIsClosed = existingEvent.EndDate < DateTime.Now
+                let previousEventIsCancelled = existingEvent.IsCancelled
+                if previousEventIsClosed || previousEventIsCancelled then
+                    do! Queries.deleteShortname shortname
+                    yield! result.Zero()
+                else
+                    return! Error [ UserMessages.Events.shortnameIsInUse shortname ] |> Task.wrap
+            | None ->
+                yield! result.Zero()
     }
 
-let createEvent viewUrl createEditUrl employeeId event =
+let createEvent viewUrl createEditUrl employeeId (event: Event.Models.WriteModel) =
     result {
+        do! setShortname event.Shortname
+        
         let! newEvent = Queries.createEvent employeeId event
 
         match event.ParticipantQuestions with
@@ -137,12 +141,6 @@ let createEvent viewUrl createEditUrl employeeId event =
             yield! result.Zero()
         | questions ->
             yield! Queries.insertQuestions newEvent.Id questions
-
-        match event.Shortname with
-        | None -> 
-            yield! result.Zero()
-        | Some shortname ->
-            yield! setShortname newEvent.Id shortname
 
         yield sendNewlyCreatedEventMail viewUrl createEditUrl newEvent
 
@@ -469,6 +467,14 @@ let updateEvent (id: Event.Types.Id) writeModel =
         let! { waitingList = oldWaitingList } = getParticipantsForEvent oldEvent
 
         do! Validation.assertValidCapacityChange oldEvent newEvent
+        
+        match oldEvent.Shortname with
+        | Event.Types.Shortname (Some oldShortname) ->
+            yield! Queries.deleteShortname oldShortname
+        | Event.Types.Shortname None ->
+            yield! result.Zero()
+
+        do! setShortname newEvent.Shortname.Unwrap
         do! Queries.updateEvent newEvent
 
         if newEvent.ParticipantQuestions <> oldEvent.ParticipantQuestions then
@@ -481,18 +487,6 @@ let updateEvent (id: Event.Types.Id) writeModel =
                 yield! Queries.deleteLastQuestions ((oldEvent.ParticipantQuestions.Unwrap |> Seq.length) - (answeredQuestions |> Seq.length)) newEvent.Id
                 yield! Queries.insertQuestions newEvent.Id unansweredQuestions
 
-        if newEvent.Shortname <> oldEvent.Shortname then
-            match oldEvent.Shortname with
-            | Event.Types.Shortname (Some oldShortname) ->
-                yield! Queries.deleteShortname oldShortname
-            | Event.Types.Shortname None ->
-                yield! result.Zero()
-
-            match newEvent.Shortname with
-            | Event.Types.Shortname (Some shortname) ->
-                yield! setShortname newEvent.Id shortname
-            | Event.Types.Shortname None ->
-                yield! result.Zero()
 
         let numberOfNewPeople =
             match oldEvent.MaxParticipants.Unwrap, newEvent.MaxParticipants.Unwrap with

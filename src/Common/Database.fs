@@ -65,22 +65,10 @@ let runInnerJoinSelectQuery<'a, 'b> query =
         return! config.currentConnection.SelectAsync<'a, 'b>(query, config.currentTransaction) |> Task.map Ok
     }
 
-let runInnerJoinJoinSelectQuery<'a, 'b, 'c> query =
-    result {
-        let! config = getConfig >> Ok >> Task.wrap
-        return! config.currentConnection.SelectAsync<'a, 'b, 'c>(query, config.currentTransaction) |> Task.map Ok
-    }
-
 let runOuterJoinSelectQuery<'a, 'b> query =
     result {
         let! config = getConfig >> Ok >> Task.wrap
         return! config.currentConnection.SelectAsyncOption<'a, 'b>(query, config.currentTransaction) |> Task.map Ok
-    }
-
-let runOuterJoinJoinSelectQuery<'a, 'b, 'c> query =
-    result {
-        let! config = getConfig >> Ok >> Task.wrap
-        return! config.currentConnection.SelectAsyncOption<'a, 'b, 'c>(query, config.currentTransaction) |> Task.map Ok
     }
 
 let runUpdateQuery query =
