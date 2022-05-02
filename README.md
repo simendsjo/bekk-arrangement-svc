@@ -58,11 +58,7 @@ TODO.
 ## Migrating the database
 
 - Create a new .sql file with a number prefix (increment the highest existing prefix) with your new migration
-- Make sure the table has at least one row of valid data (it's used to generate the `DbSchema`)
-- Delete the `obj` and `bin` folders
-- Delete the file `DbSchema.json`
 - Run `$ dotnet run`
-- The migration should be performed, and generate a new `DbSchema`. If it does not, try to delete the obj and bin folders again, and run or build it one more time.
 
 ## Shortnames
 Shortnames is a way to change the URL of an event.
