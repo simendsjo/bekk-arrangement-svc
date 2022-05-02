@@ -8,7 +8,7 @@ An F# service for collecting and maintaining data about events.
 
 ## Requirements
 
-- .NET Core SDK 3.0
+- .NET Core SDK 6.0
 - SQL server
 
 ### Recommended tools
