@@ -4,28 +4,15 @@ open System
 open Dapper
 open Microsoft.Data.SqlClient
 
-[<CLIMutable>]
-type private ForsideEvent = {
-    Id: Guid
-    Title: string
-    Location: string
-    StartDate: DateTime
-    StartTime: TimeSpan
-    MaxParticipants: int option
-    CustomHexColor: string option
-    NumberOfParticipants: int
-    IsParticipating: bool
-}
-
 let getEventsForForside (email: string) (transaction: SqlTransaction) =
     task {
         let query =
             "
-            SELECT E.Id, E.Title, E.Location, E.StartDate, E.StartTime, E.MaxParticipants, E.CustomHexColor, COUNT(P.EmployeeId) as NumberOfParticipants, (SELECT COUNT(*) FROM Participants p0 WHERE p0.Email = @email AND p0.EventId = E.Id) as IsParticipating
+            SELECT E.Id, E.Title, E.Location, E.StartDate, E.EndDate, E.StartTime, E.EndTime, E.OpenForRegistrationTime, E.CloseRegistrationTime, E.MaxParticipants, E.CustomHexColor, E.hasWaitingList, COUNT(*) as NumberOfParticipants, (SELECT COUNT(*) FROM Participants p0 WHERE p0.Email = @email AND p0.EventId = E.Id) as IsParticipating
             FROM Events E
             LEFT JOIN Participants P on E.Id = P.EventId
-            WHERE EndDate > GETDATE() AND IsCancelled = 0
-            GROUP BY E.Id, E.Title, E.Location, E.StartDate, E.StartTime, E.MaxParticipants, E.CustomHexColor
+            WHERE EndDate > GETDATE() AND IsCancelled = 0 AND IsHidden = 0
+            GROUP BY E.Id, E.Title, E.Location, E.StartDate, E.EndDate, E.StartTime, E.EndTime, E.OpenForRegistrationTime, E.CloseRegistrationTime, E.MaxParticipants, E.CustomHexColor, E.hasWaitingList
             "
             
         let parameters = dict [
@@ -33,7 +20,7 @@ let getEventsForForside (email: string) (transaction: SqlTransaction) =
         ]
         
         try
-            let! result = transaction.Connection.QueryAsync<FOO>(query, parameters, transaction)
+            let! result = transaction.Connection.QueryAsync<Event.Models.ForsideEvent>(query, parameters, transaction)
             return Ok (Seq.toList result)
         with
         | ex ->

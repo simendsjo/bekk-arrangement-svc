@@ -1,6 +1,5 @@
 module V2.Handlers
 
-open System.Diagnostics
 open Giraffe
 open System
 open System.Web
@@ -8,6 +7,7 @@ open Thoth.Json.Net
 open Microsoft.Data.SqlClient
 open Microsoft.AspNetCore.Http
 
+open Auth
 open Config
 open UserMessage
 open Participant.Models
@@ -199,8 +199,7 @@ let routes: HttpHandler =
         [ POST
           >=> choose
                   [ routef "/events/%O/participants/%s" registerParticipationHandler ]
-          // TODO: Legg inn authenticatino her
           GET
           >=> choose
-                  [ routef "/events/forside/%s" getEventsForForsideHandler ]
+                  [ isAuthenticatedV2 >=> routef "/events/forside/%s" getEventsForForsideHandler ]
         ]
