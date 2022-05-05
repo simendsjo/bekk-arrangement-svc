@@ -168,6 +168,7 @@ type ForsideEvent = {
     CloseRegistrationTime: int64 option
     MaxParticipants: int option
     CustomHexColor: string option
+    Shortname: string option
     HasWaitingList: bool
     NumberOfParticipants: int
     IsParticipating: bool

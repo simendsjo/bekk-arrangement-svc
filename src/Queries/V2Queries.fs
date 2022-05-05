@@ -8,11 +8,11 @@ let getEventsForForside (email: string) (transaction: SqlTransaction) =
     task {
         let query =
             "
-            SELECT E.Id, E.Title, E.Location, E.StartDate, E.EndDate, E.StartTime, E.EndTime, E.OpenForRegistrationTime, E.CloseRegistrationTime, E.MaxParticipants, E.CustomHexColor, E.hasWaitingList, COUNT(*) as NumberOfParticipants, (SELECT COUNT(*) FROM Participants p0 WHERE p0.Email = @email AND p0.EventId = E.Id) as IsParticipating
+            SELECT E.Id, E.Title, E.Location, E.StartDate, E.EndDate, E.StartTime, E.EndTime, E.OpenForRegistrationTime, E.CloseRegistrationTime, E.MaxParticipants, E.CustomHexColor, E.Shortname, E.hasWaitingList, COUNT(*) as NumberOfParticipants, (SELECT COUNT(*) FROM Participants p0 WHERE p0.Email = @email AND p0.EventId = E.Id) as IsParticipating
             FROM Events E
             LEFT JOIN Participants P on E.Id = P.EventId
             WHERE EndDate > GETDATE() AND IsCancelled = 0 AND IsHidden = 0
-            GROUP BY E.Id, E.Title, E.Location, E.StartDate, E.EndDate, E.StartTime, E.EndTime, E.OpenForRegistrationTime, E.CloseRegistrationTime, E.MaxParticipants, E.CustomHexColor, E.hasWaitingList
+            GROUP BY E.Id, E.Title, E.Location, E.StartDate, E.EndDate, E.StartTime, E.EndTime, E.OpenForRegistrationTime, E.CloseRegistrationTime, E.MaxParticipants, E.CustomHexColor, E.Shortname, E.hasWaitingList
             "
             
         let parameters = dict [
