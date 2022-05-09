@@ -166,12 +166,13 @@ type ForsideEvent = {
     EndTime: TimeSpan
     OpenForRegistrationTime: int64 
     CloseRegistrationTime: int64 option
-    MaxParticipants: int option
     CustomHexColor: string option
     Shortname: string option
-    HasWaitingList: bool
-    NumberOfParticipants: int
+    HasWaitingList: bool;
+    HasRoom: bool
     IsParticipating: bool
+    IsWaitlisted: bool
+    PositionInWaitlist: int
 }
 
 let writeToDomain
