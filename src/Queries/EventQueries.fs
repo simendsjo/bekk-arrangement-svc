@@ -18,27 +18,25 @@ let createEvent employeeId (event: WriteModel)  =
                      value dbModel
                    }
             |> Database.runInsertQuery
-        return dbToDomain (dbModel, event.ParticipantQuestions.Unwrap, event.Shortname.Unwrap)
+        return dbToDomain (dbModel, event.ParticipantQuestions.Unwrap)
     }
 
 let private groupEventAndShortname ls =
     ls
-    |> Seq.map (fun (event: DbModel, questionDbModel: ParticipantQuestionDbModel option, shortnameDbModel: ShortnameDbModel option) ->
+    |> Seq.map (fun (event: DbModel, questionDbModel: ParticipantQuestionDbModel option) ->
                     ( event
-                    , questionDbModel 
-                    , shortnameDbModel 
-                        |> Option.map (fun dbModel -> dbModel.Shortname)))
-    |> Seq.groupBy (fun (event, _, _) -> event.Id)
+                    , questionDbModel))
+    |> Seq.groupBy (fun (event, _) -> event.Id)
     |> Seq.map (fun (_eventId, listOfQuestions) -> 
-        let event, _, shortname = listOfQuestions |> Seq.head
+        let event, _ = listOfQuestions |> Seq.head
         let sortedQuestionsForEvent =
             listOfQuestions 
-            |> Seq.collect (fun (_, question, _) -> match question with | Some q -> [ q ] | None -> []) 
+            |> Seq.collect (fun (_, question) -> match question with | Some q -> [ q ] | None -> []) 
             |> Seq.sortBy (fun q -> q.Id) 
             |> Seq.map (fun q -> q.Question) 
             |> List.ofSeq
 
-        (event, sortedQuestionsForEvent, shortname)
+        (event, sortedQuestionsForEvent)
     )
 
 let getEvents: Handler<Event seq> =
@@ -46,10 +44,9 @@ let getEvents: Handler<Event seq> =
         let! events =
             select { table eventsTable
                      leftJoin questionsTable "EventId" "Events.Id"
-                     leftJoin shortnamesTable "EventId" "Events.Id"
                      where (ge "EndDate" DateTime.Now)
                      orderBy "StartDate" Asc }
-            |> Database.runOuterJoinJoinSelectQuery<DbModel, ParticipantQuestionDbModel, ShortnameDbModel> 
+            |> Database.runOuterJoinSelectQuery<DbModel, ParticipantQuestionDbModel> 
 
         let groupedEvents =
             events
@@ -63,10 +60,9 @@ let getPastEvents: Handler<Event seq> =
         let! events =
             select { table eventsTable
                      leftJoin questionsTable "EventId" "Events.Id"
-                     leftJoin shortnamesTable "EventId" "Events.Id"
                      where (lt "EndDate" DateTime.Now + eq "IsCancelled" false)
                      orderBy "StartDate" Desc }
-            |> Database.runOuterJoinJoinSelectQuery<DbModel, ParticipantQuestionDbModel, ShortnameDbModel>
+            |> Database.runOuterJoinSelectQuery<DbModel, ParticipantQuestionDbModel>
         
         let groupedEvents =
             events
@@ -102,10 +98,9 @@ let queryEventByEventId (eventId: Types.Id): Handler<Event> =
         let! events = 
             select { table eventsTable 
                      leftJoin questionsTable "EventId" "Events.Id"
-                     leftJoin shortnamesTable "EventId" "Events.Id"
                      where (eq "Events.Id" eventId.Unwrap)
                    }
-           |> Database.runOuterJoinJoinSelectQuery<DbModel, ParticipantQuestionDbModel, ShortnameDbModel> 
+           |> Database.runOuterJoinSelectQuery<DbModel, ParticipantQuestionDbModel> 
 
         let event = 
             events
@@ -127,10 +122,9 @@ let queryEventsOrganizedByEmail (organizerEmail: EmailAddress): Handler<Event se
         let! events =
             select { table eventsTable
                      leftJoin questionsTable "EventId" "Events.Id"
-                     leftJoin shortnamesTable "EventId" "Events.Id" 
                      where (eq "Email" organizerEmail.Unwrap)
                    }
-           |> Database.runOuterJoinJoinSelectQuery<DbModel, ParticipantQuestionDbModel, ShortnameDbModel>
+           |> Database.runOuterJoinSelectQuery<DbModel, ParticipantQuestionDbModel>
 
         let groupedEvents =
             events
@@ -144,10 +138,9 @@ let queryEventsOrganizedByOrganizerId (organizerId: Types.EmployeeId): Handler<E
         let! events =
             select { table eventsTable
                      leftJoin questionsTable "EventId" "Events.Id"
-                     leftJoin shortnamesTable "EventId" "Events.Id" 
                      where (eq "OrganizerId" organizerId.Unwrap)
                    }
-           |> Database.runOuterJoinJoinSelectQuery<DbModel, ParticipantQuestionDbModel, ShortnameDbModel>
+           |> Database.runOuterJoinSelectQuery<DbModel, ParticipantQuestionDbModel>
 
         let groupedEvents =
             events
@@ -161,10 +154,9 @@ let queryEventByShortname (shortname: string): Handler<Event> =
         let! events =
             select { table eventsTable 
                      leftJoin questionsTable "EventId" "Events.Id"
-                     leftJoin shortnamesTable "EventId" "Events.Id"
                      where (eq "Shortname" shortname)
                    }
-           |> Database.runOuterJoinJoinSelectQuery<DbModel, ParticipantQuestionDbModel, ShortnameDbModel>
+           |> Database.runOuterJoinSelectQuery<DbModel, ParticipantQuestionDbModel>
 
         let event = 
             events
@@ -181,8 +173,29 @@ let queryEventByShortname (shortname: string): Handler<Event> =
                 Error [ UserMessages.Events.eventNotFound shortname ]
                 |> Task.wrap
     }
+    
+let shortnameExists (shortname: string): Handler<DbModel option> =
+    result {
+        let! events =
+            select { table eventsTable 
+                     where (eq "Shortname" shortname)
+                   }
+           |> Database.runSelectQuery<DbModel>
+        let event = Seq.tryHead events
 
-let insertShortname (eventId: Types.Id) (shortname: string): Handler<unit> =
+        return!
+            match event with
+            | Some event ->
+                Some event
+                |> Ok
+                |> Task.wrap
+            | None ->
+                None
+                |> Ok
+                |> Task.wrap
+    }
+
+let updateShortname (eventId: Types.Id) (shortname: string): Handler<unit> =
     result {
         let! () =
             queryEventByShortname shortname
@@ -190,21 +203,23 @@ let insertShortname (eventId: Types.Id) (shortname: string): Handler<unit> =
                             | Ok _ -> Error [ UserMessages.Events.shortnameIsInUse shortname ]
                             | Error _ -> Ok ())
         let! _res =
-            insert { table shortnamesTable
-                     value {| Shortname = shortname; EventId = eventId.Unwrap |}
+            update { table eventsTable
+                     set {| Shortname = shortname |}
+                     where (eq "Id" eventId.Unwrap)
                    }
-            |> Database.runInsertQuery
+            |> Database.runUpdateQuery
 
         return ()
     }
-
+    
 let deleteShortname (shortname: string): Handler<unit> =
     result {
         let! _res =
-            delete { table shortnamesTable
-                     where (eq "Shortname" shortname)
+            update { table eventsTable
+                     set {| Shortname = None |}
+                     where (eq "shortname" shortname)
                    }
-            |> Database.runDeleteQuery
+            |> Database.runUpdateQuery
 
         return ()
     }
