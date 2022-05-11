@@ -168,7 +168,8 @@ type ForsideEvent = {
     CloseRegistrationTime: int64 option
     CustomHexColor: string option
     Shortname: string option
-    HasWaitingList: bool;
+    HasWaitingList: bool
+    IsCancelled: bool
     HasRoom: bool
     IsParticipating: bool
     IsWaitlisted: bool

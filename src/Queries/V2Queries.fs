@@ -31,13 +31,14 @@ let getEventsForForside (email: string) (transaction: SqlTransaction) =
                    CustomHexColor,
                    Shortname,
                    HasWaitingList,
+                   IsCancelled,
                    IIF(e.MaxParticipants < pn.mySpot, 0, 1) as hasRoom,
                    IIF(pn.isPaameldt IS NULL, 0, isPaameldt) as isParticipating,
                    IIF(e.HasWaitingList = 1 AND pn.peopleInFront > E.MaxParticipants AND pn.isPaameldt = 1, 1, 0) as isWaitlisted,
                    IIF(e.HasWaitingList = 1 AND pn.peopleInFront > E.MaxParticipants AND pn.isPaameldt = 1, ((pn.peopleInFront - E.MaxParticipants) + 1), 0) as positionInWaitlist
             FROM Events AS e
             LEFT JOIN participation AS pn ON e.Id = pn.EventId
-            WHERE e.EndDate > (GETDATE()) AND e.IsCancelled = 0 AND e.IsHidden = 0;
+            WHERE e.EndDate > (GETDATE()) AND e.IsHidden = 0;
             "
             
         let parameters = dict [
