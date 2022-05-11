@@ -10,7 +10,7 @@ let getEventsForForside (email: string) (transaction: SqlTransaction) =
             "
             WITH participation as (
                 -- If 'mySpot' is null, the email is not registered for participation
-                SELECT q.EventId, COUNT(q.EventId) AS peopleInFront, IIF(mySpot IS NULL, 0, 1) AS isPaameldt, mySpot
+                SELECT q.EventId, COUNT(q.EventId) AS peopleInFront, IIF(mySpot IS NULL, 0, 1) AS isPaameldt
                 FROM (SELECT p.EventId AS EventId, p.RegistrationTime AS regTime, participation.RegistrationTime AS mySpot
                       FROM (SELECT EventId, RegistrationTime FROM Participants) p
                                LEFT JOIN (SELECT EventID, RegistrationTime
@@ -32,12 +32,12 @@ let getEventsForForside (email: string) (transaction: SqlTransaction) =
                    Shortname,
                    HasWaitingList,
                    IsCancelled,
-                   IIF(e.MaxParticipants < pn.mySpot, 0, 1) as hasRoom,
+                   IIF(pn.peopleInFront > MaxParticipants, 0, 1) as hasRoom,
                    IIF(pn.isPaameldt IS NULL, 0, isPaameldt) as isParticipating,
                    IIF(e.HasWaitingList = 1 AND pn.peopleInFront > E.MaxParticipants AND pn.isPaameldt = 1, 1, 0) as isWaitlisted,
                    IIF(e.HasWaitingList = 1 AND pn.peopleInFront > E.MaxParticipants AND pn.isPaameldt = 1, ((pn.peopleInFront - E.MaxParticipants) + 1), 0) as positionInWaitlist
             FROM Events AS e
-            LEFT JOIN participation AS pn ON e.Id = pn.EventId
+                     LEFT JOIN participation AS pn ON e.Id = pn.EventId
             WHERE e.EndDate > (GETDATE()) AND e.IsHidden = 0;
             "
             
