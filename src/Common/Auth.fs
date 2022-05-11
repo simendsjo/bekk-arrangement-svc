@@ -2,6 +2,7 @@ module Auth
 
 open System
 open Giraffe
+open Microsoft.AspNetCore.Authentication.JwtBearer
 open Microsoft.AspNetCore.Http
 
 open Config
@@ -49,6 +50,9 @@ let isAuthenticated =
         else
             return! [ NotLoggedIn $"User not logged in" ] |> Error |> Task.wrap
     }
+    
+let isAuthenticatedV2 (next: HttpFunc) (context: HttpContext)  =
+    requiresAuthentication (challenge JwtBearerDefaults.AuthenticationScheme) next context
 
 let isAdmin =
     result {

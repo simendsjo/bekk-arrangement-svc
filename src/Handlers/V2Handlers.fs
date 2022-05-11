@@ -7,6 +7,7 @@ open Thoth.Json.Net
 open Microsoft.Data.SqlClient
 open Microsoft.AspNetCore.Http
 
+open Auth
 open Config
 open UserMessage
 open Participant.Models
@@ -173,9 +174,32 @@ let registerParticipationHandler (eventId: Guid, email): HttpHandler =
                     convertUserMessagesToHttpError [BadInput e] next context
         }
         
+let getEventsForForsideHandler (email: string) =
+    fun (next: HttpFunc) (context: HttpContext) ->
+        task {
+            let config = context.GetService<AppConfig>()
+            
+            use connection = new SqlConnection(config.databaseConnectionString)
+            connection.Open()
+            use transaction = connection.BeginTransaction()
+            let! events = Queries.getEventsForForside email transaction
+            transaction.Commit()
+            connection.Close()
+            
+            match events with
+            | Ok events ->  
+                return! json events next context
+            | Error e ->
+                let message = convertUserMessagesToHttpError [NotFound e] next context
+                return! message
+        }
+        
 let routes: HttpHandler =
     choose
         [ POST
           >=> choose
                   [ routef "/events/%O/participants/%s" registerParticipationHandler ]
+          GET
+          >=> choose
+                  [ isAuthenticatedV2 >=> routef "/events/forside/%s" getEventsForForsideHandler ]
         ]

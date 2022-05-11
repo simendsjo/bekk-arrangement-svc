@@ -4,6 +4,55 @@ open System
 open Dapper
 open Microsoft.Data.SqlClient
 
+let getEventsForForside (email: string) (transaction: SqlTransaction) =
+    task {
+        let query =
+            "
+            WITH participation as (
+                -- If 'mySpot' is null, the email is not registered for participation
+                SELECT q.EventId, COUNT(q.EventId) AS peopleInFront, IIF(mySpot IS NULL, 0, 1) AS isPaameldt, mySpot
+                FROM (SELECT p.EventId AS EventId, p.RegistrationTime AS regTime, participation.RegistrationTime AS mySpot
+                      FROM (SELECT EventId, RegistrationTime FROM Participants) p
+                               LEFT JOIN (SELECT EventID, RegistrationTime
+                                          FROM Participants
+                                          WHERE Email = @email) participation ON p.EventId = participation.EventId) q
+                     -- If Email is not participating, set their registration to maxInt to count all participants as infront.
+                where regTime < IIF(mySpot IS NULL, CAST(0x7FFFFFFFFFFFFFFF AS bigint), mySpot)
+                group by q.EventId, mySpot)
+            SELECT Id,
+                   Title,
+                   Location,
+                   StartDate,
+                   EndDate,
+                   StartTime,
+                   EndTime,
+                   OpenForRegistrationTime,
+                   CloseRegistrationTime,
+                   CustomHexColor,
+                   Shortname,
+                   HasWaitingList,
+                   IsCancelled,
+                   IIF(e.MaxParticipants < pn.mySpot, 0, 1) as hasRoom,
+                   IIF(pn.isPaameldt IS NULL, 0, isPaameldt) as isParticipating,
+                   IIF(e.HasWaitingList = 1 AND pn.peopleInFront > E.MaxParticipants AND pn.isPaameldt = 1, 1, 0) as isWaitlisted,
+                   IIF(e.HasWaitingList = 1 AND pn.peopleInFront > E.MaxParticipants AND pn.isPaameldt = 1, ((pn.peopleInFront - E.MaxParticipants) + 1), 0) as positionInWaitlist
+            FROM Events AS e
+            LEFT JOIN participation AS pn ON e.Id = pn.EventId
+            WHERE e.EndDate > (GETDATE()) AND e.IsHidden = 0;
+            "
+            
+        let parameters = dict [
+            "email", box email
+        ]
+        
+        try
+            let! result = transaction.Connection.QueryAsync<Event.Models.ForsideEvent>(query, parameters, transaction)
+            return Ok (Seq.toList result)
+        with
+        | ex ->
+            return Error $"Klarer ikke hente arrangementer. Feil: {ex}"
+    }
+
 let getEvent (eventId: Guid) (transaction: SqlTransaction) =
     let query =
         "

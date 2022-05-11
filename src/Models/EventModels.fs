@@ -154,7 +154,27 @@ type DbModel =
               OrganizerId = employeeId
               CustomHexColor = writeModel.CustomHexColor
               Shortname = writeModel.Shortname }
-
+            
+[<CLIMutable>]
+type ForsideEvent = {
+    Id: Guid
+    Title: string
+    Location: string
+    StartDate: DateTime
+    EndDate: DateTime
+    StartTime: TimeSpan
+    EndTime: TimeSpan
+    OpenForRegistrationTime: int64 
+    CloseRegistrationTime: int64 option
+    CustomHexColor: string option
+    Shortname: string option
+    HasWaitingList: bool
+    IsCancelled: bool
+    HasRoom: bool
+    IsParticipating: bool
+    IsWaitlisted: bool
+    PositionInWaitlist: int
+}
 
 let writeToDomain
     (id: Key)
