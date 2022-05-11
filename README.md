@@ -64,7 +64,7 @@ TODO.
 Shortnames is a way to change the URL of an event.
 Events are unique in the database, so only 1 row can have a specific shortname at any given time.
 
-A typical event URL is `https://skjerv.bekk.no/events/84427e54-54cd-4a74-8a53-cb0e4cc97004` with a shortname however you can replace the GUID with a string -> `https://skjer-dev.bekk.no/events/my-event`.
+A typical event URL is `https://skjer.bekk.no/events/84427e54-54cd-4a74-8a53-cb0e4cc97004` with a shortname however you can replace the GUID with a string -> `https://skjer-dev.bekk.no/events/my-event`.
 Shortnames are added when creating or editing an event.
 A shortname can only be taken if:
 - It is not currently used by an active event.
