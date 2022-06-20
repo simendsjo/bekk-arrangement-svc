@@ -204,23 +204,23 @@ let getEventsForForsideHandler (email: string) =
         jsonResult result next context
         
 let getFutureEvents (next: HttpFunc) (context: HttpContext) =
-        let result =
-            taskResult {
-                let! userId =
-                    getUserId context
-                    |> TaskResult.requireSome couldNotRetrieveUserId
-                let connection = context.GetService<DatabaseConnection>().getConnection()
-                use transaction = connection.BeginTransaction()
-                let! eventAndQuestions =
-                    Queries.getFutureEvents userId transaction
-                    |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
-                transaction.Commit()
-                let result =
-                    eventAndQuestions
-                    |> List.map Event.encodeEventAndQuestions 
-                return result
-            }
-        jsonResult result next context
+    let result =
+        taskResult {
+            let! userId =
+                getUserId context
+                |> TaskResult.requireSome couldNotRetrieveUserId
+            let connection = context.GetService<DatabaseConnection>().getConnection()
+            use transaction = connection.BeginTransaction()
+            let! eventAndQuestions =
+                Queries.getFutureEvents userId transaction
+                |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
+            transaction.Commit()
+            let result =
+                eventAndQuestions
+                |> List.map Event.encodeEventAndQuestions 
+            return result
+        }
+    jsonResult result next context
 
 let getPastEvents (next: HttpFunc) (context: HttpContext) =
         let result =

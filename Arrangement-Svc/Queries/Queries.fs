@@ -419,7 +419,7 @@ let getNumberOfParticipantsForEvent isBekker (eventId: Guid) (transaction: SqlTr
                 FROM
                 Participants
                 INNER JOIN Events E on E.Id = @eventId
-            WHERE EventId = @eventId AND (1 = 1 OR IsExternal = 1);
+            WHERE EventId = @eventId AND (@isBekker = 1 OR IsExternal = 1);
             "
         let parameters = dict [
             "eventId", box eventId
