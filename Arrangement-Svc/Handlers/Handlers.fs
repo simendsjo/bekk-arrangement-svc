@@ -736,8 +736,6 @@ let deleteParticipantFromEvent (eventId: Guid) (email: string) =
                 let! participant =
                     Queries.getParticipantForEvent eventId email transaction
                     |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
-                printfn "Participant: %A" participant
-                printfn "CancellationTOken: %A" cancellationToken
                 do! (isAdmin || (cancellationToken.IsSome && cancellationToken.Value = participant.CancellationToken))
                     |> Result.requireTrue cannotDeleteParticipation
                 let! eventAndQuestions =
