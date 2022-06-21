@@ -118,14 +118,18 @@ let registerParticipationHandler (eventId: Guid, email): HttpHandler =
                 
                 let connection = context.GetService<DatabaseConnection>().getConnection()
                 use transaction = connection.BeginTransaction()
+                let! isEventExternal =
+                    Queries.isEventExternal eventId transaction
+                    |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
+                do! (isBekker || isEventExternal) |> Result.requireTrue mustBeAuthorizedOrEventMustBeExternal
                 let! eventAndQuestions =
-                    Queries.getEvent isBekker eventId transaction
+                    Queries.getEvent eventId transaction
                     |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
                 let! eventAndQuestions =
                     eventAndQuestions
                     |> Result.requireSome (eventNotFound eventId)
                 let! numberOfParticipants =
-                    Queries.getNumberOfParticipantsForEvent isBekker eventId transaction
+                    Queries.getNumberOfParticipantsForEvent eventId transaction
                     |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
                 
                 let! participate = 
@@ -282,8 +286,12 @@ let getEvent (eventId: Guid) =
             taskResult {
                 let connection = context.GetService<DatabaseConnection>().getConnection()
                 use transaction = connection.BeginTransaction()
+                let! isEventExternal =
+                    Queries.isEventExternal eventId transaction
+                    |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
+                do! (isBekker || isEventExternal) |> Result.requireTrue mustBeAuthorizedOrEventMustBeExternal
                 let! eventAndQuestions =
-                    Queries.getEvent isBekker eventId transaction
+                    Queries.getEvent eventId transaction
                     |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
                 let! eventAndQuestions =
                     eventAndQuestions
@@ -323,13 +331,13 @@ let getUnfurlEvent (idOrName: string) =
                        }
                        
                 let! eventAndQuestions =
-                    Queries.getEvent true eventId transaction
+                    Queries.getEvent eventId transaction
                     |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
                 let! eventAndQuestions =
                     eventAndQuestions
                     |> Result.requireSome (eventNotFound eventId)
                 let! numberOfParticipants =
-                    Queries.getNumberOfParticipantsForEvent true eventId transaction
+                    Queries.getNumberOfParticipantsForEvent eventId transaction
                     |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
                 transaction.Commit()
                 return {| event = Event.encodeEventAndQuestions eventAndQuestions; numberOfParticipants = numberOfParticipants |}
@@ -386,7 +394,7 @@ let cancelEvent (eventId: Guid) =
                 do! Queries.cancelEvent eventId transaction
                     |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
                 let! eventAndQuestions =
-                    Queries.getEvent true eventId transaction
+                    Queries.getEvent eventId transaction
                     |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
                 let! eventAndQuestions =
                     eventAndQuestions
@@ -421,7 +429,7 @@ let deleteEvent (eventId: Guid) =
                     |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
                 do! canEditEvent |> Result.requireTrue cannotUpdateEvent
                 let! eventAndQuestions =
-                    Queries.getEvent true eventId transaction
+                    Queries.getEvent eventId transaction
                     |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
                 let! eventAndQuestions =
                     eventAndQuestions
@@ -545,7 +553,7 @@ let updateEvent (eventId: Guid) =
                     |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
                 do! canEditEvent |> Result.requireTrue cannotUpdateEvent
                 let! oldEvent =
-                    Queries.getEvent true eventId transaction
+                    Queries.getEvent eventId transaction
                     |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
                 let! oldEventParticipants =
                     Queries.getParticipantsForEvent eventId transaction
@@ -554,7 +562,7 @@ let updateEvent (eventId: Guid) =
                     oldEvent
                     |> Result.requireSome (eventNotFound eventId)
                 let! numberOfParticipantsForOldEvent =
-                    Queries.getNumberOfParticipantsForEvent true eventId transaction
+                    Queries.getNumberOfParticipantsForEvent eventId transaction
                     |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
                     
                 do! canUpdateNumberOfParticipants oldEvent.Event writeModel numberOfParticipantsForOldEvent
@@ -599,7 +607,7 @@ let getNumberOfParticipantsForEvent (eventId: Guid) =
                     |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
                 do! (isEventExternal || isBekker) |> Result.requireTrue cannotUpdateEvent
                 let! result =
-                    Queries.getNumberOfParticipantsForEvent isBekker eventId transaction
+                    Queries.getNumberOfParticipantsForEvent eventId transaction
                     |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
                 transaction.Commit();
                 return result
@@ -616,7 +624,7 @@ let getParticipantsForEvent (eventId: Guid) =
                     Queries.getParticipantsAndAnswersForEvent eventId transaction
                     |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
                 let! event =
-                    Queries.getEvent true eventId transaction
+                    Queries.getEvent eventId transaction
                     |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
                 let! event = event |> Result.requireSome (eventNotFound eventId)
                 transaction.Commit()
@@ -665,7 +673,7 @@ let exportParticipationsForEvent (eventId: Guid) =
                     |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
                 do! canEditEvent |> Result.requireTrue cannotUpdateEvent
                 let! eventAndQuestions =
-                    Queries.getEvent true eventId transaction
+                    Queries.getEvent eventId transaction
                     |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
                 let! eventAndQuestions =
                     eventAndQuestions
@@ -691,7 +699,7 @@ let getWaitinglistSpot (eventId: Guid) (email: string) =
                     |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
                 do! (isEventExternal || isBekker) |> Result.requireTrue cannotUpdateEvent
                 let! eventAndQuestions =
-                    Queries.getEvent isBekker eventId transaction
+                    Queries.getEvent eventId transaction
                     |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
                 let! eventAndQuestions =
                     eventAndQuestions
@@ -739,7 +747,7 @@ let deleteParticipantFromEvent (eventId: Guid) (email: string) =
                 do! (isAdmin || (cancellationToken.IsSome && cancellationToken.Value = participant.CancellationToken))
                     |> Result.requireTrue cannotDeleteParticipation
                 let! eventAndQuestions =
-                    Queries.getEvent true eventId transaction
+                    Queries.getEvent eventId transaction
                     |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
                 let! eventAndQuestions =
                     eventAndQuestions

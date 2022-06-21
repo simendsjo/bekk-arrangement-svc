@@ -34,7 +34,7 @@ let tests =
           let event = { Generator.generateEvent() with IsExternal = false }
           postEvent event
         let response, _ = getRequest $"/events/{created.event.id}"
-        Expect.equal response.StatusCode HttpStatusCode.NotFound "Event should not be found"
+        Expect.equal response.StatusCode HttpStatusCode.Forbidden "Event cannot be accessed"
       }
       
       test "Internal event can be seen if authenticated" {

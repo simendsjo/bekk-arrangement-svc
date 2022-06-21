@@ -27,7 +27,7 @@ let tests =
                 |> toJson
             let email = Generator.generateEmail()
             let response, _ = postRequestWithBody participant $"/events/{created.event.id}/participants/{email}"
-            Expect.equal response.StatusCode HttpStatusCode.NotFound "External can not join external event"
+            Expect.equal response.StatusCode HttpStatusCode.Forbidden "External can not join external event"
         }
         test "Internal can join external event" {
             let event = { Generator.generateEvent() with IsExternal = true; MaxParticipants = None }

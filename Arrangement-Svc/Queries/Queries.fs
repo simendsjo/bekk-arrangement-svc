@@ -346,7 +346,7 @@ let getParticipationsById (id: int) (transaction: SqlTransaction) =
 
 // Gets event based on ID.
 // Will only get an event if the user is a Bekker or the event itself is external
-let getEvent (isBekker: bool) (eventId: Guid) (transaction: SqlTransaction) =
+let getEvent (eventId: Guid) (transaction: SqlTransaction) =
     task {
         let query =
             "
@@ -377,12 +377,11 @@ let getEvent (isBekker: bool) (eventId: Guid) (transaction: SqlTransaction) =
                    P.Question
             FROM Events E
                      LEFT JOIN ParticipantQuestions P ON E.Id = P.EventId
-            WHERE E.Id = @eventId AND (@isBekker = 1 OR IsExternal = 1)
+            WHERE E.Id = @eventId
             ORDER BY P.Id;
             "
         let parameters = dict [
             "eventId", box eventId
-            "isBekker", box (if isBekker then 1 else 0)
         ]
         
         try
@@ -411,7 +410,7 @@ let getEvent (isBekker: bool) (eventId: Guid) (transaction: SqlTransaction) =
         | ex -> return Error ex
     }
     
-let getNumberOfParticipantsForEvent isBekker (eventId: Guid) (transaction: SqlTransaction) =
+let getNumberOfParticipantsForEvent (eventId: Guid) (transaction: SqlTransaction) =
     task {
         let query =
             "
@@ -419,11 +418,10 @@ let getNumberOfParticipantsForEvent isBekker (eventId: Guid) (transaction: SqlTr
                 FROM
                 Participants
                 INNER JOIN Events E on E.Id = @eventId
-            WHERE EventId = @eventId AND (@isBekker = 1 OR IsExternal = 1);
+            WHERE EventId = @eventId;
             "
         let parameters = dict [
             "eventId", box eventId
-            "isBekker", box (if isBekker then 1 else 0)
         ]
         
         try

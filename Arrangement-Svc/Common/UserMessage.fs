@@ -56,3 +56,4 @@ module ResponseMessages =
     let illegalQuestionsUpdate: HttpStatus = "Kan ikke endre på spørsmål som allerede har blitt stilt til deltakere" |> BadRequest
     let cannotUpdateEvent: HttpStatus = "Du har ikke rettigheter til å redigere dette arrangementet" |> Forbidden
     let cannotDeleteParticipation: HttpStatus = "Du kan ikke slette din deltagelse usen ditt cancellation token" |> Forbidden
+    let mustBeAuthorizedOrEventMustBeExternal: HttpStatus = "Du må enten være innlogget eller arrangementet må være eksternt for at du skal få tilgang" |> Forbidden
