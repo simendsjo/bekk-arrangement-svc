@@ -434,7 +434,6 @@ let getNumberOfParticipantsForEvent (eventId: Guid) (transaction: SqlTransaction
     
 let getParticipantsForEvent (eventId: Guid) (transaction: SqlTransaction) =
     task {
-        try
             let query =
                 "
                 SELECT Email,
@@ -451,9 +450,10 @@ let getParticipantsForEvent (eventId: Guid) (transaction: SqlTransaction) =
                 "eventId", box (eventId.ToString())
             ]
             
+        try
+            let! result = transaction.Connection.QueryAsync<Models.Participant>(query, parameters, transaction)
             return
-                transaction.Connection.Query<Models.Participant>(query, parameters, transaction)
-                |> Ok
+                Ok result
         with
             | ex -> return Error ex
     }
@@ -541,7 +541,7 @@ let cancelEvent eventId (transaction: SqlTransaction) =
         ]
         
         try
-            transaction.Connection.Execute(cancelQuery, parameters, transaction) |> ignore
+            let! _ = transaction.Connection.ExecuteAsync(cancelQuery, parameters, transaction)
             return Ok ()
         with
             | ex ->
@@ -567,7 +567,7 @@ let deleteEvent eventId (transaction: SqlTransaction) =
         ]
         
         try
-            transaction.Connection.Execute(deleteQuery, parameters, transaction) |> ignore
+            let! _ = transaction.Connection.ExecuteAsync(deleteQuery, parameters, transaction)
             return Ok ()
         with
             | ex ->
