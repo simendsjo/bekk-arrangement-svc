@@ -3,6 +3,8 @@ module V2.Handlers
 open Giraffe
 open System
 open System.Web
+open WebEssentials.AspNetCore.OutputCaching
+open Microsoft.Extensions.Configuration
 open Thoth.Json.Net
 open Microsoft.Data.SqlClient
 open Microsoft.AspNetCore.Http
@@ -10,6 +12,7 @@ open Microsoft.AspNetCore.Http
 open Auth
 open Config
 open UserMessage
+open Middleware
 open Participant.Models
 
 type private ParticipateEvent =
@@ -201,5 +204,10 @@ let routes: HttpHandler =
                   [ routef "/events/%O/participants/%s" registerParticipationHandler ]
           GET
           >=> choose
-                  [ isAuthenticatedV2 >=> routef "/events/forside/%s" getEventsForForsideHandler ]
+                  [ isAuthenticatedV2 >=> routef "/events/forside/%s" getEventsForForsideHandler
+                    isAuthenticatedV2
+                        >=> route "/office-events"
+                        >=> outputCache (fun opt -> opt.Duration <- TimeSpan.FromMinutes(5).TotalSeconds)
+                        >=> OfficeEvents.WebApi.get
+                  ]
         ]

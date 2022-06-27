@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "bekk-arrangement-svc", "src\bekk-arrangement-svc.fsproj", "{C622A6F9-E2C3-44EE-BEBE-733C487ADBF7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "migrator", "migration\migrator.csproj", "{BEFF7DF0-5B7D-4132-9A38-0BA217D5D09F}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "OfficeEvents.Tests", "OfficeEvents.Tests\OfficeEvents.Tests.fsproj", "{2E03ADA2-7B9D-4352-8A93-878D90BC90F9}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C622A6F9-E2C3-44EE-BEBE-733C487ADBF7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C622A6F9-E2C3-44EE-BEBE-733C487ADBF7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C622A6F9-E2C3-44EE-BEBE-733C487ADBF7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C622A6F9-E2C3-44EE-BEBE-733C487ADBF7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BEFF7DF0-5B7D-4132-9A38-0BA217D5D09F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BEFF7DF0-5B7D-4132-9A38-0BA217D5D09F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BEFF7DF0-5B7D-4132-9A38-0BA217D5D09F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BEFF7DF0-5B7D-4132-9A38-0BA217D5D09F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2E03ADA2-7B9D-4352-8A93-878D90BC90F9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2E03ADA2-7B9D-4352-8A93-878D90BC90F9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2E03ADA2-7B9D-4352-8A93-878D90BC90F9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2E03ADA2-7B9D-4352-8A93-878D90BC90F9}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

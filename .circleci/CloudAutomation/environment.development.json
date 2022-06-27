@@ -34,5 +34,13 @@
   {
     "name": "Auth0__PERMISSION_CLAIM_TYPE",
     "value": "https://api.bekk.no/claims/permission"
+  },
+  {
+    "name": "OfficeEvents__Mailbox",
+    "vaule": "fagaktiviteter-dev@bekk.onmicrosoft.com"
+  },
+  {
+    "name": "OfficeEvents__ClientSecret",
+    "value": "<SECRET>"
   }
 ]
