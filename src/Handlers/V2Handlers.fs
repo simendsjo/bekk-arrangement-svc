@@ -13,18 +13,18 @@ open UserMessage
 open Participant.Models
 
 type private ParticipateEvent =
-    | NotExternal 
+    | NotExternal
     | IsCancelled
     | NotOpenForRegistration
     | HasAlreadyTakenPlace
     | NoRoom
     | IsWaitListed
     | CanParticipate
-    
+
 let private participateEvent isBekker numberOfParticipants (event: Event.Models.DbModel) =
     let currentEpoch = DateTimeOffset.Now.ToUnixTimeMilliseconds()
     let hasRoom = event.MaxParticipants.IsNone || event.MaxParticipants.IsSome && numberOfParticipants < event.MaxParticipants.Value
-    // Eventet er ikke ekstern 
+    // Eventet er ikke ekstern
     // Brukeren er ikke en bekker
     if not event.IsExternal && not isBekker then
         NotExternal
@@ -37,35 +37,35 @@ let private participateEvent isBekker numberOfParticipants (event: Event.Models.
     // Eventet har funnet sted
     else if DateTimeCustom.now() > (DateTimeCustom.toCustomDateTime event.EndDate event.EndTime) then
         HasAlreadyTakenPlace
-    // Eventet har ikke nok ledig plass 
+    // Eventet har ikke nok ledig plass
     else if not hasRoom && not event.HasWaitingList then
         NoRoom
     else if not hasRoom && event.HasWaitingList then
         IsWaitListed
     else
         CanParticipate
-        
+
 let registerParticipationHandler (eventId: Guid, email): HttpHandler =
     fun (next: HttpFunc) (context: HttpContext) ->
         task {
             let isBekker = context.User.Identity.IsAuthenticated
             let userId = Auth.getUserIdV2 context
-            
+
             let! body = context.ReadBodyFromRequestAsync()
             let writeModel = Decode.Auto.fromString<WriteModel> (body, caseStrategy = CamelCase)
-            
+
             let config = context.GetService<AppConfig>()
-            
+
             use connection = new SqlConnection(config.databaseConnectionString)
             connection.Open()
             use transaction = connection.BeginTransaction()
             let event = Queries.getEvent eventId transaction
             let numberOfParticipants = Queries.getNumberOfParticipantsForEvent eventId transaction
-            
+
             let result =
                 match event, writeModel with
                 | Ok event, Ok writeModel ->
-                    let canParticipate = 
+                    let canParticipate =
                         match participateEvent isBekker numberOfParticipants event with
                             | NotExternal ->
                                 Error "Arrangementet er ikke eksternt"
@@ -83,8 +83,8 @@ let registerParticipationHandler (eventId: Guid, email): HttpHandler =
                                 Ok CanParticipate
                     match canParticipate with
                     | Error e -> Error e
-                    | Ok participate -> 
-                        let insertResult =    
+                    | Ok participate ->
+                        let insertResult =
                             try
                                 let participant = Queries.addParticipantToEvent eventId email userId writeModel.Name transaction
                                 let answers =
@@ -96,7 +96,7 @@ let registerParticipationHandler (eventId: Guid, email): HttpHandler =
                                         let participantAnswerDbModels: ParticipantAnswerDbModel list =
                                             writeModel.ParticipantAnswers
                                             |> List.zip eventQuestions
-                                            |> List.map (fun (question, answer) -> 
+                                            |> List.map (fun (question, answer) ->
                                                 { QuestionId = question.Id
                                                   EventId = eventId
                                                   Email = email
@@ -109,9 +109,9 @@ let registerParticipationHandler (eventId: Guid, email): HttpHandler =
                             | ex ->
                                 transaction.Rollback()
                                 Error ex.Message
-                                
+
                         connection.Close()
-                        
+
                         let validatedInsertResult =
                             match insertResult with
                             | Ok (participant, answers) ->
@@ -129,7 +129,7 @@ let registerParticipationHandler (eventId: Guid, email): HttpHandler =
                                     | Ok _, Error e ->
                                         Error $"Feil med lagring av deltakersvar: {e}"
                             | Error e -> Error e
-                            
+
                         Result.map (fun (participant: DbModel, answers) ->
                             // FIXME: we need these domain models as the rest of the system all work with these
                             // Lage domenemodell av participant
@@ -152,18 +152,18 @@ let registerParticipationHandler (eventId: Guid, email): HttpHandler =
                                                        .Replace("{cancellationToken}",
                                                                 participant.CancellationToken.ToString
                                                                     ())
-                                
+
                                 Event.Service.createNewParticipantMail
                                     createCancelUrl eventDomainModel isWaitlisted
                                     (Email.Types.EmailAddress config.noReplyEmail)
                                     participantDomainModel
                             Email.Service.sendMail email context
-                            
+
                             participantDomainModel
                             ) validatedInsertResult
                 | Error e, _ -> Error e
                 | _, Error e -> Error $"Fikk ikke til å parse request body: {e}"
-                
+
             return!
                 match result with
                 | Ok result ->
@@ -173,27 +173,27 @@ let registerParticipationHandler (eventId: Guid, email): HttpHandler =
                     context.SetStatusCode 400
                     convertUserMessagesToHttpError [BadInput e] next context
         }
-        
+
 let getEventsForForsideHandler (email: string) =
     fun (next: HttpFunc) (context: HttpContext) ->
         task {
             let config = context.GetService<AppConfig>()
-            
+
             use connection = new SqlConnection(config.databaseConnectionString)
             connection.Open()
             use transaction = connection.BeginTransaction()
             let! events = Queries.getEventsForForside email transaction
             transaction.Commit()
             connection.Close()
-            
+
             match events with
-            | Ok events ->  
+            | Ok events ->
                 return! json events next context
             | Error e ->
                 let message = convertUserMessagesToHttpError [NotFound e] next context
                 return! message
         }
-        
+
 let routes: HttpHandler =
     choose
         [ POST
