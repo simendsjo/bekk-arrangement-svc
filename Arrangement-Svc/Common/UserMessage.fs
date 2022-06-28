@@ -29,7 +29,8 @@ let private httpStatusResult result handler next context =
         | Error (Forbidden e) -> return! forbidden { UserMessage = e } next context
         | Error (InternalError e) ->
             let logger = context.GetService<Bekk.Canonical.Logger.Logger>()
-            logger.log(Bekk.Canonical.Logger.Error, "Exception", e.ToString())
+            logger.log(Bekk.Canonical.Logger.Error, "ExceptionMessage", e.Message)
+            logger.log(Bekk.Canonical.Logger.Error, "ExceptionStacktrace", e.StackTrace)
             return! internalError { UserMessage = $"Det har skjedd en feil i backenden. Feil registrert med id: {logger.getRequestId()}. Kontakt basen dersom dette vedvarer." } next context
     }
 let jsonResult result =
@@ -37,14 +38,14 @@ let jsonResult result =
         task {
             return! httpStatusResult result json next context
         }
-    
+
 let csvResult filename result (next: HttpFunc) (context: HttpContext) =
     task {
         context.SetHttpHeader (HeaderNames.ContentType, "text/csv")
         context.SetHttpHeader (HeaderNames.ContentDisposition, $"attachment; filename=\"{filename}.csv\"")
         return! httpStatusResult result text next context
     }
-    
+
 module ResponseMessages =
     let eventNotFound id: HttpStatus = $"Kan ikke finne event {id}" |> NotFound
     let eventSuccessfullyCancelled title: string = $"Arrangement: '{title}' blei avlyst. Epost har blitt sendt til alle deltagere"
