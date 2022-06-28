@@ -95,29 +95,32 @@ let getEventsForForside (email: string) (transaction: SqlTransaction) =
 let private getEventAndParticipantQuestions query (parameters: IDictionary<string, Object>) (transaction: SqlTransaction) =
     task {
         try
-            let mutable events = []
-            let mutable questions = []
-
-            let! _ =
+            let! rows =
                 transaction.Connection.QueryAsync(
                     query,
                     (fun (event: Models.Event) (question: Models.ParticipantQuestion) ->
-                        events <- events@[event]
-                        if (question :> obj <> null) then
-                            questions <- questions@[question]),
+                        let question =  question :> obj |> Option.ofObj |> Option.map (fun x -> x :?> Models.ParticipantQuestion)
+                        (event, question)
+                    ),
                     parameters,
                     transaction = transaction)
 
-            // Kan deenne også være en dictionary?
-            let groupedEvents: Models.EventAndQuestions list =
-                events
-                |> List.distinct
-                |> List.map (fun event ->
-                    let questionsForEvent =
-                        questions
-                        |> List.filter (fun question -> question.EventId = event.Id)
-                    { Event = event; Questions = questionsForEvent})
-
+            let groupedEvents =
+                rows
+                |> Seq.fold (fun state (event, question) ->
+                    let group =
+                        // Find existing or create event if not exists
+                        Map.tryFind event.Id state
+                        |> Option.defaultValue ({ Event = event; Questions = [] } : Models.EventAndQuestions)
+                        // Add question
+                        |> fun e ->
+                            question
+                            |> Option.map (fun q -> { e with Questions = q :: e.Questions })
+                            |> Option.defaultValue e
+                    Map.add event.Id group state
+                    ) Map.empty
+                |> Map.values
+                |> Seq.toList
             return Ok groupedEvents
         with
         | ex ->
