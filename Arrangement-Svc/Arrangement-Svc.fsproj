@@ -36,7 +36,6 @@
     <Compile Include="Config.fs" />
     <Compile Include="LanguageExtensions\Seq.fs" />
     <Compile Include="Common\DateTime.fs" />
-    <Compile Include="Common\Database.fs" /> 
     <Compile Include="Common\Auth.fs" /> 
     <Compile Include="Common\UserMessage.fs" />
     <Compile Include="Models\Models.fs" />

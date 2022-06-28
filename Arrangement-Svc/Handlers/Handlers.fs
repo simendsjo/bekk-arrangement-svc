@@ -3,6 +3,7 @@ module Handlers
 open Giraffe
 open System
 open System.Web
+open Microsoft.Data.SqlClient
 open Thoth.Json.Net
 open FsToolkit.ErrorHandling
 open Microsoft.AspNetCore.Http
@@ -12,7 +13,6 @@ open Email.Service
 open Auth
 open Config
 open Models
-open Database
 open UserMessage
 open UserMessage.ResponseMessages
 
@@ -116,7 +116,8 @@ let registerParticipationHandler (eventId: Guid, email): HttpHandler =
                 
                 let config = context.GetService<AppConfig>()
                 
-                let connection = context.GetService<DatabaseConnection>().getConnection()
+                use connection = context.GetService<SqlConnection>()
+                connection.Open()
                 use transaction = connection.BeginTransaction()
                 let! isEventExternal =
                     Queries.isEventExternal eventId transaction
@@ -195,7 +196,8 @@ let getEventsForForsideHandler (email: string) =
     fun (next: HttpFunc) (context: HttpContext) ->
         let result = 
             taskResult {
-                let connection = context.GetService<DatabaseConnection>().getConnection()
+                use connection = context.GetService<SqlConnection>()
+                connection.Open()
                 use transaction = connection.BeginTransaction()
                 let! events =
                     Queries.getEventsForForside email transaction
@@ -213,7 +215,8 @@ let getFutureEvents (next: HttpFunc) (context: HttpContext) =
             let! userId =
                 getUserId context
                 |> TaskResult.requireSome couldNotRetrieveUserId
-            let connection = context.GetService<DatabaseConnection>().getConnection()
+            use connection = context.GetService<SqlConnection>()
+            connection.Open()
             use transaction = connection.BeginTransaction()
             let! eventAndQuestions =
                 Queries.getFutureEvents userId transaction
@@ -232,7 +235,8 @@ let getPastEvents (next: HttpFunc) (context: HttpContext) =
                 let! userId =
                     getUserId context
                     |> TaskResult.requireSome couldNotRetrieveUserId
-                let connection = context.GetService<DatabaseConnection>().getConnection()
+                use connection = context.GetService<SqlConnection>()
+                connection.Open()
                 use transaction = connection.BeginTransaction()
                 let! eventAndQuestions =
                     Queries.getPastEvents userId transaction
@@ -249,7 +253,8 @@ let getEventsOrganizedBy (email: string) =
     fun (next: HttpFunc) (context: HttpContext) ->
         let result =
             taskResult {
-                let connection = context.GetService<DatabaseConnection>().getConnection()
+                use connection = context.GetService<SqlConnection>()
+                connection.Open()
                 use transaction = connection.BeginTransaction()
                 let! eventAndQuestions =
                     Queries.getEventsOrganizedByEmail email transaction
@@ -269,7 +274,8 @@ let getEventIdByShortname =
                     context.GetQueryStringValue "shortname"
                     |> Result.mapError BadRequest
                 let shortname = HttpUtility.UrlDecode(shortnameEncoded)
-                let connection = context.GetService<DatabaseConnection>().getConnection()
+                use connection = context.GetService<SqlConnection>()
+                connection.Open()
                 use transaction = connection.BeginTransaction()
                 let! result =
                     Queries.getEventIdByShortname shortname transaction
@@ -284,7 +290,8 @@ let getEvent (eventId: Guid) =
         let isBekker = context.User.Identity.IsAuthenticated
         let result =
             taskResult {
-                let connection = context.GetService<DatabaseConnection>().getConnection()
+                use connection = context.GetService<SqlConnection>()
+                connection.Open()
                 use transaction = connection.BeginTransaction()
                 let! isEventExternal =
                     Queries.isEventExternal eventId transaction
@@ -310,7 +317,8 @@ let getUnfurlEvent (idOrName: string) =
             |> String.concat ""
         let result =
             taskResult {
-                let connection = context.GetService<DatabaseConnection>().getConnection()
+                use connection = context.GetService<SqlConnection>()
+                connection.Open()
                 use transaction = connection.BeginTransaction()
                 // TODO: USikker på hvilken av disse som er riktig.
                 // Gamle versjon gjør det på utkommentert måte, men den funker ikke i postman
@@ -354,7 +362,8 @@ let createEvent =
                 let! userId =
                     getUserId context
                     |> TaskResult.requireSome couldNotRetrieveUserId
-                let connection = context.GetService<DatabaseConnection>().getConnection()
+                use connection = context.GetService<SqlConnection>()
+                connection.Open()
                 use transaction = connection.BeginTransaction()
                 let! doesShortNameExist =
                     Queries.doesShortnameExist writeModel.Shortname transaction
@@ -385,7 +394,8 @@ let cancelEvent (eventId: Guid) =
                 let! userId = getUserId context
                 let userIsAdmin = isAdmin context
                 let editToken = getEditTokenFromQuery context
-                let connection = context.GetService<DatabaseConnection>().getConnection()
+                use connection = context.GetService<SqlConnection>()
+                connection.Open()
                 use transaction = connection.BeginTransaction()
                 let! canEditEvent =
                     Queries.canEditEvent eventId userIsAdmin userId editToken transaction
@@ -422,7 +432,8 @@ let deleteEvent (eventId: Guid) =
                 let! userId = getUserId context
                 let userIsAdmin = isAdmin context
                 let editToken = getEditTokenFromQuery context
-                let connection = context.GetService<DatabaseConnection>().getConnection()
+                use connection = context.GetService<SqlConnection>()
+                connection.Open()
                 use transaction = connection.BeginTransaction()
                 let! canEditEvent =
                     Queries.canEditEvent eventId userIsAdmin userId editToken transaction
@@ -461,7 +472,8 @@ let getEventsAndParticipations (id: int) =
                 let userIsAdmin = isAdmin context
                 do! (userId = id || userIsAdmin)
                     |> Result.requireTrue cannotSeeParticipations
-                let connection = context.GetService<DatabaseConnection>().getConnection()
+                use connection = context.GetService<SqlConnection>()
+                connection.Open()
                 use transaction = connection.BeginTransaction()
                 let! eventsAndQuestions =
                     Queries.getEventsOrganizedById id transaction
@@ -546,7 +558,8 @@ let updateEvent (eventId: Guid) =
                 let! writeModel =
                     decodeWriteModel<Models.EventWriteModel> context
                     |> TaskResult.mapError BadRequest
-                let connection = context.GetService<DatabaseConnection>().getConnection()
+                use connection = context.GetService<SqlConnection>()
+                connection.Open()
                 use transaction = connection.BeginTransaction()
                 let! canEditEvent =
                     Queries.canEditEvent eventId userIsAdmin userId editToken transaction
@@ -600,7 +613,8 @@ let getNumberOfParticipantsForEvent (eventId: Guid) =
         let result =
             taskResult {
                 let isBekker = context.User.Identity.IsAuthenticated
-                let connection = context.GetService<DatabaseConnection>().getConnection()
+                use connection = context.GetService<SqlConnection>()
+                connection.Open()
                 use transaction = connection.BeginTransaction()
                 let! isEventExternal =
                     Queries.isEventExternal eventId transaction
@@ -618,7 +632,8 @@ let getParticipantsForEvent (eventId: Guid) =
     fun (next: HttpFunc) (context: HttpContext) ->
         let result =
             taskResult {
-                let connection = context.GetService<DatabaseConnection>().getConnection()
+                use connection = context.GetService<SqlConnection>()
+                connection.Open()
                 use transaction = connection.BeginTransaction()
                 let! participations =
                     Queries.getParticipantsAndAnswersForEvent eventId transaction
@@ -666,7 +681,8 @@ let exportParticipationsForEvent (eventId: Guid) =
                 let editToken = getEditTokenFromQuery context
                 let isAdmin = isAdmin context
                 let! userId = getUserId context
-                let connection = context.GetService<DatabaseConnection>().getConnection()
+                use connection = context.GetService<SqlConnection>()
+                connection.Open()
                 use transaction = connection.BeginTransaction()
                 let! canEditEvent =
                     Queries.canEditEvent eventId isAdmin userId editToken transaction
@@ -692,7 +708,8 @@ let getWaitinglistSpot (eventId: Guid) (email: string) =
         let result =
             taskResult {
                 let isBekker = context.User.Identity.IsAuthenticated
-                let connection = context.GetService<DatabaseConnection>().getConnection()
+                use connection = context.GetService<SqlConnection>()
+                connection.Open()
                 use transaction = connection.BeginTransaction()
                 let! isEventExternal =
                     Queries.isEventExternal eventId transaction
@@ -723,7 +740,8 @@ let getParticipationsForParticipant (email: string) =
     fun (next: HttpFunc) (context: HttpContext) ->
         let result =
             taskResult {
-                let connection = context.GetService<DatabaseConnection>().getConnection()
+                use connection = context.GetService<SqlConnection>()
+                connection.Open()
                 let! result =
                     Queries.getParticipationsForParticipant email connection
                     |> TaskResult.mapError InternalError
@@ -739,7 +757,8 @@ let deleteParticipantFromEvent (eventId: Guid) (email: string) =
             taskResult {
                 let isAdmin = isAdmin context
                 let cancellationToken = getCancellationTokenFromQuery context
-                let connection = context.GetService<DatabaseConnection>().getConnection()
+                use connection = context.GetService<SqlConnection>()
+                connection.Open()
                 use transaction = connection.BeginTransaction()
                 let! participant =
                     Queries.getParticipantForEvent eventId email transaction

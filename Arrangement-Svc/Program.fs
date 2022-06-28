@@ -1,7 +1,6 @@
 ﻿module App
 
 open System
-open Database
 open Giraffe
 open System.IO
 open Bekk.Canonical.Logger
@@ -9,6 +8,7 @@ open System.Threading.Tasks
 open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.Hosting
 open Microsoft.AspNetCore.Builder
+open Microsoft.Data.SqlClient
 open Microsoft.IdentityModel.Tokens
 open Microsoft.Extensions.Configuration
 open Microsoft.Extensions.DependencyInjection
@@ -67,7 +67,7 @@ let configureServices (services: IServiceCollection) =
         }
     services.AddScoped<AppConfig>(fun _ -> config) |> ignore 
     services.AddScoped<Logger>() |> ignore
-    services.AddTransient<DatabaseConnection>(fun _ -> new DatabaseConnection(config.databaseConnectionString)) |> ignore
+    services.AddTransient<SqlConnection>(fun _ -> new SqlConnection(config.databaseConnectionString)) |> ignore
     services.AddAuthentication(fun options ->
             options.DefaultAuthenticateScheme <-
                 JwtBearerDefaults.AuthenticationScheme
