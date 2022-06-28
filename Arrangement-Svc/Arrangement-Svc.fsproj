@@ -11,7 +11,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Migration\Migration.csproj">
+    <ProjectReference Include="..\migration\Migration.csproj">
       <Name>migrator</Name>
     </ProjectReference>
   </ItemGroup>

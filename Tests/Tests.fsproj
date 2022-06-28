@@ -35,7 +35,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Arrangement-svc\Arrangement-Svc.fsproj" />
+      <ProjectReference Include="..\Arrangement-Svc\Arrangement-Svc.fsproj" />
       <ProjectReference Include="..\migration\Migration.csproj" />
     </ItemGroup>
 
