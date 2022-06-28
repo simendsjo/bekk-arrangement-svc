@@ -15,17 +15,17 @@ let isEventExternal eventId (transaction: SqlTransaction) =
             ELSE
                 SELECT CAST(0 AS BIT);
             "
-            
+
         let parameters = dict [
             "eventId", box eventId
         ]
-            
+
         try
             let! result = transaction.Connection.QuerySingleAsync<bool>(query, parameters, transaction)
             return Ok result
         with
         | ex ->
-            return Error ex 
+            return Error ex
     }
 
 let canEditEvent eventId isAdmin (employeeId: int option) editToken (transaction: SqlTransaction) =
@@ -38,20 +38,20 @@ let canEditEvent eventId isAdmin (employeeId: int option) editToken (transaction
             ELSE
                 SELECT CAST(0 AS BIT);
             "
-            
+
         let parameters = dict [
             "eventId", box eventId
             "isAdmin", box isAdmin
             "employeeId", if employeeId.IsSome then box employeeId.Value else box null
             "editToken", box editToken
         ]
-            
+
         try
             let! result = transaction.Connection.QuerySingleAsync<bool>(query, parameters, transaction)
             return Ok result
         with
         | ex ->
-            return Error ex 
+            return Error ex
     }
 
 let getEventsForForside (email: string) (transaction: SqlTransaction) =
@@ -78,12 +78,12 @@ let getEventsForForside (email: string) (transaction: SqlTransaction) =
             WHERE EndDate > @now AND IsCancelled = 0 AND IsHidden = 0
             GROUP BY E.Id, E.Title, E.Location, E.StartDate, E.EndDate, E.StartTime, E.EndTime, E.OpenForRegistrationTime, E.CloseRegistrationTime, E.MaxParticipants, E.CustomHexColor, E.Shortname, E.hasWaitingList
             "
-            
+
         let parameters = dict [
             "email", box email
             "now", box (DateTime.Now.Date.ToString())
         ]
-        
+
         try
             let! result = transaction.Connection.QueryAsync<Models.ForsideEvent>(query, parameters, transaction)
             return Ok result
@@ -91,13 +91,13 @@ let getEventsForForside (email: string) (transaction: SqlTransaction) =
         | ex ->
             return Error ex
     }
-    
+
 let private getEventAndParticipantQuestions query (parameters: IDictionary<string, Object>) (transaction: SqlTransaction) =
     task {
         try
             let mutable events = []
             let mutable questions = []
-            
+
             let! _ =
                 transaction.Connection.QueryAsync(
                     query,
@@ -107,7 +107,7 @@ let private getEventAndParticipantQuestions query (parameters: IDictionary<strin
                             questions <- questions@[question]),
                     parameters,
                     transaction = transaction)
-                
+
             // Kan deenne også være en dictionary?
             let groupedEvents: Models.EventAndQuestions list =
                 events
@@ -117,13 +117,13 @@ let private getEventAndParticipantQuestions query (parameters: IDictionary<strin
                         questions
                         |> List.filter (fun question -> question.EventId = event.Id)
                     { Event = event; Questions = questionsForEvent})
-                
+
             return Ok groupedEvents
         with
         | ex ->
             return Error ex
     }
-    
+
 // Denne querien returnerer alle events som ikke er ferdig enda
 // Gjemte arrangementer vises kun dersom man arrangerer de eller deltar på de
 let getFutureEvents (employeeId: int) (transaction: SqlTransaction) =
@@ -168,18 +168,18 @@ let getFutureEvents (employeeId: int) (transaction: SqlTransaction) =
             FROM Events E
                      LEFT JOIN ParticipantQuestions P ON E.Id = P.EventId
                      LEFT JOIN participation PN ON PN.EventId = E.Id
-            WHERE E.EndDate > (@now)
+            WHERE E.EndDate >= @now
             AND ((E.IsHidden = 1 AND E.OrganizerId = @employeeId) OR (E.IsHidden = 1 AND PN.isPaameldt = 1) OR E.IsHidden = 0)
             ORDER BY StartDate;
             "
         let parameters = dict [
             "employeeId", box employeeId
-            "now", box (DateTime.Now.Date.ToString())
+            "now", box DateTime.Now.Date
         ]
-        
+
         return! getEventAndParticipantQuestions query parameters transaction
     }
-    
+
 // Denne querien returnerer alle ferdige events
 // Gjemte arrangementer vises kun dersom man arrangerer de eller deltar på de
 let getPastEvents (employeeId: int) (transaction: SqlTransaction) =
@@ -230,12 +230,12 @@ let getPastEvents (employeeId: int) (transaction: SqlTransaction) =
             "
         let parameters = dict [
             "employeeId", box employeeId
-            "now", box (DateTime.Now.Date.ToString())
+            "now", box DateTime.Now.Date
         ]
-        
+
         return! getEventAndParticipantQuestions query parameters transaction
     }
-    
+
 let getEventsOrganizedByEmail (email: string) (transaction: SqlTransaction) =
     task {
         let query =
@@ -273,10 +273,10 @@ let getEventsOrganizedByEmail (email: string) (transaction: SqlTransaction) =
         let parameters = dict [
             "email", box email
         ]
-        
+
         return! getEventAndParticipantQuestions query parameters transaction
     }
-    
+
 let getEventsOrganizedById (id: int) (transaction: SqlTransaction) =
     task {
         let query =
@@ -314,10 +314,10 @@ let getEventsOrganizedById (id: int) (transaction: SqlTransaction) =
         let parameters = dict [
             "id", box id
         ]
-        
+
         return! getEventAndParticipantQuestions query parameters transaction
     }
-    
+
 let getParticipationsById (id: int) (transaction: SqlTransaction) =
     task {
         let query =
@@ -336,7 +336,7 @@ let getParticipationsById (id: int) (transaction: SqlTransaction) =
         let parameters = dict [
             "id", box id
         ]
-        
+
         try
             let! result = transaction.Connection.QueryAsync<Models.Participant>(query, parameters, transaction)
             return Ok result
@@ -383,11 +383,11 @@ let getEvent (eventId: Guid) (transaction: SqlTransaction) =
         let parameters = dict [
             "eventId", box eventId
         ]
-        
+
         try
             let mutable events = []
             let mutable questions = []
-            
+
             let! _ =
                 transaction.Connection.QueryAsync(
                     query,
@@ -397,19 +397,19 @@ let getEvent (eventId: Guid) (transaction: SqlTransaction) =
                             questions <- questions@[question]),
                     parameters,
                     transaction = transaction)
-            
-            let result = 
+
+            let result =
                 events
                 |> List.tryHead
                 |> Option.map (fun x ->
                     let result: Models.EventAndQuestions = { Event = List.head events; Questions = questions}
                     result)
-                
+
             return Ok result
         with
         | ex -> return Error ex
     }
-    
+
 let getNumberOfParticipantsForEvent (eventId: Guid) (transaction: SqlTransaction) =
     task {
         let query =
@@ -423,15 +423,15 @@ let getNumberOfParticipantsForEvent (eventId: Guid) (transaction: SqlTransaction
         let parameters = dict [
             "eventId", box eventId
         ]
-        
+
         try
             let! result = transaction.Connection.QuerySingleAsync<int>(query, parameters, transaction)
             return Ok result
         with
             | ex -> return Error ex
-        
+
     }
-    
+
 let getParticipantsForEvent (eventId: Guid) (transaction: SqlTransaction) =
     task {
             let query =
@@ -441,7 +441,7 @@ let getParticipantsForEvent (eventId: Guid) (transaction: SqlTransaction) =
                        RegistrationTime,
                        CancellationToken,
                        Name,
-                       EmployeeId 
+                       EmployeeId
                 FROM [Participants]
                 WHERE EventId = @eventId
                 ORDER BY RegistrationTime;
@@ -449,7 +449,7 @@ let getParticipantsForEvent (eventId: Guid) (transaction: SqlTransaction) =
             let parameters = dict [
                 "eventId", box (eventId.ToString())
             ]
-            
+
         try
             let! result = transaction.Connection.QueryAsync<Models.Participant>(query, parameters, transaction)
             return
@@ -457,7 +457,7 @@ let getParticipantsForEvent (eventId: Guid) (transaction: SqlTransaction) =
         with
             | ex -> return Error ex
     }
-    
+
 let addParticipantToEvent (eventId: Guid) email (userId: int option) name (transaction: SqlTransaction) =
     let query =
         "
@@ -465,22 +465,22 @@ let addParticipantToEvent (eventId: Guid) email (userId: int option) name (trans
         OUTPUT INSERTED.*
         VALUES (@email, @eventId, @currentEpoch, @cancellationToken, @name, @employeeId);
         "
-        
+
     let parameters = dict [
         "eventId", box (eventId.ToString())
         "currentEpoch", box (DateTimeOffset.Now.ToUnixTimeMilliseconds())
         "email", box email
-        "cancellationToken", box (Guid.NewGuid().ToString()) 
-        "name", box name 
+        "cancellationToken", box (Guid.NewGuid().ToString())
+        "name", box name
         "employeeId", if userId.IsSome then box userId.Value else box null
     ]
-    
+
     try
         transaction.Connection.QuerySingle<Models.Participant>(query, parameters, transaction)
         |> Ok
     with
         | ex -> Error ex
-    
+
 let getEventQuestions eventId (transaction: SqlTransaction) =
     let query =
         "
@@ -494,10 +494,10 @@ let getEventQuestions eventId (transaction: SqlTransaction) =
     let parameters = dict [
         "eventId", box (eventId.ToString())
     ]
-    
+
     transaction.Connection.Query<Models.ParticipantQuestion>(query, parameters, transaction)
     |> Seq.toList
-        
+
 let createParticipantAnswers (participantAnswers: Models.ParticipantAnswer list) (transaction: SqlTransaction) =
     let answer = List.tryHead participantAnswers
     match answer with
@@ -518,7 +518,7 @@ let createParticipantAnswers (participantAnswers: Models.ParticipantAnswer list)
         "eventId", box answer.EventId
         "email", box answer.Email
     ]
-    
+
     try
         transaction.Connection.Execute(insertQuery, participantAnswers |> List.toSeq, transaction) |> ignore
         transaction.Connection.Query<Models.ParticipantAnswer>(selectQuery, selectParameters, transaction)
@@ -526,7 +526,7 @@ let createParticipantAnswers (participantAnswers: Models.ParticipantAnswer list)
         |> Ok
     with
         | ex -> Error ex
-        
+
 let cancelEvent eventId (transaction: SqlTransaction) =
     task {
         let cancelQuery =
@@ -535,11 +535,11 @@ let cancelEvent eventId (transaction: SqlTransaction) =
             SET IsCancelled = 1
             WHERE Id = @eventId;
             "
-            
+
         let parameters = dict [
             "eventId", box eventId
         ]
-        
+
         try
             let! _ = transaction.Connection.ExecuteAsync(cancelQuery, parameters, transaction)
             return Ok ()
@@ -547,7 +547,7 @@ let cancelEvent eventId (transaction: SqlTransaction) =
             | ex ->
                 return Error ex
     }
-    
+
 let deleteEvent eventId (transaction: SqlTransaction) =
     task {
         let deleteQuery =
@@ -555,17 +555,17 @@ let deleteEvent eventId (transaction: SqlTransaction) =
             DELETE FROM ParticipantQuestions
             WHERE EventId = @eventId;
 
-            DELETE FROM ParticipantAnswers 
+            DELETE FROM ParticipantAnswers
             WHERE EventId = @eventId;
 
             DELETE FROM Events
             WHERE Id = @eventId;
             "
-            
+
         let parameters = dict [
             "eventId", box eventId
         ]
-        
+
         try
             let! _ = transaction.Connection.ExecuteAsync(deleteQuery, parameters, transaction)
             return Ok ()
@@ -573,7 +573,7 @@ let deleteEvent eventId (transaction: SqlTransaction) =
             | ex ->
                 return Error ex
     }
-    
+
 let updateEvent eventId (model: Models.EventWriteModel) (transaction: SqlTransaction) =
     task {
         let query =
@@ -581,7 +581,7 @@ let updateEvent eventId (model: Models.EventWriteModel) (transaction: SqlTransac
             UPDATE Events
             SET Shortname = NULL
             WHERE ShortName = @shortname AND (EndDate < @now Or IsCancelled = 1)
-            
+
             UPDATE Events
             SET Title = @title,
                 Description = @description,
@@ -604,11 +604,11 @@ let updateEvent eventId (model: Models.EventWriteModel) (transaction: SqlTransac
             OUTPUT INSERTED.*
             WHERE Id = @eventId;
             "
-            
+
         let parameters = dict [
             "eventId", box (eventId.ToString())
             "now", box (DateTime.Now.Date.ToString())
-            
+
             "title", box model.Title
             "description", box model.Description
             "location", box model.Location
@@ -628,7 +628,7 @@ let updateEvent eventId (model: Models.EventWriteModel) (transaction: SqlTransac
             "customHexColor", (if model.CustomHexColor.IsSome then model.CustomHexColor.Value else box null)
             "shortname", (if model.Shortname.IsSome then model.Shortname.Value else box null)
         ]
-        
+
         try
             let! result = transaction.Connection.QuerySingleAsync<Models.Event>(query, parameters, transaction)
             return Ok result
@@ -636,8 +636,8 @@ let updateEvent eventId (model: Models.EventWriteModel) (transaction: SqlTransac
             | ex ->
                 return Error ex
     }
-    
-    
+
+
 let getEventIdByShortname shortname (transaction: SqlTransaction) =
     task {
         let query =
@@ -648,14 +648,14 @@ let getEventIdByShortname shortname (transaction: SqlTransaction) =
         let parameters = dict [
             "shortname", box shortname
         ]
-        
+
         try
             let! result = transaction.Connection.QuerySingleAsync<Guid>(query, parameters, transaction)
             return Ok result
         with
             | ex -> return Error ex
     }
-    
+
 let doesShortnameExist (shortname: string option) (transaction: SqlTransaction) =
     task {
         let check_for_existing_shortnames_query =
@@ -663,12 +663,12 @@ let doesShortnameExist (shortname: string option) (transaction: SqlTransaction) 
             SELECT Count(*) FROM Events
             WHERE Shortname = @shortname AND (EndDate > @now AND IsCancelled = 0)
             "
-            
+
         let parameters = dict [
             "shortname", box (if shortname.IsSome then shortname.Value else null)
             "now", box (DateTime.Now.Date.ToString())
         ]
-        
+
         try
             if shortname.IsNone then
                 return Ok false
@@ -681,11 +681,11 @@ let doesShortnameExist (shortname: string option) (transaction: SqlTransaction) 
         with
             | ex -> return Error ex
     }
-    
+
 let createParticipantQuestions (eventId: Guid) (participantQuestions: string list) (transaction: SqlTransaction) =
     task {
         let question = List.tryHead participantQuestions
-        
+
         if not question.IsSome then
             return Ok []
         else
@@ -694,11 +694,11 @@ let createParticipantQuestions (eventId: Guid) (participantQuestions: string lis
                 INSERT INTO ParticipantQuestions (EventId, Question)
                 VALUES (@eventId, @question)
                 "
-                
+
             let insertParameters =
                 participantQuestions
                 |> Seq.map (fun question -> {| EventId = eventId; Question = question |})
-                
+
             let selectQuery =
                 "
                 SELECT * FROM ParticipantQuestions
@@ -707,7 +707,7 @@ let createParticipantQuestions (eventId: Guid) (participantQuestions: string lis
             let selectParameters = dict [
                 "eventId", box (eventId.ToString())
             ]
-    
+
             try
                 let! _ = transaction.Connection.ExecuteAsync(insertQuery, insertParameters, transaction)
                 let! result = transaction.Connection.QueryAsync<Models.ParticipantQuestion>(selectQuery, selectParameters, transaction)
@@ -715,7 +715,7 @@ let createParticipantQuestions (eventId: Guid) (participantQuestions: string lis
             with
                 | ex -> return Error ex
     }
-    
+
 let deleteParticipantQuestions (eventId: Guid) (transaction: SqlTransaction) =
     task {
         let query =
@@ -723,7 +723,7 @@ let deleteParticipantQuestions (eventId: Guid) (transaction: SqlTransaction) =
             DELETE FROM ParticipantQuestions
             WHERE EventId = @eventId
             "
-            
+
         let parameters = dict [
             "eventId", box (eventId.ToString())
         ]
@@ -734,8 +734,8 @@ let deleteParticipantQuestions (eventId: Guid) (transaction: SqlTransaction) =
         with
             | ex -> return Error ex
     }
-        
-    
+
+
 let createEvent (writeModel: Models.EventWriteModel) employeeId (transaction: SqlTransaction) =
     task {
         let update_shortname_and_insert_event =
@@ -743,7 +743,7 @@ let createEvent (writeModel: Models.EventWriteModel) employeeId (transaction: Sq
             UPDATE Events
             SET Shortname = NULL
             WHERE ShortName = @shortname AND (EndDate < @now Or IsCancelled = 1)
-            
+
             INSERT INTO Events (Id,
                     Title,
                     Description,
@@ -814,14 +814,14 @@ let createEvent (writeModel: Models.EventWriteModel) employeeId (transaction: Sq
             "shortname", (if writeModel.Shortname.IsSome then writeModel.Shortname.Value else box null)
             "now", box (DateTime.Now.Date.ToString())
         ]
-        
+
         try
             let! result = transaction.Connection.QuerySingleAsync<Models.Event>(update_shortname_and_insert_event, parameters, transaction)
             return Ok result
         with
             | ex -> return Error ex
     }
-    
+
 let getParticipantForEvent eventId email (transaction: SqlTransaction) =
     task {
         let query =
@@ -835,19 +835,19 @@ let getParticipantForEvent eventId email (transaction: SqlTransaction) =
             FROM Participants
             WHERE EventId = @eventId AND Email = @email
             "
-            
+
         let parameters = dict [
             "eventId", box eventId
             "email", box email
         ]
-        
+
         try
             let! result = transaction.Connection.QuerySingleAsync<Models.Participant>(query, parameters, transaction)
             return Ok result
         with
             | ex -> return Error ex
     }
-    
+
 let getParticipantsAndAnswersForEvent (eventId: Guid) (transaction: SqlTransaction) =
     task {
         let query =
@@ -862,17 +862,17 @@ let getParticipantsAndAnswersForEvent (eventId: Guid) (transaction: SqlTransacti
                    PA.Email,
                    PA.Answer
             FROM Participants P
-            LEFT JOIN ParticipantAnswers PA ON PA.EventId = P.EventId AND PA.Email = P.Email 
+            LEFT JOIN ParticipantAnswers PA ON PA.EventId = P.EventId AND PA.Email = P.Email
             WHERE P.EventId = @eventId
             ORDER BY RegistrationTime;
             "
-            
+
         let parameters = dict [
             "eventId", box eventId
         ]
-        
+
         let participants = Dictionary<Models.Participant, Models.ParticipantAnswer list>()
-        
+
         try
             let! _ =
                 transaction.Connection.QueryAsync(
@@ -882,23 +882,23 @@ let getParticipantsAndAnswersForEvent (eventId: Guid) (transaction: SqlTransacti
                                 participants[participant] <- participants[participant] @ [answer]
                             else if not (participants.ContainsKey(participant)) && not (answer :> obj = null) then
                                 participants.Add(participant, [answer])
-                            else 
+                            else
                                 participants.Add(participant, [])
                         ),
                     parameters,
                     transaction,
                     splitOn = "QuestionId")
-                
+
             let result: Models.ParticipantAndAnswers seq =
                 participants
                 |> Seq.fromDict
                 |> Seq.map (fun (x, y) -> { Participant = x; Answers = y })
-                
+
             return Ok result
         with
             | ex -> return Error ex
     }
-    
+
 let getParticipationsForParticipant email (connection: SqlConnection) =
     task {
         let query =
@@ -918,13 +918,13 @@ let getParticipationsForParticipant email (connection: SqlConnection) =
                 P.EventId = A.EventId
             WHERE P.Email = @email
             "
-        
+
         let parameters = dict [
             "email", box email
         ]
-            
+
         let participants = Dictionary<Models.Participant, Models.ParticipantAnswer list>()
-        
+
         try
             let! _ =
                 connection.QueryAsync(
@@ -934,17 +934,17 @@ let getParticipationsForParticipant email (connection: SqlConnection) =
                                 participants[participant] <- participants[participant] @ [answer]
                             else if not (participants.ContainsKey(participant)) && not (answer :> obj = null) then
                                 participants.Add(participant, [answer])
-                            else 
+                            else
                                 participants.Add(participant, [])
                         ),
-                    parameters, 
+                    parameters,
                     splitOn = "QuestionId")
-                
+
             let result: Models.ParticipantAndAnswers seq =
                 participants
                 |> Seq.fromDict
                 |> Seq.map (fun (x, y) -> { Participant = x; Answers = y })
-                
+
             return Ok result
         with
             | ex -> return Error ex
@@ -958,16 +958,15 @@ let deleteParticipantFromEvent eventId email (transaction: SqlTransaction) =
             OUTPUT DELETED.*
             WHERE EventId = @eventId AND Email = @email
             "
-        
+
         let parameters = dict [
             "eventId", box eventId
             "email", box email
         ]
-            
+
         try
             let! result = transaction.Connection.QuerySingleAsync<Models.Participant>(query, parameters, transaction)
             return Ok result
         with
             | ex -> return Error ex
     }
-
