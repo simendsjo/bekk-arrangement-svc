@@ -13,9 +13,6 @@ type HttpStatus =
     | Forbidden of string
     | InternalError of exn
 
-let internal_error_and_rollback_transaction (transaction: SqlTransaction) ex =
-    transaction.Rollback()
-    InternalError ex
 let notFound message = RequestErrors.NOT_FOUND message
 let badRequest message = RequestErrors.BAD_REQUEST message
 let forbidden message = RequestErrors.FORBIDDEN message

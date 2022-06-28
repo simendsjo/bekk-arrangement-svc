@@ -115,25 +115,23 @@ let registerParticipationHandler (eventId: Guid, email): HttpHandler =
                     |> TaskResult.mapError BadRequest
                 
                 let config = context.GetService<AppConfig>()
-                
-                use connection = context.GetService<SqlConnection>()
-                connection.Open()
-                use transaction = connection.BeginTransaction()
+
+                use db = openTransaction context
                 let! isEventExternal =
-                    Queries.isEventExternal eventId transaction
-                    |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
+                    Queries.isEventExternal eventId db
+                    |> TaskResult.mapError InternalError
                 do! (isBekker || isEventExternal) |> Result.requireTrue mustBeAuthorizedOrEventMustBeExternal
                 let! eventAndQuestions =
-                    Queries.getEvent eventId transaction
-                    |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
+                    Queries.getEvent eventId db
+                    |> TaskResult.mapError InternalError
                 let! eventAndQuestions =
                     eventAndQuestions
                     |> Result.requireSome (eventNotFound eventId)
                 let! numberOfParticipants =
-                    Queries.getNumberOfParticipantsForEvent eventId transaction
-                    |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
-                
-                let! participate = 
+                    Queries.getNumberOfParticipantsForEvent eventId db
+                    |> TaskResult.mapError InternalError
+
+                let! participate =
                     match participateEvent isBekker numberOfParticipants eventAndQuestions.Event with
                         | NotExternal ->
                             Error "Arrangementet er ikke eksternt"
@@ -152,14 +150,14 @@ let registerParticipationHandler (eventId: Guid, email): HttpHandler =
                     |> Result.mapError (fun e -> BadRequest e)
 
                 let! participant, answers =
-                    let result = 
-                        let participant = Queries.addParticipantToEvent eventId email userId writeModel.Name transaction
+                    let result =
+                        let participant = Queries.addParticipantToEvent eventId email userId writeModel.Name db
                         let answers =
                             if List.isEmpty writeModel.ParticipantAnswers then
                                 Ok []
                             else
                                 // FIXME: Here we need to fetch all the questions from the database. This is because we have no question ID related to the answers. This does not feel right and should be fixed. Does require a frontend fix as well
-                                let eventQuestions = Queries.getEventQuestions eventId transaction
+                                let eventQuestions = Queries.getEventQuestions eventId db
                                 let participantAnswerDbModels: ParticipantAnswer list =
                                     writeModel.ParticipantAnswers
                                     |> Seq.zip eventQuestions
@@ -170,12 +168,12 @@ let registerParticipationHandler (eventId: Guid, email): HttpHandler =
                                           Answer = answer
                                         })
                                     |> Seq.toList
-                                Queries.createParticipantAnswers participantAnswerDbModels transaction
+                                Queries.createParticipantAnswers participantAnswerDbModels db
                         Ok (participant, answers)
-                    result |> Result.mapError (internal_error_and_rollback_transaction transaction)
-                let! participant = participant |> Result.mapError (internal_error_and_rollback_transaction transaction)
-                transaction.Commit()
-                let! answers = answers |> Result.mapError (internal_error_and_rollback_transaction transaction)
+                    result |> Result.mapError InternalError
+                let! participant = participant |> Result.mapError InternalError
+                db.Commit()
+                let! answers = answers |> Result.mapError InternalError
                 // Sende epost
                 let isWaitlisted = participate = IsWaitListed
                 let email =
@@ -196,13 +194,10 @@ let getEventsForForsideHandler (email: string) =
     fun (next: HttpFunc) (context: HttpContext) ->
         let result = 
             taskResult {
-                use connection = context.GetService<SqlConnection>()
-                connection.Open()
-                use transaction = connection.BeginTransaction()
+                use db = openConnection context
                 let! events =
-                    Queries.getEventsForForside email transaction
-                    |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
-                transaction.Commit()
+                    Queries.getEventsForForside email db
+                    |> TaskResult.mapError InternalError
                 return events
                        |> Seq.map Event.encodeForside
                        |> Encode.seq
@@ -215,13 +210,10 @@ let getFutureEvents (next: HttpFunc) (context: HttpContext) =
             let! userId =
                 getUserId context
                 |> TaskResult.requireSome couldNotRetrieveUserId
-            use connection = context.GetService<SqlConnection>()
-            connection.Open()
-            use transaction = connection.BeginTransaction()
+            use db = openConnection context
             let! eventAndQuestions =
-                Queries.getFutureEvents userId transaction
-                |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
-            transaction.Commit()
+                Queries.getFutureEvents userId db
+                |> TaskResult.mapError InternalError
             let result =
                 eventAndQuestions
                 |> List.map Event.encodeEventAndQuestions 
@@ -235,13 +227,10 @@ let getPastEvents (next: HttpFunc) (context: HttpContext) =
                 let! userId =
                     getUserId context
                     |> TaskResult.requireSome couldNotRetrieveUserId
-                use connection = context.GetService<SqlConnection>()
-                connection.Open()
-                use transaction = connection.BeginTransaction()
+                use db = openConnection context
                 let! eventAndQuestions =
-                    Queries.getPastEvents userId transaction
-                    |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
-                transaction.Commit()
+                    Queries.getPastEvents userId db
+                    |> TaskResult.mapError InternalError
                 return
                     eventAndQuestions
                     |> List.map Event.encodeEventAndQuestions
@@ -253,13 +242,10 @@ let getEventsOrganizedBy (email: string) =
     fun (next: HttpFunc) (context: HttpContext) ->
         let result =
             taskResult {
-                use connection = context.GetService<SqlConnection>()
-                connection.Open()
-                use transaction = connection.BeginTransaction()
+                use db = openConnection context
                 let! eventAndQuestions =
-                    Queries.getEventsOrganizedByEmail email transaction
-                    |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
-                transaction.Commit()
+                    Queries.getEventsOrganizedByEmail email db
+                    |> TaskResult.mapError InternalError
                 return
                     eventAndQuestions
                     |> List.map Event.encodeEventAndQuestions
@@ -274,13 +260,10 @@ let getEventIdByShortname =
                     context.GetQueryStringValue "shortname"
                     |> Result.mapError BadRequest
                 let shortname = HttpUtility.UrlDecode(shortnameEncoded)
-                use connection = context.GetService<SqlConnection>()
-                connection.Open()
-                use transaction = connection.BeginTransaction()
+                use db = openConnection context
                 let! result =
-                    Queries.getEventIdByShortname shortname transaction
-                    |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
-                transaction.Commit()
+                    Queries.getEventIdByShortname shortname db
+                    |> TaskResult.mapError InternalError
                 return result
             }
         jsonResult result next context       
@@ -290,20 +273,17 @@ let getEvent (eventId: Guid) =
         let isBekker = context.User.Identity.IsAuthenticated
         let result =
             taskResult {
-                use connection = context.GetService<SqlConnection>()
-                connection.Open()
-                use transaction = connection.BeginTransaction()
+                use db = openConnection context
                 let! isEventExternal =
-                    Queries.isEventExternal eventId transaction
-                    |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
+                    Queries.isEventExternal eventId db
+                    |> TaskResult.mapError InternalError
                 do! (isBekker || isEventExternal) |> Result.requireTrue mustBeAuthorizedOrEventMustBeExternal
                 let! eventAndQuestions =
-                    Queries.getEvent eventId transaction
-                    |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
+                    Queries.getEvent eventId db
+                    |> TaskResult.mapError InternalError
                 let! eventAndQuestions =
                     eventAndQuestions
                     |> Result.requireSome (eventNotFound eventId)
-                transaction.Commit()
                 return Event.encodeEventAndQuestions eventAndQuestions
             }
         jsonResult result next context
@@ -317,9 +297,7 @@ let getUnfurlEvent (idOrName: string) =
             |> String.concat ""
         let result =
             taskResult {
-                use connection = context.GetService<SqlConnection>()
-                connection.Open()
-                use transaction = connection.BeginTransaction()
+                use db = openConnection context
                 // TODO: USikker på hvilken av disse som er riktig.
                 // Gamle versjon gjør det på utkommentert måte, men den funker ikke i postman
 //                let success, parsedEventId = Guid.TryParse (idOrName |> strSkip ("/events/" |> String.length))
@@ -329,8 +307,8 @@ let getUnfurlEvent (idOrName: string) =
                         let name = idOrName |> strSkip 1
                         taskResult {
                             let! result =
-                                Queries.getEventIdByShortname name transaction
-                                |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
+                                Queries.getEventIdByShortname name db
+                                |> TaskResult.mapError InternalError
                             return result
                         }
                     else
@@ -339,15 +317,14 @@ let getUnfurlEvent (idOrName: string) =
                        }
                        
                 let! eventAndQuestions =
-                    Queries.getEvent eventId transaction
-                    |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
+                    Queries.getEvent eventId db
+                    |> TaskResult.mapError InternalError
                 let! eventAndQuestions =
                     eventAndQuestions
                     |> Result.requireSome (eventNotFound eventId)
                 let! numberOfParticipants =
-                    Queries.getNumberOfParticipantsForEvent eventId transaction
-                    |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
-                transaction.Commit()
+                    Queries.getNumberOfParticipantsForEvent eventId db
+                    |> TaskResult.mapError InternalError
                 return {| event = Event.encodeEventAndQuestions eventAndQuestions; numberOfParticipants = numberOfParticipants |}
             }
         jsonResult result next context
@@ -362,21 +339,19 @@ let createEvent =
                 let! userId =
                     getUserId context
                     |> TaskResult.requireSome couldNotRetrieveUserId
-                use connection = context.GetService<SqlConnection>()
-                connection.Open()
-                use transaction = connection.BeginTransaction()
+                use db = openTransaction context
                 let! doesShortNameExist =
-                    Queries.doesShortnameExist writeModel.Shortname transaction
-                    |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
+                    Queries.doesShortnameExist writeModel.Shortname db
+                    |> TaskResult.mapError InternalError
                 do! doesShortNameExist
                     |> Result.requireFalse (shortnameIsInUse writeModel.Shortname)
                 let! newEvent =
-                    Queries.createEvent writeModel userId transaction
-                    |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
+                    Queries.createEvent writeModel userId db
+                    |> TaskResult.mapError InternalError
                 let! newQuestions =
-                    Queries.createParticipantQuestions newEvent.Id writeModel.ParticipantQuestions transaction
-                    |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
-                transaction.Commit()
+                    Queries.createParticipantQuestions newEvent.Id writeModel.ParticipantQuestions db
+                    |> TaskResult.mapError InternalError
+                db.Commit()
                 let eventAndQuestions = { Event = newEvent; Questions = newQuestions }
                 // Send epost etter registrering
                 let redirectUrlTemplate = HttpUtility.UrlDecode writeModel.EditUrlTemplate
@@ -394,25 +369,23 @@ let cancelEvent (eventId: Guid) =
                 let! userId = getUserId context
                 let userIsAdmin = isAdmin context
                 let editToken = getEditTokenFromQuery context
-                use connection = context.GetService<SqlConnection>()
-                connection.Open()
-                use transaction = connection.BeginTransaction()
+                use db = openTransaction context
                 let! canEditEvent =
-                    Queries.canEditEvent eventId userIsAdmin userId editToken transaction
-                    |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
+                    Queries.canEditEvent eventId userIsAdmin userId editToken db
+                    |> TaskResult.mapError InternalError
                 do! canEditEvent |> Result.requireTrue cannotUpdateEvent
-                do! Queries.cancelEvent eventId transaction
-                    |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
+                do! Queries.cancelEvent eventId db
+                    |> TaskResult.mapError InternalError
                 let! eventAndQuestions =
-                    Queries.getEvent eventId transaction
-                    |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
+                    Queries.getEvent eventId db
+                    |> TaskResult.mapError InternalError
                 let! eventAndQuestions =
                     eventAndQuestions
                     |> Result.requireSome (eventNotFound eventId)
                 let! participants =
-                    Queries.getParticipantsForEvent eventId transaction
-                    |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
-                transaction.Commit()
+                    Queries.getParticipantsForEvent eventId db
+                    |> TaskResult.mapError InternalError
+                db.Commit()
                 let! messageToParticipants = context.ReadBodyFromRequestAsync()
                 sendCancellationMailToParticipants
                     messageToParticipants
@@ -432,25 +405,23 @@ let deleteEvent (eventId: Guid) =
                 let! userId = getUserId context
                 let userIsAdmin = isAdmin context
                 let editToken = getEditTokenFromQuery context
-                use connection = context.GetService<SqlConnection>()
-                connection.Open()
-                use transaction = connection.BeginTransaction()
+                use db = openTransaction context
                 let! canEditEvent =
-                    Queries.canEditEvent eventId userIsAdmin userId editToken transaction
-                    |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
+                    Queries.canEditEvent eventId userIsAdmin userId editToken db
+                    |> TaskResult.mapError InternalError
                 do! canEditEvent |> Result.requireTrue cannotUpdateEvent
                 let! eventAndQuestions =
-                    Queries.getEvent eventId transaction
-                    |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
+                    Queries.getEvent eventId db
+                    |> TaskResult.mapError InternalError
                 let! eventAndQuestions =
                     eventAndQuestions
                     |> Result.requireSome (eventNotFound eventId)
                 let! participants =
-                    Queries.getParticipantsForEvent eventId transaction
-                    |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
-                do! Queries.deleteEvent eventId transaction
-                    |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
-                transaction.Commit()
+                    Queries.getParticipantsForEvent eventId db
+                    |> TaskResult.mapError InternalError
+                do! Queries.deleteEvent eventId db
+                    |> TaskResult.mapError InternalError
+                db.Commit()
                 let! messageToParticipants = context.ReadBodyFromRequestAsync()
                 sendCancellationMailToParticipants
                     messageToParticipants
@@ -472,15 +443,12 @@ let getEventsAndParticipations (id: int) =
                 let userIsAdmin = isAdmin context
                 do! (userId = id || userIsAdmin)
                     |> Result.requireTrue cannotSeeParticipations
-                use connection = context.GetService<SqlConnection>()
-                connection.Open()
-                use transaction = connection.BeginTransaction()
+                use db = openConnection context
                 let! eventsAndQuestions =
-                    Queries.getEventsOrganizedById id transaction
-                    |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
-                let! participations = Queries.getParticipationsById id transaction
-                                      |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
-                transaction.Commit()
+                    Queries.getEventsOrganizedById id db
+                    |> TaskResult.mapError InternalError
+                let! participations = Queries.getParticipationsById id db
+                                      |> TaskResult.mapError InternalError
                 return Participant.encodeWithLocalStorage eventsAndQuestions (participations |> Seq.toList)
             }
         jsonResult result next context
@@ -558,26 +526,24 @@ let updateEvent (eventId: Guid) =
                 let! writeModel =
                     decodeWriteModel<Models.EventWriteModel> context
                     |> TaskResult.mapError BadRequest
-                use connection = context.GetService<SqlConnection>()
-                connection.Open()
-                use transaction = connection.BeginTransaction()
+                use db = openTransaction context
                 let! canEditEvent =
-                    Queries.canEditEvent eventId userIsAdmin userId editToken transaction
-                    |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
+                    Queries.canEditEvent eventId userIsAdmin userId editToken db
+                    |> TaskResult.mapError InternalError
                 do! canEditEvent |> Result.requireTrue cannotUpdateEvent
                 let! oldEvent =
-                    Queries.getEvent eventId transaction
-                    |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
+                    Queries.getEvent eventId db
+                    |> TaskResult.mapError InternalError
                 let! oldEventParticipants =
-                    Queries.getParticipantsForEvent eventId transaction
-                    |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
+                    Queries.getParticipantsForEvent eventId db
+                    |> TaskResult.mapError InternalError
                 let! oldEvent =
                     oldEvent
                     |> Result.requireSome (eventNotFound eventId)
                 let! numberOfParticipantsForOldEvent =
-                    Queries.getNumberOfParticipantsForEvent eventId transaction
-                    |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
-                    
+                    Queries.getNumberOfParticipantsForEvent eventId db
+                    |> TaskResult.mapError InternalError
+
                 do! canUpdateNumberOfParticipants oldEvent.Event writeModel numberOfParticipantsForOldEvent
                     |> Result.mapError id
                     
@@ -590,18 +556,18 @@ let updateEvent (eventId: Guid) =
                         
                     if canUpdateQuestions.ShouldChangeQuestions then
                         let! _ =
-                            Queries.deleteParticipantQuestions eventId transaction
-                            |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
+                            Queries.deleteParticipantQuestions eventId db
+                            |> TaskResult.mapError InternalError
                         let! newQuestions =
-                            Queries.createParticipantQuestions eventId writeModel.ParticipantQuestions transaction
-                            |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
+                            Queries.createParticipantQuestions eventId writeModel.ParticipantQuestions db
+                            |> TaskResult.mapError InternalError
                         eventQuestions <- newQuestions
                         ()
                     
                     let! updatedEvent =
-                        Queries.updateEvent eventId writeModel transaction
-                        |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
-                    transaction.Commit()
+                        Queries.updateEvent eventId writeModel db
+                        |> TaskResult.mapError InternalError
+                    db.Commit()
                     sendEmailToNewParticipants oldEvent.Event.MaxParticipants writeModel.MaxParticipants oldEventParticipants updatedEvent context
                     let eventAndQuestions = { Event = updatedEvent; Questions = eventQuestions }
                     return Event.encodeEventAndQuestions eventAndQuestions
@@ -613,17 +579,14 @@ let getNumberOfParticipantsForEvent (eventId: Guid) =
         let result =
             taskResult {
                 let isBekker = context.User.Identity.IsAuthenticated
-                use connection = context.GetService<SqlConnection>()
-                connection.Open()
-                use transaction = connection.BeginTransaction()
+                use db = openConnection context
                 let! isEventExternal =
-                    Queries.isEventExternal eventId transaction
-                    |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
+                    Queries.isEventExternal eventId db
+                    |> TaskResult.mapError InternalError
                 do! (isEventExternal || isBekker) |> Result.requireTrue cannotUpdateEvent
                 let! result =
-                    Queries.getNumberOfParticipantsForEvent eventId transaction
-                    |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
-                transaction.Commit();
+                    Queries.getNumberOfParticipantsForEvent eventId db
+                    |> TaskResult.mapError InternalError
                 return result
             }
         jsonResult result next context
@@ -632,17 +595,14 @@ let getParticipantsForEvent (eventId: Guid) =
     fun (next: HttpFunc) (context: HttpContext) ->
         let result =
             taskResult {
-                use connection = context.GetService<SqlConnection>()
-                connection.Open()
-                use transaction = connection.BeginTransaction()
+                use db = openConnection context
                 let! participations =
-                    Queries.getParticipantsAndAnswersForEvent eventId transaction
-                    |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
+                    Queries.getParticipantsAndAnswersForEvent eventId db
+                    |> TaskResult.mapError InternalError
                 let! event =
-                    Queries.getEvent eventId transaction
-                    |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
+                    Queries.getEvent eventId db
+                    |> TaskResult.mapError InternalError
                 let! event = event |> Result.requireSome (eventNotFound eventId)
-                transaction.Commit()
                 return Participant.encodeParticipationsAndWaitlist (participationsToAttendeesAndWaitlist event.Event.MaxParticipants (participations |> Seq.toList))
             }
         jsonResult result next context
@@ -681,25 +641,22 @@ let exportParticipationsForEvent (eventId: Guid) =
                 let editToken = getEditTokenFromQuery context
                 let isAdmin = isAdmin context
                 let! userId = getUserId context
-                use connection = context.GetService<SqlConnection>()
-                connection.Open()
-                use transaction = connection.BeginTransaction()
+                use db = openConnection context
                 let! canEditEvent =
-                    Queries.canEditEvent eventId isAdmin userId editToken transaction
-                    |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
+                    Queries.canEditEvent eventId isAdmin userId editToken db
+                    |> TaskResult.mapError InternalError
                 do! canEditEvent |> Result.requireTrue cannotUpdateEvent
                 let! eventAndQuestions =
-                    Queries.getEvent eventId transaction
-                    |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
+                    Queries.getEvent eventId db
+                    |> TaskResult.mapError InternalError
                 let! eventAndQuestions =
                     eventAndQuestions
                     |> Result.requireSome (eventNotFound eventId)
                 let! participations =
-                    Queries.getParticipantsAndAnswersForEvent eventId transaction
-                    |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
-                transaction.Commit()
+                    Queries.getParticipantsAndAnswersForEvent eventId db
+                    |> TaskResult.mapError InternalError
                 let participants = participationsToAttendeesAndWaitlist eventAndQuestions.Event.MaxParticipants (participations |> Seq.toList)
-                return createCsvString eventAndQuestions.Event eventAndQuestions.Questions participants 
+                return createCsvString eventAndQuestions.Event eventAndQuestions.Questions participants
             }
         csvResult eventId result next context
         
@@ -708,24 +665,22 @@ let getWaitinglistSpot (eventId: Guid) (email: string) =
         let result =
             taskResult {
                 let isBekker = context.User.Identity.IsAuthenticated
-                use connection = context.GetService<SqlConnection>()
-                connection.Open()
-                use transaction = connection.BeginTransaction()
+                use db = openConnection context
                 let! isEventExternal =
-                    Queries.isEventExternal eventId transaction
-                    |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
+                    Queries.isEventExternal eventId db
+                    |> TaskResult.mapError InternalError
                 do! (isEventExternal || isBekker) |> Result.requireTrue cannotUpdateEvent
                 let! eventAndQuestions =
-                    Queries.getEvent eventId transaction
-                    |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
+                    Queries.getEvent eventId db
+                    |> TaskResult.mapError InternalError
                 let! eventAndQuestions =
                     eventAndQuestions
                     |> Result.requireSome (eventNotFound eventId)
                 let! participations =
-                    Queries.getParticipantsAndAnswersForEvent eventId transaction
-                    |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
+                    Queries.getParticipantsAndAnswersForEvent eventId db
+                    |> TaskResult.mapError InternalError
                 let attendeesAndWaitlist = participationsToAttendeesAndWaitlist eventAndQuestions.Event.MaxParticipants (participations |> Seq.toList)
-                
+
                 let waitingListIndex =
                     attendeesAndWaitlist.WaitingList
                     |> Seq.tryFindIndex (fun participantAndAnswers -> participantAndAnswers.Participant.Email = email)
@@ -740,10 +695,9 @@ let getParticipationsForParticipant (email: string) =
     fun (next: HttpFunc) (context: HttpContext) ->
         let result =
             taskResult {
-                use connection = context.GetService<SqlConnection>()
-                connection.Open()
+                use db = openConnection context
                 let! result =
-                    Queries.getParticipationsForParticipant email connection
+                    Queries.getParticipationsForParticipant email db
                     |> TaskResult.mapError InternalError
                 return
                     result
@@ -757,28 +711,26 @@ let deleteParticipantFromEvent (eventId: Guid) (email: string) =
             taskResult {
                 let isAdmin = isAdmin context
                 let cancellationToken = getCancellationTokenFromQuery context
-                use connection = context.GetService<SqlConnection>()
-                connection.Open()
-                use transaction = connection.BeginTransaction()
+                use db = openTransaction context
                 let! participant =
-                    Queries.getParticipantForEvent eventId email transaction
-                    |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
+                    Queries.getParticipantForEvent eventId email db
+                    |> TaskResult.mapError InternalError
                 do! (isAdmin || (cancellationToken.IsSome && cancellationToken.Value = participant.CancellationToken))
                     |> Result.requireTrue cannotDeleteParticipation
                 let! eventAndQuestions =
-                    Queries.getEvent eventId transaction
-                    |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
+                    Queries.getEvent eventId db
+                    |> TaskResult.mapError InternalError
                 let! eventAndQuestions =
                     eventAndQuestions
                     |> Result.requireSome (eventNotFound eventId)
                 let! participants =
-                    Queries.getParticipantsAndAnswersForEvent eventId transaction
-                    |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
+                    Queries.getParticipantsAndAnswersForEvent eventId db
+                    |> TaskResult.mapError InternalError
                 let! deletedParticipant =
-                    Queries.deleteParticipantFromEvent eventId email transaction
-                    |> TaskResult.mapError (internal_error_and_rollback_transaction transaction)
+                    Queries.deleteParticipantFromEvent eventId email db
+                    |> TaskResult.mapError InternalError
                 let participants = participationsToAttendeesAndWaitlist eventAndQuestions.Event.MaxParticipants (participants |> Seq.toList)
-                transaction.Commit()
+                db.Commit()
                 sendParticipantCancelMails eventAndQuestions.Event deletedParticipant participants.WaitingList context
                 return ()
             }
