@@ -27,6 +27,7 @@ let webApp =
 let configuration =
     let builder = ConfigurationBuilder()
     builder.AddJsonFile("appsettings.json") |> ignore
+    builder.AddUserSecrets(System.Reflection.Assembly.GetExecutingAssembly()) |> ignore
     builder.AddEnvironmentVariables() |> ignore
     builder.Build()
 
@@ -41,13 +42,26 @@ let configureApp (app: IApplicationBuilder) =
         next.Invoke())
     |> ignore
     app.UseMiddleware<Middleware.RequestLogging>() |> ignore
-    app.UseAuthentication()
-       .UseCors(configureCors)
-       .UseGiraffe webApp
+    app.UseAuthentication() |> ignore
+    app.UseCors(configureCors) |> ignore
+    app.UseOutputCaching()
+    app.UseGiraffe(webApp) |> ignore
 
 let configureServices (services: IServiceCollection) =
     services.AddCors() |> ignore
     services.AddGiraffe() |> ignore
+    services.AddOutputCaching(fun opt ->
+        // The default option requires the user to not be authenticated, probably to avoid leaking data between
+        // users. A good default, but it means we cannot use it as a cache for all users. We turn off this security
+        // measure so we can use a common cache for all users
+        opt.DoesRequestQualify <- fun ctx -> ctx.Request.Method = HttpMethods.Get)
+    services.AddSingleton<OfficeEvents.CalendarLookup.Options>(
+        { TenantId = configuration.["OfficeEvents:TenantId"]
+          Mailbox = configuration.["OfficeEvents:Mailbox"]
+          ClientId = configuration.["OfficeEvents:ClientId"]
+          ClientSecret = configuration.["OfficeEvents:ClientSecret"]
+        } : OfficeEvents.CalendarLookup.Options)
+    |> ignore
     services.AddSingleton<SendgridOptions>
         { ApiKey = configuration["Sendgrid:Apikey"]
           SendgridUrl = configuration["Sendgrid:SendgridUrl"] }

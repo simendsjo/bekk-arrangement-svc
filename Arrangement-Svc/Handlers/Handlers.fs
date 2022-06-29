@@ -15,6 +15,7 @@ open Config
 open Models
 open UserMessage
 open UserMessage.ResponseMessages
+open Middleware
 
 let private decodeWriteModel<'T> (context: HttpContext) =
     task {
@@ -766,6 +767,9 @@ let routes: HttpHandler =
                 routef "/events-and-participations/%i" getEventsAndParticipations
                 routef "/events/%O/participants" getParticipantsForEvent
                 routef "/participants/%s/events" getParticipationsForParticipant
+                route "/office-events"
+                    >=> outputCache (fun opt -> opt.Duration <- TimeSpan.FromMinutes(5).TotalSeconds)
+                    >=> OfficeEvents.WebApi.get
             ]
           ]
           DELETE

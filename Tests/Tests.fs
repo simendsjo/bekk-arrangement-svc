@@ -13,6 +13,7 @@ let allTests =
         UpdateEvent.tests
         GetEvent.tests
         DeleteEvent.tests
+        OfficeEvents.tests
     ]
 
 [<EntryPoint>]

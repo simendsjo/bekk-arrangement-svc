@@ -15,6 +15,7 @@
         <Compile Include="UpdateEvent.fs" />
         <Compile Include="DeleteEvent.fs" />
         <Compile Include="GetEvent.fs" />
+        <Compile Include="OfficeEvents.fs" />
         <Compile Include="Tests.fs" />
     </ItemGroup>
 

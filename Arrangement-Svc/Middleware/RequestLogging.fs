@@ -38,3 +38,13 @@ type RequestLogging(next: RequestDelegate) =
             ])
         }
 
+
+[<AutoOpen>]
+module OutputCache =
+    open WebEssentials.AspNetCore.OutputCaching
+    let outputCache (f : OutputCacheProfile -> unit) =
+        fun (next : HttpFunc) (ctx : HttpContext) ->
+            let profile = OutputCacheProfile()
+            f profile
+            ctx.EnableOutputCaching(profile)
+            next ctx
